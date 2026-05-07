@@ -1,0 +1,99 @@
+﻿{% extends "base.html" %}
+{% block title %}Review #{{ review.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+      <i class="bi bi-clipboard-check"></i> Review #{{ review.id }}
+      {% if review.status == 'Completed' %}
+      <span class="badge bg-success">Completed</span>
+      {% elif review.status == 'Overdue' %}
+      <span class="badge bg-danger">Overdue</span>
+      {% else %}
+      <span class="badge bg-info">Scheduled</span>
+      {% endif %}
+    </h2>
+    <div>
+      {% if review.status != 'Completed' %}
+      <a href="{{ url_for('reviews.complete_review', id=review.id) }}" class="btn btn-success">
+        <i class="bi bi-check-circle"></i> Complete Review
+      </a>
+      {% endif %}
+      <a href="{{ url_for('reviews.review_list') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </a>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Review Info -->
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Review Details</h5></div>
+        <div class="card-body">
+          <div class="row mb-2">
+            <div class="col-5"><strong>Case Reference No.</strong></div>
+            <div class="col-7">{{ review.case_id }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Offence Type</strong></div>
+            <div class="col-7">{{ review.offence_type or 'â€”' }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Case Status</strong></div>
+            <div class="col-7">{{ review.case_status or 'â€”' }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Review Type</strong></div>
+            <div class="col-7">{{ review.review_type }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Scheduled Date</strong></div>
+            <div class="col-7">{{ review.scheduled_date }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Actual Date</strong></div>
+            <div class="col-7">{{ review.actual_date or 'â€”' }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Reviewer</strong></div>
+            <div class="col-7">{{ review.reviewer_name or 'â€”' }} {% if review.reviewer_badge %}({{ review.reviewer_badge }}){% endif %}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Created By</strong></div>
+            <div class="col-7">{{ review.created_by }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Next Review Date</strong></div>
+            <div class="col-7">{{ review.next_review_date or 'â€”' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Findings & Directives -->
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Outcome & Findings</h5></div>
+        <div class="card-body">
+          <div class="mb-3">
+            <strong>Outcome</strong>
+            <p class="mt-1">{{ review.outcome or 'Pending review completion.' }}</p>
+          </div>
+          <hr>
+          <div class="mb-3">
+            <strong>Findings</strong>
+            <p class="mt-1">{{ review.findings or 'No findings recorded.' }}</p>
+          </div>
+          <hr>
+          <div>
+            <strong>Directives</strong>
+            <p class="mt-1">{{ review.directives or 'No directives issued.' }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}IO Performance{% endblock %}
+
+{% block head %}
+<style>
+    .perf-green { background-color: #d4edda !important; }
+    .perf-yellow { background-color: #fff3cd !important; }
+    .perf-red { background-color: #f8d7da !important; }
+    @media print {
+        .no-print { display: none !important; }
+        .perf-green { background-color: #d4edda !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .perf-yellow { background-color: #fff3cd !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .perf-red { background-color: #f8d7da !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0"><i class="bi bi-people me-2"></i>IO Performance Metrics</h2>
+        <small class="text-muted">Investigating Officer caseload, clearance rates, and review compliance</small>
+    </div>
+    <div class="no-print">
+        <a href="{{ url_for('analytics.analytics_home') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Analytics Home
+        </a>
+    </div>
+</div>
+
+<!-- Performance Legend -->
+<div class="mb-3 no-print">
+    <small class="text-muted me-3">Performance Indicators:</small>
+    <span class="badge bg-success me-1">Good (70%+)</span>
+    <span class="badge bg-warning text-dark me-1">Fair (40-69%)</span>
+    <span class="badge bg-danger">Needs Attention (&lt;40%)</span>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover fnid-table mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Officer</th>
+                    <th>Badge</th>
+                    <th>Rank</th>
+                    <th class="text-center">Assigned</th>
+                    <th class="text-center">Active</th>
+                    <th class="text-center">Closed</th>
+                    <th class="text-center">Clearance Rate</th>
+                    <th class="text-center">Review Compliance</th>
+                    <th class="text-center">Oldest Case (days)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for io in io_stats %}
+                <tr class="{% if io.clearance >= 70 %}perf-green{% elif io.clearance >= 40 %}perf-yellow{% else %}perf-red{% endif %}">
+                    <td class="fw-semibold">{{ io.name }}</td>
+                    <td><code>{{ io.badge }}</code></td>
+                    <td>{{ io.rank }}</td>
+                    <td class="text-center">{{ io.assigned }}</td>
+                    <td class="text-center">
+                        {% if io.active > 10 %}
+                        <span class="badge bg-danger">{{ io.active }}</span>
+                        {% else %}
+                        {{ io.active }}
+                        {% endif %}
+                    </td>
+                    <td class="text-center">{{ io.closed }}</td>
+                    <td class="text-center">
+                        <span class="badge {% if io.clearance >= 70 %}bg-success{% elif io.clearance >= 40 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                            {{ io.clearance }}%
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <span class="badge {% if io.review_compliance >= 70 %}bg-success{% elif io.review_compliance >= 40 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                            {{ io.review_compliance }}%
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        {% if io.oldest_days > 180 %}
+                        <span class="text-danger fw-bold">{{ io.oldest_days }}</span>
+                        {% elif io.oldest_days > 90 %}
+                        <span class="text-warning fw-bold">{{ io.oldest_days }}</span>
+                        {% else %}
+                        {{ io.oldest_days }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not io_stats %}
+                <tr>
+                    <td colspan="9" class="text-center text-muted py-4">No investigating officers found.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if io_stats %}
+<div class="row g-3 mt-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Caseload Distribution</h6>
+            </div>
+            <div class="card-body">
+                <div style="position: relative; height: 300px;">
+                    <canvas id="caseloadChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>Clearance Rates</h6>
+            </div>
+            <div class="card-body">
+                <div style="position: relative; height: 300px;">
+                    <canvas id="clearanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if io_stats %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var names = {{ io_stats|map(attribute='name')|list|tojson }};
+    var assigned = {{ io_stats|map(attribute='assigned')|list|tojson }};
+    var active = {{ io_stats|map(attribute='active')|list|tojson }};
+    var closed = {{ io_stats|map(attribute='closed')|list|tojson }};
+    var clearance = {{ io_stats|map(attribute='clearance')|list|tojson }};
+
+    fnidChart('caseloadChart', 'bar', names, [
+        { label: 'Active', data: active, backgroundColor: '#ffc107' },
+        { label: 'Closed', data: closed, backgroundColor: '#198754' }
+    ], {
+        scales: {
+            x: { stacked: true },
+            y: { stacked: true, beginAtZero: true }
+        }
+    });
+
+    fnidChart('clearanceChart', 'bar', names, [{
+        label: 'Clearance Rate (%)',
+        data: clearance,
+        backgroundColor: clearance.map(function(v) {
+            return v >= 70 ? '#198754' : v >= 40 ? '#ffc107' : '#dc3545';
+        })
+    }], {
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, max: 100 } }
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

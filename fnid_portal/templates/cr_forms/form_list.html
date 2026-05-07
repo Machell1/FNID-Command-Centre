@@ -1,0 +1,238 @@
+﻿{% extends "base.html" %}
+{% block title %}CR Forms â€” Case {{ case.case_id }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-file-earmark-ruled me-2" style="color: var(--fnid-navy);"></i>
+            CR Forms â€” Case {{ case.case_id }}
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('units.unit_home', unit='registry') }}">Registry</a></li>
+                <li class="breadcrumb-item active">CR Forms</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <div class="dropdown">
+            <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-plus-circle me-1"></i> New Form
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                {% for ft, fdef in form_definitions.items() %}
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('cr_forms.form_new', case_id=case.case_id, form_type=ft) }}">
+                        <i class="bi bi-file-earmark-plus me-2"></i>{{ ft }} &mdash; {{ fdef.name }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <a href="{{ url_for('cases.case_detail', case_id=case.case_id) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Case
+        </a>
+    </div>
+</div>
+
+<!-- Case Summary Bar -->
+<div class="form-section py-2 px-3 mb-3">
+    <div class="row align-items-center">
+        <div class="col-md-3">
+            <small class="text-muted d-block">Case Reference No.</small>
+            <strong>{{ case.case_id }}</strong>
+        </div>
+        <div class="col-md-3">
+            <small class="text-muted d-block">Classification</small>
+            <span>{{ case.classification or 'â€”' }}</span>
+        </div>
+        <div class="col-md-3">
+            <small class="text-muted d-block">OIC</small>
+            <span>{{ case.oic_name or 'â€”' }}</span>
+        </div>
+        <div class="col-md-3">
+            <small class="text-muted d-block">Status</small>
+            <span>{{ case.case_status or 'â€”' }}</span>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4 no-print">
+    <div class="col-md-6">
+        <div class="form-section h-100">
+            <div class="form-section-title">
+                <i class="bi bi-person-badge me-2"></i>Investigator Section
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                {% for ft in ['CR1','CR2','CR3','CR4','CR5','CR6','CR8','CR9','CR11','CR12','CR14'] %}
+                {% set fdef = form_definitions.get(ft) %}
+                {% if fdef %}
+                <a href="{{ url_for('cr_forms.form_word_template', case_id=case.case_id, form_type=ft) }}"
+                   class="btn btn-primary btn-sm">
+                    <i class="bi bi-file-earmark-word me-1"></i>{{ ft }} Word
+                </a>
+                <a href="{{ url_for('cr_forms.form_new', case_id=case.case_id, form_type=ft) }}"
+                   class="btn btn-outline-primary btn-sm">
+                    {{ ft }} Workflow
+                </a>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="form-section h-100">
+            <div class="form-section-title">
+                <i class="bi bi-person-check me-2"></i>Team Lead Section
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                {% for ft in ['CR2','CR12','CR13','CR15'] %}
+                {% set fdef = form_definitions.get(ft) %}
+                {% if fdef %}
+                <a href="{{ url_for('cr_forms.form_word_template', case_id=case.case_id, form_type=ft) }}"
+                   class="btn btn-dark btn-sm">
+                    <i class="bi bi-file-earmark-word me-1"></i>{{ ft }} Word
+                </a>
+                <a href="{{ url_for('cr_forms.form_new', case_id=case.case_id, form_type=ft) }}"
+                   class="btn btn-outline-dark btn-sm">
+                    {{ ft }} Workflow
+                </a>
+                {% endif %}
+                {% endfor %}
+                <a href="{{ url_for('policy.forms_library') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-file-earmark-word me-1"></i> Templates
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Form Type Cards -->
+<div class="row g-3 mb-4">
+    {% for ft, fdef in form_definitions.items() %}
+    {% set count = forms | selectattr('form_type', 'equalto', ft) | list | length %}
+    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+        <div class="card text-center h-100" style="border-top: 3px solid var(--fnid-navy);">
+            <div class="card-body py-3">
+                <h5 class="mb-1 fw-bold" style="color: var(--fnid-navy);">{{ ft }}</h5>
+                <small class="text-muted d-block mb-2">{{ fdef.name }}</small>
+                <span class="badge rounded-pill {% if count > 0 %}bg-success{% else %}bg-secondary{% endif %}">
+                    {{ count }}
+                </span>
+            </div>
+            <div class="card-footer bg-white border-0 pt-0">
+                <div class="btn-group btn-group-sm w-100" role="group" aria-label="{{ ft }} actions">
+                    <a href="{{ url_for('cr_forms.form_word_template', case_id=case.case_id, form_type=ft) }}"
+                       class="btn btn-primary" title="Download exact uploaded Word template">
+                        <i class="bi bi-file-earmark-word"></i>
+                    </a>
+                    <a href="{{ url_for('cr_forms.form_new', case_id=case.case_id, form_type=ft) }}"
+                       class="btn btn-outline-primary" title="Create browser workflow capture">
+                        <i class="bi bi-ui-checks"></i>
+                    </a>
+                    <a href="{{ url_for('policy.print_blank_form', form_type=ft) }}"
+                       class="btn btn-outline-secondary" title="Print blank official copy" target="_blank">
+                        <i class="bi bi-printer"></i>
+                    </a>
+                    <a href="{{ url_for('policy.download_form', form_type=ft) }}"
+                       class="btn btn-outline-success" title="Download blank original DOCX">
+                        <i class="bi bi-file-earmark-word"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Existing Forms Table -->
+<div class="form-section">
+    <div class="form-section-title">
+        <i class="bi bi-table me-2"></i>Existing CR Forms
+    </div>
+
+    {% if forms %}
+    <div class="table-responsive">
+        <table id="formsTable" class="table table-striped table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Form ID</th>
+                    <th>Type</th>
+                    <th>Form Name</th>
+                    <th>Status</th>
+                    <th>Created By</th>
+                    <th>Date Created</th>
+                    <th class="text-center no-print">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for form in forms %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('cr_forms.form_edit', case_id=case.case_id, form_id=form.id) }}" class="fw-bold text-decoration-none">
+                            {{ form.form_id or form.id }}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="badge bg-fnid-navy">{{ form.form_type }}</span>
+                    </td>
+                    <td>{{ form_definitions.get(form.form_type, {}).get('name', form.form_type) }}</td>
+                    <td>
+                        {% if form.status == 'Draft' %}
+                            <span class="badge badge-draft">{{ form.status }}</span>
+                        {% elif form.status == 'Submitted' %}
+                            <span class="badge badge-submitted">{{ form.status }}</span>
+                        {% elif form.status == 'Approved' %}
+                            <span class="badge badge-approved">{{ form.status }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ form.status or 'Draft' }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ form.created_by or 'â€”' }}</td>
+                    <td>{{ form.created_at or 'â€”' }}</td>
+                    <td class="text-center no-print">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('cr_forms.form_edit', case_id=case.case_id, form_id=form.id) }}"
+                               class="btn btn-outline-primary" title="Edit">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                            <a href="{{ url_for('cr_forms.form_print', case_id=case.case_id, form_id=form.id) }}"
+                               class="btn btn-outline-secondary" title="Print" target="_blank">
+                                <i class="bi bi-printer"></i>
+                            </a>
+                            <a href="{{ url_for('cr_forms.form_pdf', case_id=case.case_id, form_id=form.id) }}"
+                               class="btn btn-outline-danger" title="Export PDF">
+                                <i class="bi bi-file-earmark-pdf"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+        <i class="bi bi-file-earmark-x fs-1 d-block mb-2"></i>
+        <p class="mb-1">No CR forms have been created for this case yet.</p>
+        <p class="small">Use the <strong>New Form</strong> button above to create one.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('formsTable') && $.fn.DataTable) {
+        $('#formsTable').DataTable({
+            order: [[5, 'desc']],
+            pageLength: 25,
+            language: { search: "Filter:" }
+        });
+    }
+});
+</script>
+{% endblock %}

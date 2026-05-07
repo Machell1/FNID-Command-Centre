@@ -1,0 +1,171 @@
+﻿{% extends "base.html" %}
+{% block title %}{% if is_edit %}Edit DPP Submission{% else %}New DPP Submission{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="bi bi-briefcase"></i>
+            {% if is_edit %}Edit DPP Submission #{{ entry.id }}{% else %}New DPP Submission{% endif %}
+        </h2>
+        <a href="{{ url_for('dpp.dpp_home') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Pipeline
+        </a>
+    </div>
+
+    <form method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <!-- Case & Classification -->
+        <div class="card mb-4">
+            <div class="card-header"><h5 class="mb-0"><i class="bi bi-folder me-2"></i>Case Information</h5></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Linked Case Reference No.</label>
+                        <input type="text" name="linked_case_id" class="form-control"
+                               value="{{ entry.linked_case_id if is_edit else (case_data.case_id if case_data else case_id) }}"
+                               placeholder="e.g. MAND/SD/A3/FNID/2026/0001">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Classification</label>
+                        <input type="text" name="classification" class="form-control"
+                               value="{{ entry.classification if is_edit else (case_data.classification if case_data else '') }}"
+                               placeholder="e.g. Murder, Shooting, Robbery">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">OIC Name <span class="text-danger">*</span></label>
+                        <input type="text" name="oic_name" class="form-control" required
+                               value="{{ entry.oic_name if is_edit else (case_data.oic_name if case_data else '') }}"
+                               placeholder="Officer in Charge">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Suspect Name <span class="text-danger">*</span></label>
+                        <input type="text" name="suspect_name" class="form-control" required
+                               value="{{ entry.suspect_name if is_edit else '' }}"
+                               placeholder="Full name of suspect">
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Offence Summary <span class="text-danger">*</span></label>
+                        <textarea name="offence_summary" class="form-control" rows="3" required
+                                  placeholder="Brief summary of the offence(s)">{{ entry.offence_summary if is_edit else '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DPP Filing -->
+        <div class="card mb-4">
+            <div class="card-header"><h5 class="mb-0"><i class="bi bi-calendar-event me-2"></i>DPP Filing Details</h5></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">DPP File Date</label>
+                        <input type="date" name="dpp_file_date" class="form-control"
+                               value="{{ entry.dpp_file_date if is_edit else '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Crown Counsel</label>
+                        <input type="text" name="crown_counsel" class="form-control"
+                               value="{{ entry.crown_counsel if is_edit else '' }}"
+                               placeholder="Assigned Crown Counsel">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">DPP Status</label>
+                        <select name="dpp_status" class="form-select">
+                            {% for s in ['Awaiting Ruling', 'Approved', 'Rejected', 'Returned for Further Investigation', 'No Further Action', 'Resubmitted'] %}
+                            <option value="{{ s }}" {% if is_edit and entry.dpp_status == s %}selected{% endif %}>{{ s }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assessments -->
+        <div class="card mb-4">
+            <div class="card-header"><h5 class="mb-0"><i class="bi bi-check2-square me-2"></i>Assessments</h5></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Evidential Sufficiency</label>
+                        <select name="evidential_sufficiency" class="form-select">
+                            <option value="No" {% if is_edit and entry.evidential_sufficiency == 'No' %}selected{% endif %}>No</option>
+                            <option value="Yes" {% if is_edit and entry.evidential_sufficiency == 'Yes' %}selected{% endif %}>Yes</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Public Interest Met</label>
+                        <select name="public_interest_met" class="form-select">
+                            <option value="No" {% if is_edit and entry.public_interest_met == 'No' %}selected{% endif %}>No</option>
+                            <option value="Yes" {% if is_edit and entry.public_interest_met == 'Yes' %}selected{% endif %}>Yes</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Voluntary Bill</label>
+                        <select name="voluntary_bill" class="form-select">
+                            <option value="No" {% if is_edit and entry.voluntary_bill == 'No' %}selected{% endif %}>No</option>
+                            <option value="Yes" {% if is_edit and entry.voluntary_bill == 'Yes' %}selected{% endif %}>Yes</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Prelim Exam</label>
+                        <select name="prelim_exam" class="form-select">
+                            <option value="No" {% if is_edit and entry.prelim_exam == 'No' %}selected{% endif %}>No</option>
+                            <option value="Yes" {% if is_edit and entry.prelim_exam == 'Yes' %}selected{% endif %}>Yes</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Returned for Investigation</label>
+                        <select name="returned_for_investigation" class="form-select">
+                            <option value="No" {% if is_edit and entry.returned_for_investigation == 'No' %}selected{% endif %}>No</option>
+                            <option value="Yes" {% if is_edit and entry.returned_for_investigation == 'Yes' %}selected{% endif %}>Yes</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Return Reason</label>
+                        <input type="text" name="return_reason" class="form-control"
+                               value="{{ entry.return_reason if is_edit else '' }}"
+                               placeholder="Reason for return (if applicable)">
+                    </div>
+                    {% if is_edit %}
+                    <div class="col-md-4">
+                        <label class="form-label">Resubmission Date</label>
+                        <input type="date" name="resubmission_date" class="form-control"
+                               value="{{ entry.resubmission_date if is_edit else '' }}">
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Record Status & Notes -->
+        <div class="card mb-4">
+            <div class="card-header"><h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Status & Notes</h5></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Record Status</label>
+                        <select name="record_status" class="form-select">
+                            {% for s in ['Draft', 'Submitted', 'Final'] %}
+                            <option value="{{ s }}" {% if is_edit and entry.record_status == s %}selected{% endif %}>{{ s }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="4"
+                                  placeholder="Additional notes or observations">{{ entry.notes if is_edit else '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle"></i> {% if is_edit %}Update Submission{% else %}Create Submission{% endif %}
+            </button>
+            <a href="{{ url_for('dpp.dpp_home') }}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

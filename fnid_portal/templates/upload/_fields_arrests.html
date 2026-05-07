@@ -1,0 +1,62 @@
+<div class="row g-3">
+    <div class="col-md-4">
+        <label class="form-label">Arrest Date</label>
+        <input type="date" class="form-control" name="arrest_date" value="{{ fields.get('arrest_date', '') }}">
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Suspect Name</label>
+        <input type="text" class="form-control" name="suspect_name" value="{{ fields.get('suspect_name', '') }}">
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Parish</label>
+        <select class="form-select" name="parish">
+            <option value="">-- Select --</option>
+            {% for p in cfg.ALL_PARISHES %}
+            <option value="{{ p }}" {{ 'selected' if p == fields.get('parish') }}>{{ p }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+<div class="row g-3 mt-1">
+    <div class="col-md-6">
+        <label class="form-label">Primary Offence</label>
+        <select class="form-select" name="offence_1">
+            <option value="">-- Select --</option>
+            {% for o in cfg.ALL_OFFENCES %}
+            <option value="{{ o }}" {{ 'selected' if o == fields.get('offence_1') }}>{{ o }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-6">
+        <label class="form-label">Secondary Offence</label>
+        <select class="form-select" name="offence_2">
+            <option value="">-- Select --</option>
+            {% for o in cfg.ALL_OFFENCES %}
+            <option value="{{ o }}" {{ 'selected' if o == fields.get('offence_2') }}>{{ o }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+<div class="row g-3 mt-1">
+    <div class="col-md-4">
+        <label class="form-label">Bail Status</label>
+        <select class="form-select" name="bail_status">
+            <option value="">-- Select --</option>
+            {% for b in cfg.BAIL_STATUS %}
+            <option value="{{ b }}" {{ 'selected' if b == fields.get('bail_status') }}>{{ b }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Charge Date</label>
+        <input type="date" class="form-control" name="charge_date" value="{{ fields.get('charge_date', '') }}">
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Charged Within 48hr</label>
+        <select class="form-select" name="charge_within_48hr">
+            <option value="">-- Select --</option>
+            <option value="Yes" {{ 'selected' if fields.get('charge_within_48hr') == 'Yes' }}>Yes</option>
+            <option value="No" {{ 'selected' if fields.get('charge_within_48hr') == 'No' }}>No</option>
+        </select>
+    </div>
+</div>

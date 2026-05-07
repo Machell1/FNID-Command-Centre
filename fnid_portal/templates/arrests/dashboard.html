@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Arrests Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-graph-up me-2" style="color: {{ portal.color }};"></i>Arrests & Court Dashboard</h4>
+        <small class="text-muted">Arrest processing, 48hr compliance, bail & court analytics</small>
+    </div>
+    <a href="{{ url_for('units.unit_home', unit='arrests') }}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Arrests
+    </a>
+</div>
+
+<!-- KPIs -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card">
+            <div class="kpi-value">{{ charts.total or 0 }}</div>
+            <div class="kpi-label">Total Arrests</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-success">
+            <div class="kpi-value">{{ charts.compliant_48 or 0 }}</div>
+            <div class="kpi-label">48hr Compliant</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-danger">
+            <div class="kpi-value">
+                {{ (charts.total or 0) - (charts.compliant_48 or 0) }}
+            </div>
+            <div class="kpi-label">48hr Non-Compliant / Pending</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-info">
+            <div class="kpi-value">
+                {% if charts.total and charts.total > 0 %}
+                {{ ((charts.compliant_48 or 0) / charts.total * 100)|round|int }}%
+                {% else %}
+                0%
+                {% endif %}
+            </div>
+            <div class="kpi-label">Compliance Rate</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="chart-container" style="height: 350px;">
+            <h6 class="text-muted mb-2">Arrests by Bail Status</h6>
+            <canvas id="bailChart"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="chart-container" style="height: 350px;">
+            <h6 class="text-muted mb-2">48-Hour Rule Compliance</h6>
+            <canvas id="complianceChart"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var colors = ['#1F3864','#C00000','#BF8F00','#538135','#7030A0','#00B0F0','#8B4513','#FF6600','#006400'];
+
+    {% if charts.by_bail %}
+    fnidChart('bailChart', 'bar',
+        {{ charts.by_bail|map(attribute=0)|list|tojson }},
+        [{ data: {{ charts.by_bail|map(attribute=1)|list|tojson }},
+           backgroundColor: colors }],
+        { indexAxis: 'y', plugins: { legend: { display: false } } }
+    );
+    {% endif %}
+
+    // 48hr compliance pie
+    fnidChart('complianceChart', 'doughnut',
+        ['Compliant (within 48hr)', 'Non-Compliant / Pending'],
+        [{ data: [{{ charts.compliant_48 or 0 }}, {{ (charts.total or 0) - (charts.compliant_48 or 0) }}],
+           backgroundColor: ['#28a745', '#dc3545'] }]
+    );
+});
+</script>
+{% endblock %}

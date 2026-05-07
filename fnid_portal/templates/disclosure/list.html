@@ -1,0 +1,174 @@
+﻿{% extends "base.html" %}
+{% block title %}Disclosure Log{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-file-earmark-lock"></i> Disclosure Log</h2>
+        <a href="{{ url_for('disclosure.new_disclosure') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> New Disclosure
+        </a>
+    </div>
+
+    <!-- Case Summary Stats (case view) -->
+    {% if is_case_view is defined and is_case_view %}
+    <div class="row g-3 mb-4">
+        <div class="col-md-2">
+            <div class="card border-primary h-100">
+                <div class="card-body text-center">
+                    <h3 class="text-primary mb-1">{{ total }}</h3>
+                    <small class="text-muted">Total Disclosures</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-success h-100">
+                <div class="card-body text-center">
+                    <h3 class="text-success mb-1">{{ served }}</h3>
+                    <small class="text-muted">Served on Defence</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-info h-100">
+                <div class="card-body text-center">
+                    <h3 class="text-info mb-1">{{ acknowledged }}</h3>
+                    <small class="text-muted">Acknowledged</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning h-100">
+                <div class="card-body text-center">
+                    <h3 class="text-warning mb-1">{{ pii_count }}</h3>
+                    <small class="text-muted">PII Applications</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-danger h-100">
+                <div class="card-body text-center">
+                    <h3 class="text-danger mb-1">{{ supplementary }}</h3>
+                    <small class="text-muted">Supplementary Needed</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Filter by Case Reference No.</label>
+                    <input type="text" name="case_id" class="form-control"
+                           value="{{ case_filter }}" placeholder="Enter case reference no.">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Disclosure Status</label>
+                    <select name="disclosure_status" class="form-select">
+                        <option value="">All Statuses</option>
+                        {% for s in statuses %}
+                        <option value="{{ s }}" {% if s == status_filter %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-funnel"></i> Filter
+                    </button>
+                </div>
+                {% if case_filter or status_filter %}
+                <div class="col-md-2">
+                    <a href="{{ url_for('disclosure.disclosure_list') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </a>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- Disclosure Table -->
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Disclosure ID</th>
+                            <th>Case Reference No.</th>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Served</th>
+                            <th>Acknowledged</th>
+                            <th>PII</th>
+                            <th>Status</th>
+                            <th>Record</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for d in disclosures %}
+                        <tr>
+                            <td>{{ d.disclosure_id }}</td>
+                            <td>{{ d.linked_case_id or 'â€”' }}</td>
+                            <td>{{ d.disclosure_date or 'â€”' }}</td>
+                            <td>{{ d.disclosure_type or 'â€”' }}</td>
+                            <td>
+                                {% if d.served_on_defence == 'Yes' %}
+                                <span class="badge bg-success">Yes</span>
+                                {% else %}
+                                <span class="badge bg-danger">No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if d.acknowledgement_received == 'Yes' %}
+                                <span class="badge bg-success">Yes</span>
+                                {% else %}
+                                <span class="badge bg-danger">No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if d.pii_application == 'Yes' %}
+                                <span class="badge bg-warning text-dark">Yes</span>
+                                {% else %}
+                                <span class="badge bg-secondary">No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if d.disclosure_status == 'Complete' %}
+                                <span class="badge bg-success">{{ d.disclosure_status }}</span>
+                                {% elif d.disclosure_status == 'Pending' %}
+                                <span class="badge bg-warning text-dark">{{ d.disclosure_status }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ d.disclosure_status or 'N/A' }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if d.record_status == 'Final' else ('info' if d.record_status == 'Submitted' else 'secondary') }}">
+                                    {{ d.record_status or 'Draft' }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('disclosure.disclosure_detail', disclosure_id=d.disclosure_id) }}" class="btn btn-sm btn-outline-primary" title="View">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('disclosure.edit_disclosure', disclosure_id=d.disclosure_id) }}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="10" class="text-center text-muted py-4">No disclosure records found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}File Register — {{ case.case_id }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-folder2-open me-2" style="color: #1F3864;"></i>Case File Register &mdash; {{ case.case_id }}</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('cases.view_case', case_id=case.id) }}">{{ case.case_id }}</a></li>
+                <li class="breadcrumb-item active">File Register</li>
+            </ol>
+        </nav>
+    </div>
+    <a href="{{ url_for('cases.view_case', case_id=case.id) }}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Case
+    </a>
+</div>
+
+<!-- Currently Checked-Out Files Alert -->
+{% if checked_out %}
+<div class="alert alert-warning border-0 shadow-sm mb-4">
+    <h6 class="alert-heading"><i class="bi bi-exclamation-triangle me-2"></i>Files Currently Checked Out</h6>
+    <div class="table-responsive">
+        <table class="table table-sm mb-0">
+            <thead>
+                <tr>
+                    <th>File Type</th>
+                    <th>Checked Out To</th>
+                    <th>Date</th>
+                    <th>Reason</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in checked_out %}
+                <tr>
+                    <td><strong>{{ item.file_type }}</strong></td>
+                    <td>{{ item.destination }}</td>
+                    <td><small>{{ item.checkout_date }}</small></td>
+                    <td><small>{{ item.reason or '-' }}</small></td>
+                    <td>
+                        <form method="POST" action="{{ url_for('file_movement.return_file', case_id=case.id) }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="movement_id" value="{{ item.id }}">
+                            <button type="submit" class="btn btn-sm btn-success" title="Return File">
+                                <i class="bi bi-box-arrow-in-left me-1"></i> Return
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<div class="row g-4 mb-4">
+    <!-- Checkout Form -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header" style="background-color: #1F3864; color: #fff;">
+                <h6 class="mb-0"><i class="bi bi-box-arrow-right me-2"></i>Checkout File</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('file_movement.checkout_file', case_id=case.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label for="file_type" class="form-label">File Type <span class="required">*</span></label>
+                        <select class="form-select" id="file_type" name="file_type" required>
+                            <option value="">-- Select File Type --</option>
+                            {% for ft in file_types %}
+                            <option value="{{ ft }}">{{ ft }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="destination" class="form-label">Destination <span class="required">*</span></label>
+                        <input type="text" class="form-control" id="destination" name="destination" required
+                               placeholder="e.g. Court, DPP Office, OIC">
+                    </div>
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Reason</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="2"
+                                  placeholder="Reason for checkout"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="background-color: #1F3864; border-color: #1F3864;">
+                        <i class="bi bi-box-arrow-right me-1"></i> Checkout
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Return Form -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header" style="background-color: #1F3864; color: #fff;">
+                <h6 class="mb-0"><i class="bi bi-box-arrow-in-left me-2"></i>Return File</h6>
+            </div>
+            <div class="card-body">
+                {% if checked_out %}
+                <form method="POST" action="{{ url_for('file_movement.return_file', case_id=case.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label for="movement_id" class="form-label">Select Checked-Out File <span class="required">*</span></label>
+                        <select class="form-select" id="movement_id" name="movement_id" required>
+                            <option value="">-- Select File --</option>
+                            {% for item in checked_out %}
+                            <option value="{{ item.id }}">{{ item.file_type }} &mdash; {{ item.destination }} ({{ item.checkout_date }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="return_notes" class="form-label">Return Notes</label>
+                        <textarea class="form-control" id="return_notes" name="return_notes" rows="2"
+                                  placeholder="Any notes on file condition or return"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-box-arrow-in-left me-1"></i> Return File
+                    </button>
+                </form>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-check-circle fs-3 d-block mb-2"></i>
+                    No files are currently checked out.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Movement History -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #1F3864; color: #fff;">
+        <h6 class="mb-0"><i class="bi bi-clock-history me-2"></i>Movement History</h6>
+        <span class="badge bg-light text-dark">{{ movements|length }} entries</span>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover fnid-table mb-0">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>File</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th>By</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Return Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in movements %}
+                <tr>
+                    <td><small>{{ m.movement_date }}</small></td>
+                    <td>
+                        {% if m.movement_type == 'Checkout' %}
+                        <span class="badge bg-warning text-dark">{{ m.movement_type }}</span>
+                        {% elif m.movement_type == 'Return' %}
+                        <span class="badge bg-success">{{ m.movement_type }}</span>
+                        {% elif m.movement_type == 'Transfer' %}
+                        <span class="badge bg-info">{{ m.movement_type }}</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ m.movement_type or '-' }}</span>
+                        {% endif %}
+                    </td>
+                    <td><strong>{{ m.file_type or '-' }}</strong></td>
+                    <td>{{ m.from_location or '-' }}</td>
+                    <td>{{ m.to_location or '-' }}</td>
+                    <td>{{ m.officer_name or '-' }}</td>
+                    <td><small>{{ m.reason|truncate(50) if m.reason else '-' }}</small></td>
+                    <td>
+                        {% if m.status == 'Out' %}
+                        <span class="badge bg-danger">Out</span>
+                        {% elif m.status == 'Returned' %}
+                        <span class="badge bg-success">Returned</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ m.status or '-' }}</span>
+                        {% endif %}
+                    </td>
+                    <td><small>{{ m.return_date or '-' }}</small></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="text-center text-muted py-4">No file movements recorded for this case.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

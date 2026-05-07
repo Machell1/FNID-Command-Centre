@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}Trip Log{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-journal-text me-2" style="color: var(--fnid-navy);"></i>
+            Trip Log
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('transport.fleet') }}">Transport</a></li>
+                <li class="breadcrumb-item active">Trip Log</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('transport.new_trip') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-circle me-1"></i> Log New Trip
+        </a>
+        <a href="{{ url_for('transport.fleet') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-truck me-1"></i> Fleet
+        </a>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="form-section mb-3">
+    <form method="GET" class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label for="date_from" class="form-label">Date From</label>
+            <input type="date" class="form-control form-control-sm" id="date_from" name="date_from"
+                   value="{{ date_from }}">
+        </div>
+        <div class="col-md-3">
+            <label for="date_to" class="form-label">Date To</label>
+            <input type="date" class="form-control form-control-sm" id="date_to" name="date_to"
+                   value="{{ date_to }}">
+        </div>
+        <div class="col-md-3">
+            <label for="vehicle_id" class="form-label">Vehicle</label>
+            <select class="form-select form-select-sm" id="vehicle_id" name="vehicle_id">
+                <option value="">All Vehicles</option>
+                {% for v in vehicles %}
+                <option value="{{ v.vehicle_id }}"
+                        {% if vehicle_filter == v.vehicle_id %}selected{% endif %}>
+                    {{ v.vehicle_id }} - {{ v.registration }} ({{ v.make }} {{ v.model }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-sm btn-primary">
+                <i class="bi bi-funnel me-1"></i> Filter
+            </button>
+            <a href="{{ url_for('transport.trip_log') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-x-circle me-1"></i> Clear
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Trips Table -->
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover fnid-table" id="tripsTable" data-datatable-manual="true">
+            <thead>
+                <tr>
+                    <th>Trip ID</th>
+                    <th>Date</th>
+                    <th>Vehicle</th>
+                    <th>Driver</th>
+                    <th>Route</th>
+                    <th>Purpose</th>
+                    <th>Mileage</th>
+                    <th>Fuel (L)</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in trips %}
+                <tr {% if not t.return_time %}class="table-warning"{% endif %}>
+                    <td><strong>{{ t.trip_id }}</strong></td>
+                    <td>{{ t.trip_date or '-' }}</td>
+                    <td>{{ t.vehicle_id }}</td>
+                    <td>{{ t.driver_name or '-' }}</td>
+                    <td>
+                        <small>{{ t.departure_location or '?' }} &rarr; {{ t.destination or '?' }}</small>
+                    </td>
+                    <td><small>{{ t.purpose or '-' }}</small></td>
+                    <td>
+                        {% if t.end_mileage and t.start_mileage %}
+                        {{ t.end_mileage - t.start_mileage }} km
+                        {% elif t.start_mileage %}
+                        {{ t.start_mileage }} (start)
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>{{ t.fuel_added_litres or '-' }}</td>
+                    <td>
+                        {% if t.return_time %}
+                        <span class="badge bg-success">Returned</span>
+                        {% else %}
+                        <span class="badge bg-warning text-dark">Active</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if not t.return_time %}
+                        <button type="button" class="btn btn-sm btn-outline-success"
+                                data-bs-toggle="modal" data-bs-target="#returnModal{{ loop.index }}">
+                            <i class="bi bi-check-circle me-1"></i> Return
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Return Trip Modals -->
+{% for t in trips %}
+{% if not t.return_time %}
+<div class="modal fade" id="returnModal{{ loop.index }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('transport.return_trip', trip_id=t.trip_id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header bg-fnid-navy text-white">
+                    <h5 class="modal-title">Return Trip {{ t.trip_id }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted">
+                        Vehicle: <strong>{{ t.vehicle_id }}</strong> |
+                        Driver: <strong>{{ t.driver_name or '-' }}</strong>
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label">Return Time</label>
+                        <input type="time" class="form-control" name="return_time" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">End Mileage (km)</label>
+                        <input type="number" class="form-control" name="end_mileage"
+                               placeholder="Odometer reading at return" required>
+                        {% if t.start_mileage %}
+                        <small class="text-muted">Start mileage: {{ t.start_mileage }} km</small>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Fuel Added (litres)</label>
+                        <input type="number" step="0.1" class="form-control" name="fuel_added_litres"
+                               placeholder="Optional">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle me-1"></i> Confirm Return
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var table = document.getElementById('tripsTable');
+    if (table && $.fn.DataTable && !$.fn.DataTable.isDataTable(table)) {
+        $(table).DataTable({
+            order: [[1, 'desc']],
+            pageLength: 25,
+            language: {
+                search: "Search trips:",
+                emptyTable: "No trips found matching the current filters."
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

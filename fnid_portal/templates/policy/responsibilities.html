@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}Roles & Responsibilities{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-people me-2"></i>Roles & Responsibilities</h4>
+        <small class="text-muted">JCF Case Management Policy Sections 7.0 & 8.0 - JCF/FW/PL/C&S/0001/2024</small>
+    </div>
+    <a href="{{ url_for('policy.policy_home') }}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Policy
+    </a>
+</div>
+
+<!-- Section 7.0 Key Responsibilities -->
+<h5 class="mb-3">7.0 Key Responsibilities</h5>
+
+{% set roles = [
+    ("7.1 Deputy Commissioner of Police (Crime & Security)", "bi-star-fill text-warning", [
+        "Provide strategic oversight and policy direction to all criminal investigations, security services and intelligence management island-wide."
+    ]),
+    ("7.2 ACP Criminal Investigation Branch (CIB)", "bi-shield-fill text-primary", [
+        "Set and maintain standards for auditing and inspecting investigation services and processes",
+        "Ensure all divisions/formations are audited",
+        "Monitor performance of all investigation services and processes",
+        "Provide leadership to CIB island-wide in crime management",
+        "Monitor cross area investigations for forensic match reports (DNA, ballistics, biometrics)",
+        "Manage vetting and submission of all case files for ruling of the ODPP",
+        "Ensure adequate personnel are trained and deployed island-wide",
+        "Coordinate CIB assets island-wide for major investigations",
+    ]),
+    ("7.3 ACPs for Areas", "bi-geo-alt-fill text-success", [
+        "Ensure formations comply with this Policy & SOPs",
+        "Ensure investigative standards are complied with",
+        "Submit case files intended for ODPP through ACP CIB for approval",
+        "Monitor performance of investigation services under their command",
+        "Identify training needs and make recommendations",
+        "Coordinate assets with other Area ACPs and Divisional Crime Officers",
+    ]),
+    ("7.4 Area Crime Officer (ACO)", "bi-eye-fill text-info", [
+        "Provide guidance, general oversight and management to all criminal investigations within the area",
+        "Ensure investigative systems comply with legislation and policies",
+        "Implement the area crime strategy",
+        "Conduct or cause audits of investigation systems at least once per calendar year",
+        "Coordinate investigations extending across divisions/areas",
+        "Manage forensic match report investigations within the area",
+        "Review critical incidents of national/international interest",
+        "Monitor inspections conducted by Registrar and Crime Officers",
+        "Manage all cross divisional investigations within the area",
+        "Ensure files requiring ODPP ruling are vetted and submitted to ACP CIB",
+        "Monitor submission of Morning Crime Reports (MCR) by 5:55am daily",
+    ]),
+    ("7.5 Divisional Commander", "bi-building text-dark", [
+        "Ensure all reported crimes/incidents are managed per this policy & SOPs",
+        "Manage and coordinate divisional investigation services' assets",
+        "Conduct review of DCR by September 30th each year, submit report within 14 days",
+        "Provide resources for all investigation services in the division",
+        "Ensure registry has minimum staff per Organizational Charts (Appendix 1 & 2)",
+    ]),
+    ("7.6 Divisional Crime Officer", "bi-badge-cc text-danger", [
+        "Manage all crime and incident investigations within the division",
+        "Ensure weekly investigative meetings are conducted",
+        "Conduct inspections of DCR twice per year (by June 30th and November 30th)",
+        "Analyse inspection reports and submit findings with recommendations",
+        "Ensure MCR is vetted, approved and sent by 5:55am daily",
+    ]),
+    ("7.7 Divisional Detective Inspector (DDI)", "bi-person-badge text-primary", [
+        "Report promptly to Divisional Crime Officer on all crime matters",
+        "Manage and oversee all investigations per JCF policies and SOPs",
+        "Ensure case files are properly prepared and vetted for DCR submission",
+        "Ensure proper classification and recording of all crimes",
+        "Ensure continuous vetting and supervision of non-uniformed personnel cases",
+        "Visit scenes of all major crimes of extreme nature",
+        "Liaise with Clerk of Courts and Crown Counsel",
+        "Conduct weekly lectures with CIB personnel",
+    ]),
+    ("7.8 Registrar", "bi-journal-check text-success", [
+        "Manage operations of the Divisional Case Registry (DCR)",
+        "Provide supervision for all investigations in the division",
+        "Ensure vetting of all cases and assign tasks to investigators",
+        "Maintain standard of investigative processes",
+        "Coordinate with uniformed supervisors regarding cases",
+        "Ensure MCR prepared and submitted to Crime Officer by 5:40am daily",
+        "Cause outstanding documents to be submitted to courts in timely manner",
+        "Conduct inspections every 4 months of investigation processes and child diversion offences",
+        "Maintain repository for all gazettes for the calendar year",
+    ]),
+    ("7.9 Legal Officers", "bi-briefcase text-warning", [
+        "Attend meetings, case reviews and case conferences as required",
+        "Review case files and provide guidance on new developments in law",
+        "Vet case files and make recommendations for ODPP/DPP or Clerk of Courts",
+    ]),
+    ("7.10 Station Managers", "bi-house-door text-secondary", [
+        "Ensure all initial reports are appreciated and referred appropriately (including C-TOC, CISOCA etc.)",
+        "Manage all reported incidents/crimes investigated by uniformed personnel",
+        "Manage supervision process for all major and minor crimes at the station",
+        "Ensure station officers conduct preliminary and continuous vetting",
+        "Manage minor crimes services, processes and registers",
+        "Cause all crimes reported to be forwarded to DCR by 5:30am daily",
+        "Cause cleared minor crimes case files to be submitted to court through DCR",
+        "Manage Child Diversion cases and maintain Station's Child Diversion Register",
+    ]),
+] %}
+
+<div class="accordion" id="rolesAccordion">
+{% for title, icon, duties in roles %}
+<div class="accordion-item">
+    <h2 class="accordion-header">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#role{{ loop.index }}">
+            <i class="bi {{ icon }} me-2"></i>{{ title }}
+        </button>
+    </h2>
+    <div id="role{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#rolesAccordion">
+        <div class="accordion-body">
+            <ul class="mb-0">
+                {% for duty in duties %}
+                <li class="mb-1">{{ duty }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endfor %}
+</div>
+
+<!-- Section 8.0 Roles and Functions -->
+<h5 class="mt-4 mb-3">8.0 Specific Roles and Functions</h5>
+
+{% set functions = [
+    ("8.1 Investigating Officer (IO)", "bi-search text-primary", [
+        "Conduct thorough investigation into all assigned cases per SOPs, Standing Orders and policies",
+        "Attend court on initial mentioned date and all trial dates",
+        "Inform court in reasonable time if unable to attend, giving reasons",
+        "Fully brief PLO on outstanding actions and case/witness status when unable to attend",
+        "Periodically keep complainants and witnesses informed of investigation status and progress",
+    ]),
+    ("8.2 Prosecution Liaison Officer (PLO)", "bi-briefcase-fill text-success", [
+        "Attend all court hearings as representative of the IO",
+        "Liaise with Clerk of Courts, Crown Counsels and ODPP to ensure expeditious case disposal",
+        "Provide prompt updates to registry, IO and all witnesses after each court hearing",
+        "Update court regarding availability of all witnesses",
+        "Bring matters requiring immediate attention to the Registrar",
+        "Monitor timely completion and submission of all outstanding evidence and certificates",
+        "Submit weekly report of all courts attended to Chief PLO at CIB HQ",
+    ]),
+    ("8.3 DCR Vetting Officer", "bi-clipboard-check text-warning", [
+        "Report promptly to Registrar and Station Managers on all crime matters",
+        "Ensure all cases are vetted per this policy and SOPs",
+        "Ensure case files are promptly prepared and vetted for court and ODPP submission",
+        "Ensure proper classification and recording of all crimes",
+        "Review all case files for crimes within the station area",
+        "Keep liaison with Clerk of Courts",
+        "Ensure members are kept abreast of investigation techniques",
+        "Ensure crime returns are properly prepared for early submission",
+    ]),
+    ("8.5 Senior Investigation Officer (SIO)", "bi-person-fill-gear text-danger", [
+        "Supervise all investigations and CIB staff as tactical lead",
+        "Ensure performance targets are met per agreed mandate",
+        "Where necessary appoint initial investigator and oversee their investigations",
+        "Ensure effective monitoring procedures for supervision of all investigations",
+        "Ensure compliance with legislation, JCF policies and guidelines",
+        "Support DDI for daily supervision and deputise in his/her absence",
+        "Oversee daily operations utilising multi-agency support",
+        "Ensure team leaders conduct preliminary and continuous vetting",
+        "Promptly address issues affecting performance",
+    ]),
+] %}
+
+<div class="accordion" id="functionsAccordion">
+{% for title, icon, duties in functions %}
+<div class="accordion-item">
+    <h2 class="accordion-header">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#func{{ loop.index }}">
+            <i class="bi {{ icon }} me-2"></i>{{ title }}
+        </button>
+    </h2>
+    <div id="func{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#functionsAccordion">
+        <div class="accordion-body">
+            <ul class="mb-0">
+                {% for duty in duties %}
+                <li class="mb-1">{{ duty }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endfor %}
+</div>
+{% endblock %}

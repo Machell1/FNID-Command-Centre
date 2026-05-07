@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Arrests & Court Unit{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-person-badge me-2" style="color: {{ portal.color }};"></i>
+            Arrests & Court Unit - Processing, Bail & Court Tracking
+        </h4>
+        {% if not is_unit_workspace %}
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item active">Arrests</li>
+            </ol>
+        </nav>
+        {% endif %}
+    </div>
+    <div class="d-flex gap-2">
+        {% if is_unit_workspace %}
+        <a href="{{ url_for('upload.submit_report') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-robot me-1"></i> Upload Report
+        </a>
+        {% else %}
+        <a href="{{ url_for('units.new_record', unit='arrests') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-circle me-1"></i> New Arrest Record
+        </a>
+        {% endif %}
+        <a href="{{ url_for('units.unit_dashboard', unit='arrests') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-graph-up me-1"></i> Dashboard
+        </a>
+        <a href="{{ url_for('data.export_unit', unit='arrests') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-download me-1"></i> Export
+        </a>
+    </div>
+</div>
+
+{% include "_unit_workspace_header.html" %}
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card">
+            <div class="kpi-value">{{ data.records|length if data.records else 0 }}</div>
+            <div class="kpi-label">Total Arrests</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-success">
+            <div class="kpi-value">
+                {{ data.records|selectattr('charge_within_48hr', 'equalto', 'Yes')|list|length if data.records else 0 }}
+            </div>
+            <div class="kpi-label">48hr Compliant</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-danger">
+            <div class="kpi-value">
+                {{ data.records|selectattr('charge_within_48hr', 'equalto', 'No')|list|length if data.records else 0 }}
+            </div>
+            <div class="kpi-label">48hr Breach</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-info">
+            <div class="kpi-value">
+                {{ data.records|selectattr('bail_status', 'defined')|selectattr('bail_status', 'search', 'Remanded')|list|length if data.records else 0 }}
+            </div>
+            <div class="kpi-label">Remanded in Custody</div>
+        </div>
+    </div>
+</div>
+
+<!-- Arrests Table -->
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover fnid-table">
+            <thead>
+                <tr>
+                    <th>Arrest ID</th>
+                    <th>Date</th>
+                    <th>Suspect</th>
+                    <th>Parish</th>
+                    <th>Primary Offence</th>
+                    <th>48hr</th>
+                    <th>Bail Status</th>
+                    <th>Court</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in data.records %}
+                <tr>
+                    <td><strong>{{ r.arrest_id }}</strong></td>
+                    <td>{{ r.arrest_date }}</td>
+                    <td>{{ r.suspect_name or '-' }}</td>
+                    <td>{{ r.parish or '-' }}</td>
+                    <td>{{ r.offence_1 or '-' }}</td>
+                    <td>
+                        {% if r.charge_within_48hr == 'Yes' %}
+                        <span class="badge bg-success">Compliant</span>
+                        {% elif r.charge_within_48hr == 'No' %}
+                        <span class="badge bg-danger">Breach</span>
+                        {% else %}
+                        <span class="badge bg-warning text-dark">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if 'Remanded' in (r.bail_status or '') %}
+                        <span class="badge bg-danger">{{ r.bail_status }}</span>
+                        {% elif 'Bail Granted' in (r.bail_status or '') %}
+                        <span class="badge bg-success">{{ r.bail_status }}</span>
+                        {% elif 'Bail Denied' in (r.bail_status or '') %}
+                        <span class="badge bg-warning text-dark">{{ r.bail_status }}</span>
+                        {% elif 'Released' in (r.bail_status or '') %}
+                        <span class="badge bg-info">{{ r.bail_status }}</span>
+                        {% else %}
+                        <span class="badge bg-light text-dark">{{ r.bail_status or 'Pending' }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ r.court_type or '-' }}</td>
+                    <td><span class="badge" data-status="{{ r.record_status }}">{{ r.record_status }}</span></td>
+                    <td>
+                        <a href="{{ url_for('units.edit_record', unit='arrests', record_id=r.id) }}"
+                           class="btn btn-sm btn-outline-primary" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

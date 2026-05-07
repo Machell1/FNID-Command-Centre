@@ -1,0 +1,269 @@
+{% macro field_control(field, form_data, mode) -%}
+    {% set value = form_data.get(field.name, '') if form_data else '' %}
+    {% if mode == 'print' %}
+        {% if field.type == 'checkbox' %}
+            <span class="jcf-checkbox-print">{% if value == 'Yes' %}X{% endif %}</span>
+        {% elif value %}
+            <span class="jcf-print-value">{{ value }}</span>
+        {% elif field.render == 'cell' %}
+            <span class="jcf-empty-cell">&nbsp;</span>
+        {% else %}
+            <span class="jcf-print-line">&nbsp;</span>
+        {% endif %}
+    {% else %}
+        {% if field.type == 'checkbox' %}
+            <label class="jcf-checkbox-edit" title="{{ field.label }}">
+                <input type="checkbox" name="{{ field.name }}" value="Yes" {% if value == 'Yes' %}checked{% endif %}>
+            </label>
+        {% elif field.type == 'textarea' %}
+            <textarea class="jcf-field jcf-field-area{% if field.render == 'cell' %} jcf-field-cell{% endif %}" name="{{ field.name }}" aria-label="{{ field.label }}">{{ value }}</textarea>
+        {% else %}
+            <input class="jcf-field{% if field.render == 'cell' %} jcf-field-cell{% endif %}" type="text" name="{{ field.name }}" value="{{ value }}" aria-label="{{ field.label }}">
+        {% endif %}
+    {% endif %}
+{%- endmacro %}
+
+{% macro segments(items, form_data, mode) -%}
+    {% for segment in items %}
+        {% if segment.kind == 'text' %}
+            <span{% if segment.style %} style="{{ segment.style }}"{% endif %}>{{ segment.text }}</span>
+        {% elif segment.kind == 'field' %}
+            {{ field_control(segment.field, form_data, mode) }}
+        {% elif segment.kind == 'break' %}
+            <br>
+        {% endif %}
+    {% endfor %}
+{%- endmacro %}
+
+<style>
+.jcf-document-wrap {
+    background: #eef1f4;
+    padding: 14px;
+}
+.jcf-paper {
+    box-sizing: border-box;
+    width: min(100%, {{ layout.page.width_in|default(8.5) }}in);
+    min-height: {{ layout.page.height_in|default(11) }}in;
+    margin: 0 auto;
+    padding: {{ layout.page.margin_top_in|default(0.5) }}in {{ layout.page.margin_right_in|default(0.5) }}in {{ layout.page.margin_bottom_in|default(0.5) }}in {{ layout.page.margin_left_in|default(0.5) }}in;
+    background: #fff;
+    color: #000;
+    font-family: "Times New Roman", Times, serif;
+    font-size: 10.5pt;
+    line-height: 1.18;
+    box-shadow: 0 8px 30px rgba(15, 23, 42, 0.16);
+}
+.jcf-paper .jcf-form-code {
+    text-align: right;
+    font-size: 8.5pt;
+    margin: 0 0 4px;
+}
+.jcf-paper .jcf-force-title {
+    text-align: center;
+    font-weight: 700;
+    font-size: 13pt;
+    margin: 0;
+}
+.jcf-paper .jcf-form-title {
+    text-align: center;
+    font-weight: 700;
+    text-decoration: underline;
+    font-size: 12pt;
+    margin: 1px 0 8px;
+}
+.jcf-paper .jcf-form-note {
+    font-size: 9.5pt;
+    font-weight: 700;
+    margin: 5px 0;
+}
+.jcf-paper .jcf-form-paragraph {
+    margin: 3px 0;
+}
+.jcf-paper .jcf-form-spacer {
+    min-height: 10pt;
+    margin: 0;
+}
+.jcf-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    margin: 5px 0 8px;
+}
+.jcf-table td {
+    border: 1px solid #000;
+    vertical-align: top;
+    padding: 3px 4px;
+    min-height: 21px;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+.jcf-cell-paragraph {
+    margin: 0;
+    min-height: 1em;
+}
+.jcf-cell-paragraph + .jcf-cell-paragraph {
+    margin-top: 2px;
+}
+.jcf-cell-spacer {
+    min-height: 9pt;
+    margin: 0;
+}
+.jcf-field {
+    width: 100%;
+    min-width: 4.2rem;
+    border: 0;
+    border-bottom: 1px dotted #333;
+    border-radius: 0;
+    background: rgba(255, 252, 221, 0.55);
+    color: #000;
+    font-family: inherit;
+    font-size: 10.5pt;
+    line-height: 1.1;
+    padding: 0 2px;
+}
+.jcf-field-cell {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 1.35rem;
+    border-bottom: 0;
+    background: rgba(255, 252, 221, 0.42);
+}
+.jcf-field:focus {
+    outline: 1px solid #1f3864;
+    background: #fff;
+}
+.jcf-field-area {
+    min-height: 2.2rem;
+    resize: vertical;
+}
+.jcf-checkbox-edit {
+    display: inline-grid;
+    place-items: center;
+    width: 1rem;
+    height: 1rem;
+    margin: 0 2px;
+    border: 1px solid #000;
+    vertical-align: middle;
+}
+.jcf-checkbox-edit input {
+    width: 0.75rem;
+    height: 0.75rem;
+    margin: 0;
+}
+.jcf-checkbox-print {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    margin: 0 2px;
+    border: 1px solid #000;
+    text-align: center;
+    line-height: 0.95rem;
+    font-weight: 700;
+    vertical-align: middle;
+}
+.jcf-print-value {
+    white-space: pre-wrap;
+    font-weight: 600;
+}
+.jcf-print-line {
+    display: inline-block;
+    min-width: 5rem;
+    border-bottom: 1px solid #000;
+}
+.jcf-empty-cell {
+    display: block;
+    min-height: 1.1rem;
+}
+.jcf-metadata {
+    border-top: 1px solid #000;
+    margin-top: 14px;
+    padding-top: 6px;
+    font-size: 8.5pt;
+    text-align: center;
+}
+@media print {
+    body {
+        background: #fff !important;
+    }
+    .navbar,
+    footer,
+    .no-print,
+    .page-header,
+    .alert {
+        display: none !important;
+    }
+    main.container-fluid {
+        padding: 0 !important;
+    }
+    .jcf-document-wrap {
+        padding: 0;
+        background: #fff;
+    }
+    .jcf-paper {
+        width: {{ layout.page.width_in|default(8.5) }}in;
+        min-height: 0;
+        margin: 0;
+        padding: {{ layout.page.margin_top_in|default(0.5) }}in {{ layout.page.margin_right_in|default(0.5) }}in {{ layout.page.margin_bottom_in|default(0.5) }}in {{ layout.page.margin_left_in|default(0.5) }}in;
+        box-shadow: none;
+        font-size: 9.8pt;
+    }
+    .jcf-field {
+        border-bottom: 1px solid #000;
+        background: transparent;
+    }
+    .jcf-field-area {
+        min-height: 1.8rem;
+    }
+    @page {
+        size: {{ layout.page.width_in|default(8.5) }}in {{ layout.page.height_in|default(11) }}in;
+        margin: 0;
+    }
+}
+</style>
+
+<div class="jcf-document-wrap">
+    <div class="jcf-paper" data-form-type="{{ layout.form_type }}">
+        {% for element in layout.elements %}
+            {% if element.kind == 'paragraph' %}
+                <p class="{{ element.class }}"{% if element.style %} style="{{ element.style }}"{% endif %}>{{ segments(element.segments, form_data, mode) }}</p>
+            {% elif element.kind == 'table' %}
+                <table class="jcf-table">
+                    {% if element.grid %}
+                    <colgroup>
+                        {% for col in element.grid %}
+                        <col style="width: {{ col.width_pct }}%;">
+                        {% endfor %}
+                    </colgroup>
+                    {% endif %}
+                    <tbody>
+                    {% for row in element.rows %}
+                        <tr{% if row.style %} style="{{ row.style }}"{% endif %}>
+                            {% for cell in row.cells %}
+                                <td{% if cell.colspan and cell.colspan > 1 %} colspan="{{ cell.colspan }}"{% endif %}{% if cell.rowspan and cell.rowspan > 1 %} rowspan="{{ cell.rowspan }}"{% endif %}{% if cell.style %} style="{{ cell.style }}"{% endif %}>
+                                    {% if cell.blocks %}
+                                        {% for block in cell.blocks %}
+                                        <p class="{{ block.class }}"{% if block.style %} style="{{ block.style }}"{% endif %}>{{ segments(block.segments, form_data, mode) }}</p>
+                                        {% endfor %}
+                                    {% else %}
+                                        {{ segments(cell.segments, form_data, mode) }}
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        {% endfor %}
+
+        {% if form_rec is defined and form_rec %}
+        <div class="jcf-metadata">
+            Form ID: {{ form_rec.form_id or form_rec.id }} |
+            Status: {{ form_rec.status or 'Draft' }} |
+            Created by: {{ form_rec.created_by or 'Unknown' }} |
+            Updated: {{ form_rec.updated_at or form_rec.created_at or 'N/A' }}
+        </div>
+        {% endif %}
+    </div>
+</div>

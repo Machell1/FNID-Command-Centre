@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Schedule Review{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-clipboard-check"></i> Schedule Case Review</h2>
+    <a href="{{ url_for('reviews.review_list') }}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </a>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <form method="post" action="{{ url_for('reviews.new_review') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label class="form-label">Case <span class="text-danger">*</span></label>
+            <select name="case_id" class="form-select" required>
+              <option value="">Select Case</option>
+              {% for c in cases %}
+              <option value="{{ c.case_id }}"
+                {% if review and review.get and review.get('case_id') == c.case_id %}selected{% endif %}
+              >{{ c.case_id }} — {{ c.offence_type or 'N/A' }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Review Type <span class="text-danger">*</span></label>
+            <select name="review_type" class="form-select" required>
+              <option value="">Select Type</option>
+              {% for rt in review_types %}
+              <option value="{{ rt }}"
+                {% if review and review.get and review.get('review_type') == rt %}selected{% endif %}
+              >{{ rt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Scheduled Date <span class="text-danger">*</span></label>
+            <input type="date" name="scheduled_date" class="form-control" required
+                   value="{{ review.get('scheduled_date', '') if review and review.get else '' }}">
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Reviewer Badge</label>
+            <input type="text" name="reviewer_badge" class="form-control"
+                   placeholder="Reviewer badge number"
+                   value="{{ review.get('reviewer_badge', '') if review and review.get else '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Reviewer Name</label>
+            <input type="text" name="reviewer_name" class="form-control"
+                   placeholder="Reviewer full name"
+                   value="{{ review.get('reviewer_name', '') if review and review.get else '' }}">
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle"></i> Schedule Review
+          </button>
+          <a href="{{ url_for('reviews.review_list') }}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

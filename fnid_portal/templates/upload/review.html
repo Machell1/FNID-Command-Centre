@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Review Extracted Data{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-robot me-2"></i>Bot Extraction Review
+        </h4>
+        <small class="text-muted">
+            Report: <strong>{{ bot_result.original_filename }}</strong>
+            &rarr; Routing to:
+            <span class="badge" style="background-color: {{ portal.color }};">
+                <i class="bi {{ portal.icon }} me-1"></i>{{ portal.name }}
+            </span>
+            {% if subtype %}
+            <span class="badge bg-secondary ms-1">{{ subtype }}</span>
+            {% endif %}
+        </small>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Bot Guidance -->
+    <div class="col-lg-4">
+        <div class="card border-0 bg-light mb-3">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="mb-0"><i class="bi bi-robot me-2"></i>Bot Guidance</h6>
+            </div>
+            <div class="card-body pt-0">
+                {% if guidance %}
+                {% for g in guidance %}
+                <div class="alert alert-{{ 'danger' if g.priority == 'high' else ('warning' if g.priority == 'medium' else 'info') }} py-2 mb-2 small">
+                    <div class="d-flex align-items-start">
+                        <i class="bi {{ 'bi-exclamation-triangle-fill' if g.type == 'warning' else ('bi-shield-check' if g.type == 'compliance' else ('bi-arrow-right-circle' if g.type == 'action' else 'bi-info-circle')) }} me-2 mt-1"></i>
+                        <div>
+                            <strong>{{ g.title }}</strong>
+                            {% if g.type == 'compliance' %}
+                            <span class="badge bg-dark ms-1" style="font-size: 0.6rem;">COMPLIANCE</span>
+                            {% endif %}
+                            <br>
+                            <span class="text-muted">{{ g.message }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="text-muted small mb-0">No specific guidance for this report.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Unit Confidence -->
+        {% if bot_result.unit_scores|length > 1 %}
+        <div class="card border-0 bg-light mb-3">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="mb-0"><i class="bi bi-graph-up me-2"></i>Unit Detection</h6>
+            </div>
+            <div class="card-body pt-0">
+                {% for unit_key, score in bot_result.unit_scores %}
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small>
+                        <i class="bi {{ portals[unit_key].icon }} me-1" style="color: {{ portals[unit_key].color }}"></i>
+                        {{ portals[unit_key].name }}
+                    </small>
+                    <small class="fw-bold">{{ score }}%</small>
+                </div>
+                <div class="progress mb-2" style="height: 4px;">
+                    <div class="progress-bar" style="width: {{ score }}%; background-color: {{ portals[unit_key].color }}"></div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Extracted Text Preview -->
+        <div class="card border-0 bg-light">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="mb-0"><i class="bi bi-file-text me-2"></i>Extracted Text</h6>
+            </div>
+            <div class="card-body pt-0">
+                {% if bot_result.text_preview %}
+                <pre class="small bg-white p-2 rounded border" style="max-height: 300px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word;">{{ bot_result.text_preview }}</pre>
+                {% else %}
+                <p class="text-muted small mb-0">
+                    <i class="bi bi-exclamation-circle me-1"></i>
+                    No text could be extracted. This may be a scanned image.
+                    Please fill in the fields manually.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Editable Fields Form -->
+    <div class="col-lg-8">
+        <form method="POST" action="{{ url_for('upload.review') }}" class="needs-validation" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="target_unit" value="{{ target_unit }}">
+            {% if subtype %}
+            <input type="hidden" name="subtype" value="{{ subtype }}">
+            {% endif %}
+
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="bi {{ portal.icon }} me-2" style="color: {{ portal.color }}"></i>
+                        Record Fields
+                        <small class="text-muted ms-2">(review and correct as needed)</small>
+                    </h6>
+                    <div>
+                        <span class="badge bg-success">Bot-extracted values are pre-filled</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if target_unit == 'intel' %}
+                    {% include "upload/_fields_intel.html" %}
+                    {% elif target_unit == 'operations' %}
+                    {% include "upload/_fields_operations.html" %}
+                    {% elif target_unit == 'seizures' and subtype == 'narcotics' %}
+                    {% include "upload/_fields_narcotics.html" %}
+                    {% elif target_unit == 'seizures' %}
+                    {% include "upload/_fields_firearms.html" %}
+                    {% elif target_unit == 'arrests' %}
+                    {% include "upload/_fields_arrests.html" %}
+                    {% elif target_unit == 'forensics' %}
+                    {% include "upload/_fields_forensics.html" %}
+                    {% elif target_unit == 'registry' %}
+                    {% include "upload/_fields_registry.html" %}
+                    {% endif %}
+
+                    <!-- Notes field (all units) -->
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Additional Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="2">{{ fields.get('notes', '') }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submission Controls -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label for="record_status" class="form-label fw-bold">Record Status</label>
+                            <select class="form-select" id="record_status" name="record_status">
+                                <option value="Draft" selected>Draft</option>
+                                <option value="Submitted">Submitted</option>
+                            </select>
+                        </div>
+                        <div class="col-md-8 d-flex justify-content-end gap-2 mt-3 mt-md-0">
+                            <button type="submit" name="action" value="discard" class="btn btn-outline-danger">
+                                <i class="bi bi-trash me-1"></i> Discard
+                            </button>
+                            <button type="submit" name="action" value="save" class="btn btn-primary btn-lg">
+                                <i class="bi bi-check-lg me-1"></i> Confirm & Save Record
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

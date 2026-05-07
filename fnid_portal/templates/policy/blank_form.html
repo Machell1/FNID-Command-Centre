@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ form_type }} - {{ form_def.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header no-print">
+    <div>
+        <h4><i class="bi bi-ui-checks me-2"></i>{{ form_type }} - {{ form_def.name }} Workflow Capture</h4>
+        <small class="text-muted">Browser workflow capture from {{ layout.source_filename }}</small>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{{ url_for('policy.forms_library') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Forms Library
+        </a>
+        {% if not print_only %}
+        <a href="{{ url_for('policy.print_blank_form', form_type=form_type) }}" class="btn btn-outline-dark btn-sm" target="_blank">
+            <i class="bi bi-printer me-1"></i> Print Blank
+        </a>
+        {% endif %}
+        <a href="{{ url_for('policy.download_form', form_type=form_type) }}" class="btn btn-success btn-sm">
+            <i class="bi bi-file-earmark-word me-1"></i> Exact Word Template
+        </a>
+        <button onclick="window.print()" class="btn btn-outline-dark btn-sm">
+            <i class="bi bi-printer me-1"></i> Print
+        </button>
+    </div>
+</div>
+
+{% if not print_only %}
+<div class="alert alert-info no-print">
+    <i class="bi bi-info-circle me-2"></i>
+    This browser page is for workflow capture only. For a true replica, edit or print the uploaded Microsoft Word template.
+</div>
+{% endif %}
+
+{% include "cr_forms/_official_form.html" %}
+{% endblock %}

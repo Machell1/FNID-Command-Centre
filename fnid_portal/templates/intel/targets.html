@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Intelligence Targets{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-crosshair me-2" style="color: #1F3864;"></i>Intelligence Targets</h4>
+        <small class="text-muted">Manage and monitor intelligence targets</small>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('intel.new_target') }}" class="btn btn-primary btn-sm" style="background-color: #1F3864; border-color: #1F3864;">
+            <i class="bi bi-plus-circle me-1"></i> New Target
+        </a>
+        <a href="{{ url_for('intel.link_analysis') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-diagram-3 me-1"></i> Link Analysis
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover fnid-table mb-0">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Aliases</th>
+                    <th>Parish</th>
+                    <th>Threat Level</th>
+                    <th>Status</th>
+                    <th>MO Excerpt</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in targets %}
+                <tr>
+                    <td><strong>{{ t.id }}</strong></td>
+                    <td>
+                        <a href="{{ url_for('intel.target_detail', target_id=t.id) }}">
+                            <strong>{{ t.name }}</strong>
+                        </a>
+                    </td>
+                    <td><small>{{ t.aliases|truncate(40) if t.aliases else '-' }}</small></td>
+                    <td>{{ t.parish or '-' }}</td>
+                    <td>
+                        {% if t.threat_level == 'Critical' %}
+                        <span class="badge bg-danger">Critical</span>
+                        {% elif t.threat_level == 'High' %}
+                        <span class="badge bg-warning text-dark">High</span>
+                        {% elif t.threat_level == 'Medium' %}
+                        <span class="badge" style="background-color: #ffc107; color: #212529;">Medium</span>
+                        {% elif t.threat_level == 'Low' %}
+                        <span class="badge bg-success">Low</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ t.threat_level or 'Unknown' }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if t.status == 'Active' %}
+                        <span class="badge bg-success">Active</span>
+                        {% elif t.status == 'Inactive' %}
+                        <span class="badge bg-secondary">Inactive</span>
+                        {% elif t.status == 'Arrested' %}
+                        <span class="badge bg-info">Arrested</span>
+                        {% elif t.status == 'Deceased' %}
+                        <span class="badge bg-dark">Deceased</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ t.status or '-' }}</span>
+                        {% endif %}
+                    </td>
+                    <td><small class="text-muted">{{ t.mo|truncate(50) if t.mo else '-' }}</small></td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('intel.target_detail', target_id=t.id) }}"
+                               class="btn btn-outline-primary" title="View">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{{ url_for('intel.edit_target', target_id=t.id) }}"
+                               class="btn btn-outline-secondary" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">No intelligence targets found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

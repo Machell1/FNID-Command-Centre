@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Intelligence Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-graph-up me-2" style="color: {{ portal.color }};"></i>Intelligence Dashboard</h4>
+        <small class="text-muted">Intelligence gathering, triage, and dissemination analytics</small>
+    </div>
+    <a href="{{ url_for('units.unit_home', unit='intel') }}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Intel
+    </a>
+</div>
+
+<!-- KPIs -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card">
+            <div class="kpi-value">{{ charts.total or 0 }}</div>
+            <div class="kpi-label">Total Intel Reports</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-danger">
+            <div class="kpi-value">{{ charts.critical or 0 }}</div>
+            <div class="kpi-label">Critical Priority</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-success">
+            <div class="kpi-value">{{ charts.actioned or 0 }}</div>
+            <div class="kpi-label">Actioned</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-warning">
+            <div class="kpi-value">
+                {{ (charts.total or 0) - (charts.actioned or 0) }}
+            </div>
+            <div class="kpi-label">Pending Triage</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="chart-container" style="height: 350px;">
+            <h6 class="text-muted mb-2">Intel by Source</h6>
+            <canvas id="sourceChart"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="chart-container" style="height: 350px;">
+            <h6 class="text-muted mb-2">Intel by Priority</h6>
+            <canvas id="priorityChart"></canvas>
+        </div>
+    </div>
+</div>
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="chart-container" style="height: 350px;">
+            <h6 class="text-muted mb-2">Intel by Parish</h6>
+            <canvas id="parishChart"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="chart-container" style="height: 350px;">
+            <h6 class="text-muted mb-2">Triage Decision Breakdown</h6>
+            <canvas id="triageChart"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var colors = ['#1F3864','#C00000','#BF8F00','#538135','#7030A0','#00B0F0','#8B4513','#FF6600','#006400'];
+
+    {% if charts.by_source %}
+    fnidChart('sourceChart', 'bar',
+        {{ charts.by_source|map(attribute=0)|list|tojson }},
+        [{ data: {{ charts.by_source|map(attribute=1)|list|tojson }},
+           backgroundColor: colors }],
+        { indexAxis: 'y', plugins: { legend: { display: false } } }
+    );
+    {% endif %}
+
+    {% if charts.by_priority %}
+    fnidChart('priorityChart', 'doughnut',
+        {{ charts.by_priority|map(attribute=0)|list|tojson }},
+        [{ data: {{ charts.by_priority|map(attribute=1)|list|tojson }},
+           backgroundColor: ['#dc3545','#fd7e14','#ffc107','#28a745'] }]
+    );
+    {% endif %}
+
+    {% if charts.by_parish %}
+    fnidChart('parishChart', 'pie',
+        {{ charts.by_parish|map(attribute=0)|list|tojson }},
+        [{ data: {{ charts.by_parish|map(attribute=1)|list|tojson }},
+           backgroundColor: colors }]
+    );
+    {% endif %}
+
+    // Triage chart uses same source data grouped differently
+    {% if charts.by_source %}
+    fnidChart('triageChart', 'bar',
+        {{ charts.by_source|map(attribute=0)|list|tojson }},
+        [{ data: {{ charts.by_source|map(attribute=1)|list|tojson }},
+           backgroundColor: colors }],
+        { plugins: { legend: { display: false } } }
+    );
+    {% endif %}
+});
+</script>
+{% endblock %}

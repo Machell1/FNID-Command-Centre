@@ -1,0 +1,824 @@
+﻿{% extends "base.html" %}
+{% from "macros.html" import select_field, text_field, textarea_field, status_badge %}
+{% block title %}Case {{ case.case_id }}{% endblock %}
+
+{% block content %}
+{# --- Page Header --- #}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-folder2-open me-2" style="color: var(--fnid-navy);"></i>
+            {{ case.case_id }}
+            {% set status = case.case_status or '' %}
+            {% if 'Open' in status %}
+            <span class="badge bg-success ms-2">{{ status }}</span>
+            {% elif 'Closed' in status %}
+            <span class="badge bg-secondary ms-2">{{ status }}</span>
+            {% elif 'Cold Case' in status %}
+            <span class="badge bg-warning text-dark ms-2">{{ status }}</span>
+            {% elif 'Before Court' in status or 'Referred' in status %}
+            <span class="badge bg-info text-dark ms-2">{{ status }}</span>
+            {% else %}
+            <span class="badge bg-light text-dark border ms-2">{{ status or 'Pending' }}</span>
+            {% endif %}
+
+            {% set stage = case.current_stage or 'intake' %}
+            {% if stage in ('closed',) %}
+            <span class="badge bg-secondary ms-2">{{ stage|replace('_', ' ')|title }}</span>
+            {% elif stage in ('suspended', 'cold_case') %}
+            <span class="badge bg-warning text-dark ms-2">{{ stage|replace('_', ' ')|title }}</span>
+            {% elif stage in ('investigation', 'follow_up') %}
+            <span class="badge bg-primary ms-2">{{ stage|replace('_', ' ')|title }}</span>
+            {% elif stage in ('court_preparation', 'before_court') %}
+            <span class="badge bg-info text-dark ms-2">{{ stage|replace('_', ' ')|title }}</span>
+            {% elif stage == 'review' %}
+            <span class="badge bg-dark ms-2">{{ stage|replace('_', ' ')|title }}</span>
+            {% elif stage == 'reopened' %}
+            <span class="badge bg-success ms-2">{{ stage|replace('_', ' ')|title }}</span>
+            {% else %}
+            <span class="badge bg-light text-dark border ms-2">{{ stage|replace('_', ' ')|title }}</span>
+            {% endif %}
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('cases.case_list') }}">Cases</a></li>
+                <li class="breadcrumb-item active">{{ case.case_id }}</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2 no-print">
+        <a href="{{ url_for('cases.case_timeline', case_id=case.case_id) }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-clock-history me-1"></i> Timeline
+        </a>
+        <a href="{{ url_for('cases.case_review', case_id=case.case_id) }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-clipboard-check me-1"></i> Review
+        </a>
+        <a href="{{ url_for('cases.case_summary', case_id=case.case_id) }}" class="btn btn-outline-secondary btn-sm" target="_blank">
+            <i class="bi bi-printer me-1"></i> Print Summary
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    {# === Main Content (Tabs) === #}
+    <div class="col-lg-9">
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#tab-overview">
+                    <i class="bi bi-info-circle me-1"></i> Overview
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#tab-timeline">
+                    <i class="bi bi-clock-history me-1"></i> Timeline
+                    <span class="badge bg-secondary ms-1">{{ lifecycle|length }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#tab-forms">
+                    <i class="bi bi-file-earmark-text me-1"></i> Forms
+                    <span class="badge bg-secondary ms-1">{{ forms|length }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#tab-evidence">
+                    <i class="bi bi-box-seam me-1"></i> Evidence
+                    <span class="badge bg-secondary ms-1">{{ exhibits|length }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#tab-arrests">
+                    <i class="bi bi-person-fill-lock me-1"></i> Arrests
+                    <span class="badge bg-secondary ms-1">{{ arrests|length }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#tab-statements">
+                    <i class="bi bi-chat-left-quote me-1"></i> Statements
+                    <span class="badge bg-secondary ms-1">{{ statements|length }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#tab-fileregister">
+                    <i class="bi bi-folder-symlink me-1"></i> File Register
+                    <span class="badge bg-secondary ms-1">{{ movements|length }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#tab-reviews">
+                    <i class="bi bi-clipboard-check me-1"></i> Reviews
+                    <span class="badge bg-secondary ms-1">{{ reviews|length }}</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="tab-content mt-3">
+            {# --- Overview Tab --- #}
+            <div class="tab-pane fade show active" id="tab-overview">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i class="bi bi-file-earmark-text me-2"></i>Case Details
+                            </div>
+                            <table class="table table-sm table-borderless mb-0">
+                                <tbody>
+                                    <tr>
+                                        <td class="text-muted" style="width:40%;">Case Reference No.</td>
+                                        <td><strong>{{ case.case_id }}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Primary Register</td>
+                                        <td>
+                                            {% if case.primary_register_type == 'major_crime_register' %}
+                                            Major Crime Register
+                                            {% else %}
+                                            DCRR
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Register Number</td>
+                                        <td>{{ case.primary_register_number or case.dcrr_number or '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Classification</td>
+                                        <td>{{ case.classification or '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Primary Offence</td>
+                                        <td>{{ case.offence_description or '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Law & Section</td>
+                                        <td>{{ case.law_and_section or '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Parish</td>
+                                        <td>{{ case.parish or '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Division</td>
+                                        <td>{{ case.division or '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Crime Type</td>
+                                        <td>{{ (case.crime_type or '-')|title }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Workflow</td>
+                                        <td>{{ (case.workflow_type or '-')|title }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Station Code</td>
+                                        <td>{{ case.station_code or '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Diary Number</td>
+                                        <td>{{ case.diary_number or '-' }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i class="bi bi-people me-2"></i>Parties & Assignment
+                            </div>
+                            <table class="table table-sm table-borderless mb-0">
+                                <tbody>
+                                    <tr>
+                                        <td class="text-muted" style="width:40%;">OIC</td>
+                                        <td>{{ case.oic_name or '-' }} {% if case.oic_rank %}({{ case.oic_rank }}){% endif %}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Assigned IO</td>
+                                        <td>
+                                            {% if inv_card %}
+                                            {{ inv_card.officer_badge }} ({{ inv_card.assignment_type|title }})
+                                            {% elif case.assigned_io_badge %}
+                                            {{ case.assigned_io_badge }}
+                                            {% else %}
+                                            <span class="text-warning">Unassigned</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Suspect</td>
+                                        <td>{{ case.suspect_name or '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Victim / Complainant</td>
+                                        <td>{{ case.victim_name or '-' }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i class="bi bi-calendar-event me-2"></i>Key Dates
+                            </div>
+                            <table class="table table-sm table-borderless mb-0">
+                                <tbody>
+                                    <tr>
+                                        <td class="text-muted" style="width:40%;">Registration Date</td>
+                                        <td>{{ case.registration_date or '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Assigned Date</td>
+                                        <td>{{ case.assigned_date or '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Last Review</td>
+                                        <td>{{ case.last_review_date or '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Next Review</td>
+                                        <td>
+                                            {% if case.next_review_date %}
+                                            <strong class="text-primary">{{ case.next_review_date }}</strong>
+                                            {% else %}-{% endif %}
+                                        </td>
+                                    </tr>
+                                    {% if case.suspended_date %}
+                                    <tr>
+                                        <td class="text-muted">Suspended Date</td>
+                                        <td>{{ case.suspended_date }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if case.closed_date %}
+                                    <tr>
+                                        <td class="text-muted">Closed Date</td>
+                                        <td>{{ case.closed_date }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <td class="text-muted">Created</td>
+                                        <td>{{ case.created_at[:10] if case.created_at else '-' }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {# Synopsis #}
+                {% if case.notes %}
+                <div class="form-section">
+                    <div class="form-section-title">
+                        <i class="bi bi-chat-left-text me-2"></i>Synopsis / Brief Facts
+                    </div>
+                    <p class="mb-0" style="white-space: pre-wrap;">{{ case.notes }}</p>
+                </div>
+                {% endif %}
+
+                {# Current Lifecycle Stage #}
+                <div class="form-section">
+                    <div class="form-section-title">
+                        <i class="bi bi-signpost-split me-2"></i>Lifecycle Stage
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        {% set all_stages = ['intake','appreciation','vetting','assignment','investigation',
+                                             'follow_up','review','court_preparation','before_court',
+                                             'suspended','reopened','cold_case','closed'] %}
+                        {% set current = case.current_stage or 'intake' %}
+                        {% set completed_stages = lifecycle|map(attribute='stage')|list %}
+                        {% for s in all_stages %}
+                        {% if s == current %}
+                        <span class="badge bg-primary px-3 py-2">
+                            <i class="bi bi-arrow-right-circle me-1"></i>{{ s|replace('_', ' ')|title }}
+                        </span>
+                        {% elif s in completed_stages %}
+                        <span class="badge bg-success px-2 py-1">{{ s|replace('_', ' ')|title }}</span>
+                        {% else %}
+                        <span class="badge bg-light text-muted border px-2 py-1">{{ s|replace('_', ' ')|title }}</span>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            {# --- Timeline Tab --- #}
+            <div class="tab-pane fade" id="tab-timeline">
+                <div class="form-section">
+                    <div class="form-section-title">
+                        <i class="bi bi-clock-history me-2"></i>Case Lifecycle Timeline
+                    </div>
+                    {% if lifecycle %}
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Stage</th>
+                                <th>Entered At</th>
+                                <th>Entered By</th>
+                                <th>Exited At</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in lifecycle %}
+                            <tr {% if not entry.exited_at %}class="table-active"{% endif %}>
+                                <td>
+                                    {% if not entry.exited_at %}
+                                    <span class="badge bg-primary">{{ entry.stage|replace('_', ' ')|title }}</span>
+                                    {% else %}
+                                    <span class="badge bg-success">{{ entry.stage|replace('_', ' ')|title }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ entry.entered_at }}</td>
+                                <td>{{ entry.entered_by or '-' }}</td>
+                                <td>{{ entry.exited_at or 'Current' }}</td>
+                                <td><small>{{ entry.notes or '-' }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted mb-0">No lifecycle entries recorded yet.</p>
+                    {% endif %}
+                    <a href="{{ url_for('cases.case_timeline', case_id=case.case_id) }}" class="btn btn-sm btn-outline-primary mt-2">
+                        <i class="bi bi-arrows-fullscreen me-1"></i> Full Timeline View
+                    </a>
+                </div>
+            </div>
+
+            {# --- Forms Tab --- #}
+            <div class="tab-pane fade" id="tab-forms">
+                <div class="row g-3 mb-3 no-print">
+                    <div class="col-md-6">
+                        <div class="form-section h-100">
+                            <div class="form-section-title">
+                                <i class="bi bi-person-badge me-2"></i>Investigator Forms
+                            </div>
+                            <p class="small text-muted">
+                                Create, edit, print, or export the case forms used during investigation.
+                            </p>
+                            <div class="d-flex flex-wrap gap-2">
+                                <a href="{{ url_for('cr_forms.form_list', case_id=case.case_id) }}" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-folder2-open me-1"></i> Open Forms Workflow
+                                </a>
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-file-earmark-plus me-1"></i> New Investigator Form
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        {% for ft in ['CR1','CR2','CR3','CR4','CR5','CR6','CR8','CR9','CR11','CR12','CR14'] %}
+                                        {% set fdef = form_definitions.get(ft) %}
+                                        {% if fdef %}
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('cr_forms.form_new', case_id=case.case_id, form_type=ft) }}">
+                                                {{ ft }} - {{ fdef.name }}
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-section h-100">
+                            <div class="form-section-title">
+                                <i class="bi bi-person-check me-2"></i>Team Lead Review
+                            </div>
+                            <p class="small text-muted">
+                                Review action sheets, case reports, checklists, and court-ready remand material.
+                            </p>
+                            <div class="d-flex flex-wrap gap-2">
+                                <a href="{{ url_for('cr_forms.form_list', case_id=case.case_id) }}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-clipboard-check me-1"></i> Review Case Forms
+                                </a>
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-dark btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-printer me-1"></i> Team Lead Forms
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        {% for ft in ['CR2','CR12','CR13','CR15'] %}
+                                        {% set fdef = form_definitions.get(ft) %}
+                                        {% if fdef %}
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('cr_forms.form_new', case_id=case.case_id, form_type=ft) }}">
+                                                {{ ft }} - {{ fdef.name }}
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                        {% endfor %}
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('policy.forms_library') }}">
+                                                Official blank form library
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 no-print">
+                        <div class="form-section-title mb-0">
+                            <i class="bi bi-file-earmark-text me-2"></i>Linked Official CR Forms
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="{{ url_for('cr_forms.form_list', case_id=case.case_id) }}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-list-check me-1"></i> Forms Workflow
+                            </a>
+                            <a href="{{ url_for('policy.forms_library') }}" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-file-earmark-word me-1"></i> Official Templates
+                            </a>
+                        </div>
+                    </div>
+                    {% if forms %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Form Type</th>
+                                    <th>Form ID</th>
+                                    <th>Name</th>
+                                    <th>Created By</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th class="no-print">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for f in forms %}
+                                {% set fdef = form_definitions.get(f.form_type) %}
+                                {% set status = f.status or f.record_status or 'Draft' %}
+                                <tr>
+                                    <td><span class="badge bg-fnid-navy">{{ f.form_type or '-' }}</span></td>
+                                    <td><strong>{{ f.form_id or f.id }}</strong></td>
+                                    <td>{{ fdef.name if fdef else f.form_type }}</td>
+                                    <td>{{ f.created_by or '-' }}</td>
+                                    <td>{{ f.created_at[:10] if f.created_at else '-' }}</td>
+                                    <td><span class="badge" data-status="{{ status }}">{{ status }}</span></td>
+                                    <td class="no-print">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('cr_forms.form_edit', case_id=case.case_id, form_id=f.id) }}"
+                                               class="btn btn-outline-primary" title="Edit">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                            <a href="{{ url_for('cr_forms.form_print', case_id=case.case_id, form_id=f.id) }}"
+                                               class="btn btn-outline-secondary" title="Print" target="_blank">
+                                                <i class="bi bi-printer"></i>
+                                            </a>
+                                            <a href="{{ url_for('cr_forms.form_pdf', case_id=case.case_id, form_id=f.id) }}"
+                                               class="btn btn-outline-danger" title="Export PDF">
+                                                <i class="bi bi-file-earmark-pdf"></i>
+                                            </a>
+                                            {% if fdef %}
+                                            <a href="{{ url_for('policy.download_form', form_type=f.form_type) }}"
+                                               class="btn btn-outline-success" title="Download official DOCX">
+                                                <i class="bi bi-file-earmark-word"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-file-earmark-x fs-1 d-block mb-2"></i>
+                        <p class="mb-3">No official CR forms are linked to this case.</p>
+                        <a href="{{ url_for('cr_forms.form_list', case_id=case.case_id) }}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-file-earmark-plus me-1"></i> Start Forms Workflow
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# --- Evidence Tab --- #}
+            <div class="tab-pane fade" id="tab-evidence">
+                <div class="form-section">
+                    <div class="form-section-title">
+                        <i class="bi bi-box-seam me-2"></i>Chain of Custody / Exhibits
+                    </div>
+                    {% if exhibits %}
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Exhibit ID</th>
+                                <th>Description</th>
+                                <th>Type</th>
+                                <th>Seized By</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for e in exhibits %}
+                            <tr>
+                                <td><strong>{{ e.exhibit_id or e.id }}</strong></td>
+                                <td>{{ e.description or '-' }}</td>
+                                <td>{{ e.exhibit_type or '-' }}</td>
+                                <td>{{ e.seized_by or '-' }}</td>
+                                <td>{{ e.current_location or '-' }}</td>
+                                <td><span class="badge" data-status="{{ e.status }}">{{ e.status or '-' }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted mb-0">No exhibits recorded for this case.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# --- Arrests Tab --- #}
+            <div class="tab-pane fade" id="tab-arrests">
+                <div class="form-section">
+                    <div class="form-section-title">
+                        <i class="bi bi-person-fill-lock me-2"></i>Linked Arrests
+                    </div>
+                    {% if arrests %}
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Arrest ID</th>
+                                <th>Date</th>
+                                <th>Suspect</th>
+                                <th>Offence</th>
+                                <th>48hr</th>
+                                <th>Bail Status</th>
+                                <th>Court</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a in arrests %}
+                            <tr>
+                                <td><strong>{{ a.arrest_id }}</strong></td>
+                                <td>{{ a.arrest_date or '-' }}</td>
+                                <td>{{ a.suspect_name or '-' }}</td>
+                                <td>{{ a.offence_1 or '-' }}</td>
+                                <td>
+                                    {% if a.charge_within_48hr == 'Yes' %}
+                                    <span class="badge bg-success">Compliant</span>
+                                    {% elif a.charge_within_48hr == 'No' %}
+                                    <span class="badge bg-danger">Breach</span>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ a.bail_status or '-' }}</td>
+                                <td>{{ a.court_type or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted mb-0">No arrests linked to this case.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# --- Statements Tab --- #}
+            <div class="tab-pane fade" id="tab-statements">
+                <div class="form-section">
+                    <div class="form-section-title">
+                        <i class="bi bi-chat-left-quote me-2"></i>Witness Statements
+                    </div>
+                    {% if statements %}
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Statement ID</th>
+                                <th>Witness Name</th>
+                                <th>Type</th>
+                                <th>Date Taken</th>
+                                <th>Taken By</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in statements %}
+                            <tr>
+                                <td><strong>{{ s.statement_id or s.id }}</strong></td>
+                                <td>{{ s.witness_name or '-' }}</td>
+                                <td>{{ s.statement_type or '-' }}</td>
+                                <td>{{ s.date_taken or '-' }}</td>
+                                <td>{{ s.taken_by or '-' }}</td>
+                                <td><span class="badge" data-status="{{ s.status }}">{{ s.status or '-' }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted mb-0">No statements recorded for this case.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# --- File Register Tab --- #}
+            <div class="tab-pane fade" id="tab-fileregister">
+                <div class="form-section">
+                    <div class="form-section-title">
+                        <i class="bi bi-folder-symlink me-2"></i>File Movement Register
+                    </div>
+                    {% if movements %}
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date/Time</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Moved By</th>
+                                <th>Purpose</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in movements %}
+                            <tr>
+                                <td>{{ m.moved_at or '-' }}</td>
+                                <td>{{ m.from_location or '-' }}</td>
+                                <td>{{ m.to_location or '-' }}</td>
+                                <td>{{ m.moved_by or '-' }}</td>
+                                <td>{{ m.purpose or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted mb-0">No file movements recorded.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# --- Reviews Tab --- #}
+            <div class="tab-pane fade" id="tab-reviews">
+                <div class="form-section">
+                    <div class="form-section-title">
+                        <i class="bi bi-clipboard-check me-2"></i>Scheduled & Completed Reviews
+                    </div>
+                    {% if reviews %}
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Review Type</th>
+                                <th>Scheduled</th>
+                                <th>Actual</th>
+                                <th>Reviewer</th>
+                                <th>Outcome</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in reviews %}
+                            <tr>
+                                <td>{{ r.review_type or '-' }}</td>
+                                <td>{{ r.scheduled_date or '-' }}</td>
+                                <td>{{ r.actual_date or '-' }}</td>
+                                <td>{{ r.reviewer_name or '-' }}</td>
+                                <td>{{ r.outcome or '-' }}</td>
+                                <td>
+                                    {% if r.status == 'Completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                    {% elif r.status == 'Overdue' %}
+                                    <span class="badge bg-danger">Overdue</span>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark">{{ r.status or 'Scheduled' }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted mb-0">No reviews scheduled or completed.</p>
+                    {% endif %}
+                    <a href="{{ url_for('cases.case_review', case_id=case.case_id) }}" class="btn btn-sm btn-outline-primary mt-2">
+                        <i class="bi bi-clipboard-plus me-1"></i> Manage Reviews
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# === Quick Actions Sidebar === #}
+    <div class="col-lg-3 no-print">
+        {# Assign Officer #}
+        <div class="form-section">
+            <div class="form-section-title">
+                <i class="bi bi-person-plus me-2"></i>Assign Officer
+            </div>
+            <form method="POST" action="{{ url_for('cases.assign_case', case_id=case.case_id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="mb-2">
+                    <label for="io_badge" class="form-label">Investigating Officer</label>
+                    <select class="form-select form-select-sm" id="io_badge" name="io_badge" required>
+                        <option value="">-- Select Officer --</option>
+                        {% for o in officers %}
+                        <option value="{{ o.badge_number }}"
+                                {% if case.assigned_io_badge == o.badge_number %}selected{% endif %}>
+                            {{ o.rank }} {{ o.full_name }} ({{ o.badge_number }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-person-check me-1"></i> Assign
+                </button>
+            </form>
+        </div>
+
+        {# Transition Stage #}
+        <div class="form-section">
+            <div class="form-section-title">
+                <i class="bi bi-signpost-split me-2"></i>Transition Stage
+            </div>
+            {% set current_stage = case.current_stage or 'intake' %}
+            {# Define valid transitions inline matching VALID_TRANSITIONS in cases.py #}
+            {% set transitions = {
+                'intake': ['appreciation', 'vetting', 'assignment'],
+                'appreciation': ['vetting', 'assignment'],
+                'vetting': ['assignment', 'suspended'],
+                'assignment': ['investigation'],
+                'investigation': ['follow_up', 'review', 'court_preparation', 'suspended', 'cold_case'],
+                'follow_up': ['review', 'investigation', 'court_preparation', 'suspended'],
+                'review': ['investigation', 'follow_up', 'court_preparation', 'suspended', 'closed'],
+                'court_preparation': ['before_court', 'investigation'],
+                'before_court': ['closed', 'investigation'],
+                'suspended': ['reopened', 'closed'],
+                'reopened': ['investigation'],
+                'cold_case': ['reopened', 'closed'],
+                'closed': []
+            } %}
+            {% set valid_next = transitions.get(current_stage, []) %}
+
+            {% if valid_next %}
+            <form method="POST" action="{{ url_for('cases.transition_case', case_id=case.case_id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="mb-2">
+                    <label class="form-label">Current: <strong>{{ current_stage|replace('_', ' ')|title }}</strong></label>
+                    <select class="form-select form-select-sm" name="target_stage" required>
+                        <option value="">-- Next Stage --</option>
+                        {% for t in valid_next %}
+                        <option value="{{ t }}">{{ t|replace('_', ' ')|title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <textarea class="form-control form-control-sm" name="notes" rows="2"
+                              placeholder="Transition notes (optional)"></textarea>
+                </div>
+                {% if 'suspended' in valid_next or 'closed' in valid_next %}
+                <div class="mb-2">
+                    <input type="text" class="form-control form-control-sm" name="reason"
+                           placeholder="Reason (if suspending/closing)">
+                </div>
+                {% endif %}
+                {% if 'closed' in valid_next %}
+                <div class="mb-2">
+                    <select class="form-select form-select-sm" name="outcome">
+                        <option value="">-- Closure Outcome --</option>
+                        <option value="Closed - Convicted">Closed - Convicted</option>
+                        <option value="Closed - Acquitted">Closed - Acquitted</option>
+                        <option value="Closed - No Further Action">Closed - No Further Action</option>
+                        <option value="Closed - Referred to Another Agency">Closed - Referred to Another Agency</option>
+                        <option value="Closed - Administrative">Closed - Administrative</option>
+                    </select>
+                </div>
+                {% endif %}
+                <button type="submit" class="btn btn-warning btn-sm w-100">
+                    <i class="bi bi-arrow-right-circle me-1"></i> Transition
+                </button>
+            </form>
+            {% else %}
+            <p class="text-muted mb-0"><small>This case is in a terminal stage ({{ current_stage|replace('_', ' ')|title }}). No further transitions available.</small></p>
+            {% endif %}
+        </div>
+
+        {# Schedule Review #}
+        <div class="form-section">
+            <div class="form-section-title">
+                <i class="bi bi-calendar-plus me-2"></i>Quick Links
+            </div>
+            <div class="d-grid gap-2">
+                <a href="{{ url_for('cases.case_review', case_id=case.case_id) }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-clipboard-check me-1"></i> Schedule Review
+                </a>
+                <a href="{{ url_for('cr_forms.form_list', case_id=case.case_id) }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-file-earmark-plus me-1"></i> Add Form
+                </a>
+                <a href="{{ url_for('cases.case_timeline', case_id=case.case_id) }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-clock-history me-1"></i> Full Timeline
+                </a>
+                <a href="{{ url_for('cases.case_summary', case_id=case.case_id) }}" class="btn btn-outline-secondary btn-sm" target="_blank">
+                    <i class="bi bi-printer me-1"></i> Print Summary
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

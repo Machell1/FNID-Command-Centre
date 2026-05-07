@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}{% if service_view|default(false) %}Service Schedule{% else %}Vehicle Fleet{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-truck me-2" style="color: var(--fnid-navy);"></i>
+            {% if service_view|default(false) %}
+            Service Schedule
+            {% else %}
+            Vehicle Fleet
+            {% endif %}
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('transport.fleet') }}">Transport</a></li>
+                {% if service_view|default(false) %}
+                <li class="breadcrumb-item active">Service Schedule</li>
+                {% else %}
+                <li class="breadcrumb-item active">Fleet</li>
+                {% endif %}
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('transport.new_vehicle') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-circle me-1"></i> New Vehicle
+        </a>
+        <a href="{{ url_for('transport.trip_log') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-journal-text me-1"></i> Trip Log
+        </a>
+        <a href="{{ url_for('transport.fuel_report') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-fuel-pump me-1"></i> Fuel Report
+        </a>
+        <a href="{{ url_for('transport.service_log') }}" class="btn btn-outline-warning btn-sm">
+            <i class="bi bi-wrench me-1"></i> Service Due
+        </a>
+    </div>
+</div>
+
+{% if not service_view|default(false) %}
+<!-- KPI Counters -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <h2 class="mb-0 text-success">{{ available }}</h2>
+                <small class="text-muted">Available</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-primary">
+            <div class="card-body text-center">
+                <h2 class="mb-0 text-primary">{{ in_use }}</h2>
+                <small class="text-muted">In Use</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-warning">
+            <div class="card-body text-center">
+                <h2 class="mb-0 text-warning">{{ maintenance }}</h2>
+                <small class="text-muted">Maintenance</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-secondary">
+            <div class="card-body text-center">
+                <h2 class="mb-0 text-secondary">{{ vehicles|length }}</h2>
+                <small class="text-muted">Total Fleet</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Fleet Table -->
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover fnid-table" id="fleetTable" data-datatable-manual="true">
+            <thead>
+                <tr>
+                    <th>Vehicle ID</th>
+                    <th>Registration</th>
+                    <th>Make / Model</th>
+                    <th>Type</th>
+                    <th>Assigned Unit</th>
+                    <th>Mileage</th>
+                    {% if service_view|default(false) %}
+                    <th>Last Service</th>
+                    <th>Next Service Due</th>
+                    {% endif %}
+                    <th>Status</th>
+                    {% if service_view|default(false) %}
+                    <th>Defects</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in vehicles %}
+                <tr style="cursor: pointer;" onclick="window.location='{{ url_for('transport.vehicle_detail', vehicle_id=v.vehicle_id) }}'">
+                    <td><strong>{{ v.vehicle_id }}</strong></td>
+                    <td>{{ v.registration or '-' }}</td>
+                    <td>{{ v.make or '' }} {{ v.model or '' }} {% if v.year %}({{ v.year }}){% endif %}</td>
+                    <td>{{ v.vehicle_type or '-' }}</td>
+                    <td>{{ v.assigned_unit or '-' }}</td>
+                    <td>{{ v.current_mileage or '-' }} km</td>
+                    {% if service_view|default(false) %}
+                    <td>{{ v.last_service_date or '-' }}</td>
+                    <td>
+                        {% if v.next_service_due and v.next_service_due <= today %}
+                        <span class="badge bg-danger">{{ v.next_service_due }} (Overdue)</span>
+                        {% else %}
+                        {{ v.next_service_due or '-' }}
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                    <td>
+                        {% if v.status == 'Available' %}
+                        <span class="badge bg-success">Available</span>
+                        {% elif v.status == 'In Use' %}
+                        <span class="badge bg-primary">In Use</span>
+                        {% elif v.status == 'Maintenance' %}
+                        <span class="badge bg-warning text-dark">Maintenance</span>
+                        {% elif v.status == 'Decommissioned' %}
+                        <span class="badge bg-secondary">Decommissioned</span>
+                        {% else %}
+                        <span class="badge bg-light text-dark border">{{ v.status or 'Unknown' }}</span>
+                        {% endif %}
+                    </td>
+                    {% if service_view|default(false) %}
+                    <td>
+                        {% if v.defects %}
+                        <span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>{{ v.defects[:40] }}{% if v.defects|length > 40 %}...{% endif %}</span>
+                        {% else %}
+                        <span class="text-muted">None</span>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var table = document.getElementById('fleetTable');
+    if (table && $.fn.DataTable && !$.fn.DataTable.isDataTable(table)) {
+        $(table).DataTable({
+            order: [[0, 'asc']],
+            pageLength: 25,
+            language: {
+                search: "Search fleet:",
+                emptyTable: "No vehicles found."
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

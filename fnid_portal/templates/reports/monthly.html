@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Monthly Statistical Return{% endblock %}
+
+{% block head %}
+<style>
+    .stat-table th {
+        background-color: #1F3864;
+        color: white;
+    }
+    .stat-table td.metric-label {
+        font-weight: 600;
+        color: #1F3864;
+    }
+    .stat-table td.metric-value {
+        font-weight: 700;
+        font-size: 1.1rem;
+        text-align: right;
+    }
+    .section-header {
+        background-color: #e9ecef;
+        font-weight: 700;
+        color: #1F3864;
+    }
+    @media print {
+        .no-print { display: none !important; }
+        body { font-size: 10pt; }
+        .stat-table th { background-color: #1F3864 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .section-header { background-color: #e9ecef !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0"><i class="bi bi-calendar-month me-2"></i>Monthly Statistical Return</h2>
+        <small class="text-muted">
+            {% set month_names = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] %}
+            {{ month_names[month] }} {{ year }} | FNID Area 3
+        </small>
+    </div>
+    <div class="no-print">
+        <a href="{{ url_for('reports.reports_home') }}" class="btn btn-outline-secondary btn-sm me-2">
+            <i class="bi bi-arrow-left me-1"></i>Reports
+        </a>
+        <a href="{{ url_for('reports.export_report_pdf', report_type='monthly', month=month, year=year) }}" class="btn btn-sm btn-primary me-1">
+            <i class="bi bi-file-pdf me-1"></i>Export PDF
+        </a>
+        <button onclick="window.print()" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-printer me-1"></i>Print
+        </button>
+    </div>
+</div>
+
+<!-- Month/Year Selector -->
+<div class="card mb-4 no-print">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label class="form-label form-label-sm mb-0">Month</label>
+                <select name="month" class="form-select form-select-sm">
+                    {% for m in range(1, 13) %}
+                    <option value="{{ m }}" {% if m == month %}selected{% endif %}>
+                        {{ ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][m] }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="form-label form-label-sm mb-0">Year</label>
+                <select name="year" class="form-select form-select-sm">
+                    {% for y in range(2020, 2031) %}
+                    <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-arrow-repeat me-1"></i>Generate</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Report Header (printable) -->
+<div class="text-center mb-4 d-none d-print-block">
+    <h4 class="mb-1" style="color: #1F3864;">Jamaica Constabulary Force</h4>
+    <h5 class="mb-1" style="color: #1F3864;">Firearms & Narcotics Investigation Division -- Area 3</h5>
+    <h5>Monthly Statistical Return</h5>
+    <p>{{ month_names[month] }} {{ year }}</p>
+    <hr>
+</div>
+
+<!-- Statistical Table -->
+<div class="card mb-4">
+    <div class="card-body p-0">
+        <table class="table table-bordered stat-table mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 60%;">Metric</th>
+                    <th class="text-end" style="width: 40%;">Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Case Activity -->
+                <tr><td colspan="2" class="section-header">Case Activity</td></tr>
+                <tr>
+                    <td class="metric-label">New Cases Opened</td>
+                    <td class="metric-value">{{ new_cases }}</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Cases Closed</td>
+                    <td class="metric-value">{{ closures }}</td>
+                </tr>
+
+                <!-- Firearms Seizures -->
+                <tr><td colspan="2" class="section-header">Firearms Seizures ({{ total_firearms }} total)</td></tr>
+                {% for row in firearms_by_type %}
+                <tr>
+                    <td class="ps-4">{{ row.firearm_type }}</td>
+                    <td class="metric-value">{{ row.cnt }} <small class="text-muted fw-normal">({{ row.ammo or 0 }} rounds)</small></td>
+                </tr>
+                {% endfor %}
+                {% if not firearms_by_type %}
+                <tr><td class="ps-4 text-muted" colspan="2">No firearms seized this month</td></tr>
+                {% endif %}
+
+                <!-- Narcotics Seizures -->
+                <tr><td colspan="2" class="section-header">Narcotics Seizures ({{ total_narcotics }} total)</td></tr>
+                {% for row in narcotics_by_type %}
+                <tr>
+                    <td class="ps-4">{{ row.drug_type }}</td>
+                    <td class="metric-value">{{ row.total_qty or 0 }} {{ row.unit or '' }} <small class="text-muted fw-normal">({{ row.cnt }} seizures)</small></td>
+                </tr>
+                {% endfor %}
+                {% if not narcotics_by_type %}
+                <tr><td class="ps-4 text-muted" colspan="2">No narcotics seized this month</td></tr>
+                {% endif %}
+
+                <!-- Arrests & Court -->
+                <tr><td colspan="2" class="section-header">Arrests & Court</td></tr>
+                <tr>
+                    <td class="metric-label">Total Arrests</td>
+                    <td class="metric-value">{{ arrests }}</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Court Appearances</td>
+                    <td class="metric-value">{{ court_appearances }}</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Convictions</td>
+                    <td class="metric-value">{{ convictions }} / {{ verdicts_total }} verdicts</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Conviction Rate</td>
+                    <td class="metric-value">
+                        <span class="badge {% if conviction_rate >= 70 %}bg-success{% elif conviction_rate >= 40 %}bg-warning text-dark{% else %}bg-secondary{% endif %} fs-6">
+                            {{ conviction_rate }}%
+                        </span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Print Footer -->
+<div class="text-center d-none d-print-block mt-4">
+    <hr>
+    <small class="text-muted">RESTRICTED - Official Use Only | Generated: {{ now.strftime('%Y-%m-%d %H:%M') }}</small>
+</div>
+{% endblock %}

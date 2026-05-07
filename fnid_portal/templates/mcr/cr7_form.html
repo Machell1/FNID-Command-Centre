@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Official CR7 - Morning Crime Report{% endblock %}
+
+{% block content %}
+<div class="page-header no-print">
+    <div>
+        <h4>
+            <i class="bi bi-file-earmark-word me-2" style="color: var(--fnid-navy);"></i>
+            Official CR7 Morning Crime Report
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('mcr.mcr_dashboard') }}">MCR</a></li>
+                <li class="breadcrumb-item active">CR7 {{ mcr_date }}</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{{ url_for('policy.download_form', form_type='CR7') }}" class="btn btn-success btn-sm">
+            <i class="bi bi-file-earmark-word me-1"></i> Exact CR7 Word
+        </a>
+        <button type="button" onclick="window.print()" class="btn btn-outline-dark btn-sm">
+            <i class="bi bi-printer me-1"></i> Print
+        </button>
+        <a href="{{ url_for('mcr.view_mcr', date=mcr_date) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to MCR
+        </a>
+    </div>
+</div>
+
+<div class="alert alert-info no-print">
+    <i class="bi bi-info-circle me-2"></i>
+    This is the official CR7 Morning Crime Report path. It uses the uploaded Microsoft Word CR7 template as the replica;
+    MCR line entries below are only supporting register data.
+    <a href="{{ url_for('mcr.new_entry', date=mcr_date) }}" class="alert-link">Add a supporting MCR line entry</a>.
+</div>
+
+{% if overflow_count %}
+<div class="alert alert-warning no-print">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    The official CR7 template has {{ 17 }} visible matter rows. {{ overflow_count }} additional
+    supporting line entr{{ 'y' if overflow_count == 1 else 'ies' }} remain in the MCR register and should be carried
+    to an additional CR7 page if required.
+</div>
+{% endif %}
+
+<form method="POST" id="cr7-form" class="needs-validation" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {% include "cr_forms/_official_form.html" %}
+
+    <div class="form-section no-print mt-3">
+        <div class="form-section-title">
+            <i class="bi bi-check2-circle me-2"></i>Save Official CR7
+        </div>
+        <input type="hidden" id="form_status" name="form_status" value="{{ form_rec.status if form_rec else 'Draft' }}">
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <button type="submit" class="btn btn-primary" onclick="document.getElementById('form_status').value='Draft'">
+                <i class="bi bi-floppy me-1"></i> Save Draft
+            </button>
+            <button type="submit" class="btn btn-success" onclick="document.getElementById('form_status').value='Submitted'">
+                <i class="bi bi-check-lg me-1"></i> Submit CR7
+            </button>
+            <button type="button" onclick="window.print()" class="btn btn-outline-dark">
+                <i class="bi bi-printer me-1"></i> Print
+            </button>
+            <a href="{{ url_for('policy.download_form', form_type='CR7') }}" class="btn btn-outline-success">
+                <i class="bi bi-file-earmark-word me-1"></i> Exact Word Template
+            </a>
+            <a href="{{ url_for('mcr.new_entry', date=mcr_date) }}" class="btn btn-outline-primary">
+                <i class="bi bi-plus-circle me-1"></i> Add Line Entry
+            </a>
+            <span class="ms-auto small text-muted">
+                Form ID: {{ form_id }} | Source: {{ layout.source_filename }}
+            </span>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var form = document.getElementById('cr7-form');
+    if (!form) return;
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+});
+</script>
+{% endblock %}

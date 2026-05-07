@@ -1,0 +1,53 @@
+<div class="row g-3">
+    <div class="col-md-4">
+        <label class="form-label">Date Received</label>
+        <input type="date" class="form-control" name="date_received" value="{{ fields.get('date_received', '') }}">
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Source</label>
+        <select class="form-select" name="source">
+            <option value="">-- Select --</option>
+            {% for s in cfg.INTEL_SOURCES %}
+            <option value="{{ s }}" {{ 'selected' if s == fields.get('source') }}>{{ s }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Priority</label>
+        <select class="form-select" name="priority">
+            {% for p in cfg.INTEL_PRIORITIES %}
+            <option value="{{ p }}" {{ 'selected' if p == fields.get('priority') }}>{{ p }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+<div class="row g-3 mt-1">
+    <div class="col-md-4">
+        <label class="form-label">Parish</label>
+        <select class="form-select" name="parish">
+            <option value="">-- Select --</option>
+            {% for p in cfg.ALL_PARISHES %}
+            <option value="{{ p }}" {{ 'selected' if p == fields.get('parish') }}>{{ p }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Subject / Person of Interest</label>
+        <input type="text" class="form-control" name="subject_name" value="{{ fields.get('subject_name', '') }}">
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Triage Decision</label>
+        <select class="form-select" name="triage_decision">
+            <option value="">-- Select --</option>
+            {% for t in cfg.TRIAGE_DECISIONS %}
+            <option value="{{ t }}" {{ 'selected' if t == fields.get('triage_decision') }}>{{ t }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+<div class="row g-3 mt-1">
+    <div class="col-12">
+        <label class="form-label">Intelligence Summary</label>
+        <textarea class="form-control" name="substance_of_intel" rows="4">{{ fields.get('substance_of_intel', '') }}</textarea>
+    </div>
+</div>

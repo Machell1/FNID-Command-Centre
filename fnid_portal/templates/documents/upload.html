@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Upload Document{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header"><h5><i class="bi bi-upload me-2"></i>Upload Document</h5></div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" action="{{ url_for('documents.upload') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Document Title</label>
+                        <input type="text" class="form-control" id="title" name="title" placeholder="Enter title (optional)">
+                    </div>
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Category</label>
+                        <select class="form-select" id="category" name="category">
+                            <option value="General">General</option>
+                            <option value="Case File">Case File</option>
+                            <option value="Evidence">Evidence</option>
+                            <option value="Report">Report</option>
+                            <option value="Policy">Policy</option>
+                            <option value="Training">Training</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="file" class="form-label">File <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control" id="file" name="file" required accept=".pdf,.docx,.doc,.jpg,.jpeg,.png,.xlsx,.xls">
+                        <div class="form-text">Allowed: PDF, DOCX, DOC, JPG, PNG, XLSX, XLS. Max 16MB.</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i> Upload</button>
+                    <a href="{{ url_for('documents.doc_list') }}" class="btn btn-outline-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,212 @@
+﻿{% extends "base.html" %}
+{% block title %}Target â€” {{ target.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-crosshair me-2" style="color: #1F3864;"></i>
+            Target Profile &mdash; {{ target.name }}
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('intel.targets') }}">Targets</a></li>
+                <li class="breadcrumb-item active">{{ target.name }}</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('intel.edit_target', target_id=target.id) }}" class="btn btn-primary btn-sm" style="background-color: #1F3864; border-color: #1F3864;">
+            <i class="bi bi-pencil me-1"></i> Edit Target
+        </a>
+        <a href="{{ url_for('intel.targets') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Targets
+        </a>
+    </div>
+</div>
+
+<!-- Target Info Card -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #1F3864; color: #fff;">
+        <h6 class="mb-0"><i class="bi bi-person-badge me-2"></i>Target Information</h6>
+        <div>
+            {% if target.threat_level == 'Critical' %}
+            <span class="badge bg-danger fs-6">Critical Threat</span>
+            {% elif target.threat_level == 'High' %}
+            <span class="badge bg-warning text-dark fs-6">High Threat</span>
+            {% elif target.threat_level == 'Medium' %}
+            <span class="badge" style="background-color: #ffc107; color: #212529; font-size: 0.875rem;">Medium Threat</span>
+            {% elif target.threat_level == 'Low' %}
+            <span class="badge bg-success fs-6">Low Threat</span>
+            {% endif %}
+            {% if target.status == 'Active' %}
+            <span class="badge bg-success ms-1">Active</span>
+            {% elif target.status == 'Inactive' %}
+            <span class="badge bg-secondary ms-1">Inactive</span>
+            {% elif target.status == 'Arrested' %}
+            <span class="badge bg-info ms-1">Arrested</span>
+            {% elif target.status == 'Deceased' %}
+            <span class="badge bg-dark ms-1">Deceased</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-borderless mb-0">
+                    <tbody>
+                        <tr>
+                            <td class="text-muted" style="width: 35%;">Full Name</td>
+                            <td><strong>{{ target.name }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Aliases</td>
+                            <td>{{ target.aliases or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Parish</td>
+                            <td>{{ target.parish or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Area</td>
+                            <td>{{ target.area or '-' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-borderless mb-0">
+                    <tbody>
+                        <tr>
+                            <td class="text-muted" style="width: 35%;">Description</td>
+                            <td>{{ target.description or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Created</td>
+                            <td>{{ target.created_at or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Updated</td>
+                            <td>{{ target.updated_at or '-' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% if target.mo %}
+        <hr>
+        <h6 class="text-muted mb-2">Modus Operandi</h6>
+        <p class="mb-0">{{ target.mo }}</p>
+        {% endif %}
+        {% if target.notes %}
+        <hr>
+        <h6 class="text-muted mb-2">Notes</h6>
+        <p class="mb-0">{{ target.notes }}</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Linked Intel Reports -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #1F3864; color: #fff;">
+        <h6 class="mb-0"><i class="bi bi-eye me-2"></i>Linked Intelligence Reports</h6>
+        <span class="badge bg-light text-dark">{{ linked_intel|length if linked_intel else 0 }} reports</span>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover fnid-table mb-0">
+            <thead>
+                <tr>
+                    <th>Intel ID</th>
+                    <th>Date</th>
+                    <th>Priority</th>
+                    <th>Subject</th>
+                    <th>Parish</th>
+                    <th>Triage</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in linked_intel %}
+                <tr>
+                    <td><strong>{{ i.intel_id }}</strong></td>
+                    <td><small>{{ i.report_date or '-' }}</small></td>
+                    <td>
+                        {% if i.priority == 'Critical' %}
+                        <span class="badge badge-critical">{{ i.priority }}</span>
+                        {% elif i.priority == 'High' %}
+                        <span class="badge badge-high">{{ i.priority }}</span>
+                        {% elif i.priority == 'Medium' %}
+                        <span class="badge badge-medium">{{ i.priority }}</span>
+                        {% elif i.priority == 'Low' %}
+                        <span class="badge badge-low">{{ i.priority }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ i.subject_name or '-' }}</td>
+                    <td>{{ i.parish or '-' }}</td>
+                    <td>{{ i.triage_decision or 'Pending' }}</td>
+                    <td>
+                        <a href="{{ url_for('units.edit_record', unit='intel', record_id=i.id) }}"
+                           class="btn btn-sm btn-outline-primary" title="View">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-3">No linked intelligence reports.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Linked Cases -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #1F3864; color: #fff;">
+        <h6 class="mb-0"><i class="bi bi-folder me-2"></i>Linked Cases</h6>
+        <span class="badge bg-light text-dark">{{ linked_cases|length if linked_cases else 0 }} cases</span>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover fnid-table mb-0">
+            <thead>
+                <tr>
+                    <th>Case Reference No.</th>
+                    <th>Date</th>
+                    <th>Classification</th>
+                    <th>Parish</th>
+                    <th>Status</th>
+                    <th>OIC</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in linked_cases %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('cases.view_case', case_id=c.id) }}">
+                            <strong>{{ c.case_id }}</strong>
+                        </a>
+                    </td>
+                    <td><small>{{ c.report_date or '-' }}</small></td>
+                    <td>{{ c.classification or '-' }}</td>
+                    <td>{{ c.parish or '-' }}</td>
+                    <td><span class="badge" data-status="{{ c.status }}">{{ c.status or '-' }}</span></td>
+                    <td>{{ c.oic_name or '-' }}</td>
+                    <td>
+                        <a href="{{ url_for('cases.view_case', case_id=c.id) }}"
+                           class="btn btn-sm btn-outline-primary" title="View">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-3">No linked cases.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

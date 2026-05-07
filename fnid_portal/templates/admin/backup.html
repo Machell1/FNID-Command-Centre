@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Database Backup{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-hdd me-2" style="color: #1F3864;"></i>Database Backup</h4>
+        <small class="text-muted">Create and manage database backups</small>
+    </div>
+    <div class="d-flex gap-2">
+        <form method="POST" action="{{ url_for('admin.backup') }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="create">
+            <button type="submit" class="btn btn-primary btn-sm" style="background-color: #1F3864; border-color: #1F3864;">
+                <i class="bi bi-download me-1"></i> Create Backup Now
+            </button>
+        </form>
+        <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Admin
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #1F3864; color: #fff;">
+        <h6 class="mb-0"><i class="bi bi-archive me-2"></i>Existing Backups</h6>
+        <span class="badge bg-light text-dark">{{ backups|length }} backup{{ 's' if backups|length != 1 else '' }}</span>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover fnid-table mb-0">
+            <thead>
+                <tr>
+                    <th>Filename</th>
+                    <th>Size (MB)</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for backup in backups %}
+                <tr>
+                    <td>
+                        <i class="bi bi-file-earmark-zip me-1 text-muted"></i>
+                        <strong>{{ backup.filename }}</strong>
+                    </td>
+                    <td>{{ "%.2f"|format(backup.size_mb) }}</td>
+                    <td><small>{{ backup.created }}</small></td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('admin.download_backup', filename=backup.filename) }}"
+                               class="btn btn-outline-primary" title="Download">
+                                <i class="bi bi-download"></i>
+                            </a>
+                            <form method="POST" action="{{ url_for('admin.delete_backup', filename=backup.filename) }}"
+                                  class="d-inline" onsubmit="return confirm('Delete this backup? This cannot be undone.');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-outline-danger" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-4">
+                        <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                        No backups found. Click "Create Backup Now" to create one.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

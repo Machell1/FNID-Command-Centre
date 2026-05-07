@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Correspondence — {{ case.case_id }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-envelope me-2" style="color: #1F3864;"></i>Correspondence &mdash; {{ case.case_id }}</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('cases.view_case', case_id=case.id) }}">{{ case.case_id }}</a></li>
+                <li class="breadcrumb-item active">Correspondence</li>
+            </ol>
+        </nav>
+    </div>
+    <a href="{{ url_for('cases.view_case', case_id=case.id) }}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Case
+    </a>
+</div>
+
+<!-- New Correspondence Form -->
+<div class="card mb-4">
+    <div class="card-header" style="background-color: #1F3864; color: #fff;">
+        <h6 class="mb-0"><i class="bi bi-plus-circle me-2"></i>New Correspondence Entry</h6>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('file_movement.add_correspondence', case_id=case.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="direction" class="form-label">Direction <span class="required">*</span></label>
+                    <select class="form-select" id="direction" name="direction" required>
+                        <option value="">-- Select --</option>
+                        <option value="Incoming">Incoming</option>
+                        <option value="Outgoing">Outgoing</option>
+                        <option value="Internal">Internal</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="corr_date" class="form-label">Date <span class="required">*</span></label>
+                    <input type="date" class="form-control" id="corr_date" name="corr_date" required>
+                </div>
+                <div class="col-md-3">
+                    <label for="reference" class="form-label">Reference Number</label>
+                    <input type="text" class="form-control" id="reference" name="reference"
+                           placeholder="e.g. REF-2024-001">
+                </div>
+                <div class="col-md-3">
+                    <label for="action_status" class="form-label">Action Status</label>
+                    <select class="form-select" id="action_status" name="action_status">
+                        <option value="">-- Select --</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Actioned">Actioned</option>
+                        <option value="Filed">Filed</option>
+                        <option value="Follow-Up">Follow-Up Required</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row g-3 mt-1">
+                <div class="col-md-4">
+                    <label for="from_party" class="form-label">From <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="from_party" name="from_party" required
+                           placeholder="Sender name / office">
+                </div>
+                <div class="col-md-4">
+                    <label for="to_party" class="form-label">To <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="to_party" name="to_party" required
+                           placeholder="Recipient name / office">
+                </div>
+                <div class="col-md-4">
+                    <label for="subject" class="form-label">Subject <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="subject" name="subject" required
+                           placeholder="Brief subject line">
+                </div>
+            </div>
+            <div class="row g-3 mt-1">
+                <div class="col-md-12">
+                    <label for="notes" class="form-label">Notes / Details</label>
+                    <textarea class="form-control" id="notes" name="notes" rows="2"
+                              placeholder="Additional details about the correspondence"></textarea>
+                </div>
+            </div>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary" style="background-color: #1F3864; border-color: #1F3864;">
+                    <i class="bi bi-plus-circle me-1"></i> Add Entry
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Correspondence Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #1F3864; color: #fff;">
+        <h6 class="mb-0"><i class="bi bi-list-ul me-2"></i>Correspondence Register</h6>
+        <span class="badge bg-light text-dark">{{ correspondence|length }} entries</span>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover fnid-table mb-0">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Direction</th>
+                    <th>Reference</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th>Subject</th>
+                    <th>Action Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in correspondence %}
+                <tr>
+                    <td><small>{{ c.corr_date }}</small></td>
+                    <td>
+                        {% if c.direction == 'Incoming' %}
+                        <span class="badge bg-success"><i class="bi bi-box-arrow-in-down me-1"></i>{{ c.direction }}</span>
+                        {% elif c.direction == 'Outgoing' %}
+                        <span class="badge bg-primary"><i class="bi bi-box-arrow-up me-1"></i>{{ c.direction }}</span>
+                        {% elif c.direction == 'Internal' %}
+                        <span class="badge bg-secondary"><i class="bi bi-arrow-left-right me-1"></i>{{ c.direction }}</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ c.direction or '-' }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ c.reference or '-' }}</td>
+                    <td>{{ c.from_party or '-' }}</td>
+                    <td>{{ c.to_party or '-' }}</td>
+                    <td>{{ c.subject or '-' }}</td>
+                    <td>
+                        {% if c.action_status == 'Pending' %}
+                        <span class="badge bg-warning text-dark">{{ c.action_status }}</span>
+                        {% elif c.action_status == 'Actioned' %}
+                        <span class="badge bg-success">{{ c.action_status }}</span>
+                        {% elif c.action_status == 'Filed' %}
+                        <span class="badge bg-secondary">{{ c.action_status }}</span>
+                        {% elif c.action_status == 'Follow-Up' %}
+                        <span class="badge bg-danger">{{ c.action_status }}</span>
+                        {% else %}
+                        <span class="badge bg-light text-dark">{{ c.action_status or '-' }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">No correspondence recorded for this case.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% block title %}Case Management Policy{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-book me-2"></i>JCF Case Management Policy & Standard Operating Procedures</h4>
+        <small class="text-muted">JCF/FW/PL/C&S/0001/2024</small>
+    </div>
+</div>
+
+<!-- Introduction -->
+<div class="card mb-4">
+    <div class="card-header bg-fnid-navy text-white">
+        <i class="bi bi-info-circle me-2"></i>1.0 Introduction
+    </div>
+    <div class="card-body">
+        <p>In our continued effort to advance the transformation of the Jamaica Constabulary Force (JCF), the organization has reviewed its crime reporting and case management processes in order to more effectively manage the increasingly changing criminal landscape.</p>
+        <p>This document provides the policy framework as well as the required procedures for the management of crime and other 'incidents'. More specifically, it provides general guidance and Standard Operating Procedures (SOPs) for the appreciation, assignment, investigation and closure of cases.</p>
+        <p>This Case Management Policy and Standard Operating Procedures create the foundation for the establishment and maintenance of a more effective and efficient system of managing crime reports and investigations, while ensuring proper accountability and adherence to industry standards.</p>
+    </div>
+</div>
+
+<!-- Purpose & Scope -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-fnid-navy text-white">
+                <i class="bi bi-bullseye me-2"></i>2.0 Purpose
+            </div>
+            <div class="card-body">
+                <p>The purpose of this Policy and Standard Operating Procedures is to outline the process for the appreciation of crime/incident reports and the management of related investigations.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-fnid-navy text-white">
+                <i class="bi bi-diagram-3 me-2"></i>3.0 Scope
+            </div>
+            <div class="card-body">
+                <p>This Policy and Standard Operating Procedures applies to all sworn and unsworn members of the JCF and it covers the management of all crime/incident reports and related investigations.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Policy Statement -->
+<div class="card mb-4">
+    <div class="card-header bg-fnid-navy text-white">
+        <i class="bi bi-shield-check me-2"></i>4.0 Policy Statement
+    </div>
+    <div class="card-body">
+        <p>It is the policy of the JCF that:</p>
+        <ol>
+            <li class="mb-2"><strong>4.1</strong> All reports of crime and other incidents will be recorded promptly and accurately;</li>
+            <li class="mb-2"><strong>4.2</strong> Investigations will be thorough, transparent, confidential, honest and conducted with respect for human rights and dignity;</li>
+            <li class="mb-2"><strong>4.3</strong> Complainants, victims and witnesses will be kept informed of the status of the investigation;</li>
+            <li class="mb-2"><strong>4.4</strong> Only authorized persons will be permitted to process information and personal data of complainants, witnesses, victims, suspects, jurors or others; and</li>
+            <li class="mb-2"><strong>4.5</strong> All efforts will be made to bring closure to cases in a timely manner.</li>
+        </ol>
+    </div>
+</div>
+
+<!-- Quick Navigation Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <a href="{{ url_for('policy.definitions') }}" class="text-decoration-none">
+            <div class="card h-100 border-start border-4 border-primary">
+                <div class="card-body text-center">
+                    <i class="bi bi-journal-text fs-1 text-primary"></i>
+                    <h6 class="mt-2">Definitions</h6>
+                    <small class="text-muted">Section 6.0 - Key terms and case statuses</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('policy.responsibilities') }}" class="text-decoration-none">
+            <div class="card h-100 border-start border-4 border-success">
+                <div class="card-body text-center">
+                    <i class="bi bi-people fs-1 text-success"></i>
+                    <h6 class="mt-2">Roles & Responsibilities</h6>
+                    <small class="text-muted">Sections 7.0-8.0 - Key roles and functions</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('policy.sops') }}" class="text-decoration-none">
+            <div class="card h-100 border-start border-4 border-warning">
+                <div class="card-body text-center">
+                    <i class="bi bi-clipboard-check fs-1 text-warning"></i>
+                    <h6 class="mt-2">Standard Operating Procedures</h6>
+                    <small class="text-muted">Section 9.0 - SOPs for case management</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('policy.forms_library') }}" class="text-decoration-none">
+            <div class="card h-100 border-start border-4 border-danger">
+                <div class="card-body text-center">
+                    <i class="bi bi-file-earmark-text fs-1 text-danger"></i>
+                    <h6 class="mt-2">Case Reference Forms</h6>
+                    <small class="text-muted">Section 11.0 - CR Forms (editable & downloadable)</small>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Abbreviations -->
+<div class="card mb-4">
+    <div class="card-header bg-fnid-navy text-white">
+        <i class="bi bi-alphabet me-2"></i>5.0 Abbreviations and Acronyms
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for abbr, full in abbreviations.items()|sort %}
+            <div class="col-md-4 col-lg-3 mb-1">
+                <strong>{{ abbr }}</strong> <small class="text-muted">{{ full }}</small>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Case Status Summary -->
+<div class="card mb-4">
+    <div class="card-header bg-fnid-navy text-white">
+        <i class="bi bi-diagram-2 me-2"></i>Case Status Categories (Section 6.3)
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6><span class="badge bg-success">Case Open (6.3.1)</span></h6>
+                <p class="small">A case that is actively under investigation.</p>
+
+                <h6><span class="badge bg-warning text-dark">Case Suspended (6.3.2)</span></h6>
+                <p class="small">A case that has been put on hold after all investigative leads have been exhausted.</p>
+
+                <h6><span class="badge bg-info text-dark">Case Cleared (6.3.3)</span></h6>
+                <p class="small">A case is considered cleared when charge(s) have been laid, suspect is dead, warrant issued (life sentence abroad), extradition denied, victim will not prosecute, submitted to Coroners Court, cleared by Child Diversion, suspect summoned, or report was contrived.</p>
+            </div>
+            <div class="col-md-6">
+                <h6><span class="badge bg-secondary">Case Closed (6.3.4)</span></h6>
+                <p class="small">A case is considered closed when charge(s) have been preferred and no other suspect is being pursued, suspect is dead and no other suspect is being pursued, or any other circumstances ACP CIB may deem necessary.</p>
+
+                <h6><span class="badge bg-dark">Cold Case (6.3.5)</span></h6>
+                <p class="small">A reported crime or incident under investigation that has remained unsolved and inactive for a period of <strong>three years</strong> after it was declared suspended.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Review Timelines -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-fnid-navy text-white">
+                <i class="bi bi-calendar-event me-2"></i>Case Review Timelines (Section 9.3.3)
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-striped mb-0">
+                    <thead><tr><th>Review Type</th><th>Timeline</th></tr></thead>
+                    <tbody>
+                        {% for key, timeline in review_timelines.items() %}
+                        <tr>
+                            <td><small>{{ key.replace('_', ' ').title() }}</small></td>
+                            <td><span class="badge bg-primary">{{ timeline }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-fnid-navy text-white">
+                <i class="bi bi-clock me-2"></i>Vetting & Submission Timelines (Section 9.1.12)
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-striped mb-0">
+                    <thead><tr><th>Submission Type</th><th>Timeline</th></tr></thead>
+                    <tbody>
+                        {% for key, timeline in vetting_timelines.items() %}
+                        <tr>
+                            <td><small>{{ key.replace('_', ' ').title() }}</small></td>
+                            <td><span class="badge bg-warning text-dark">{{ timeline }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Legislative Authority -->
+<div class="card mb-4">
+    <div class="card-header bg-fnid-navy text-white">
+        <i class="bi bi-journal-bookmark me-2"></i>10.0 Legislative Authority / Guiding Principles
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-check-circle text-success me-1"></i> Book of Rules for the Guidance and General Direction of the JCF</li>
+                    <li><i class="bi bi-check-circle text-success me-1"></i> CIB SOP, 2010</li>
+                    <li><i class="bi bi-check-circle text-success me-1"></i> Committal Proceedings Act</li>
+                    <li><i class="bi bi-check-circle text-success me-1"></i> Common Law</li>
+                    <li><i class="bi bi-check-circle text-success me-1"></i> Constabulary Force Act</li>
+                    <li><i class="bi bi-check-circle text-success me-1"></i> Child Diversion Act, 2018</li>
+                    <li><i class="bi bi-check-circle text-success me-1"></i> Data Protection Act, 2020</li>
+                    <li><i class="bi bi-check-circle text-success me-1"></i> Evidence Amendment Act</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-check-circle text-success me-1"></i> Force Standing Orders, Chapters 25, 43, 47, 48 & 49</li>
+                    <li><i class="bi bi-check-circle text-success me-1"></i> JCF Homicide Investigation Manual</li>
+                    <li><i class="bi bi-check-circle text-success me-1"></i> JCF Data Protection Policy & SOPs</li>
+                    <li><i class="bi bi-check-circle text-success me-1"></i> JCF Investigators Handbook</li>
+                    <li><i class="bi bi-check-circle text-success me-1"></i> JCF Investigators Manual</li>
+                    <li><i class="bi bi-check-circle text-success me-1"></i> JCF Records Information Management Policy & SOPs</li>
+                    <li><i class="bi bi-check-circle text-success me-1"></i> The New Judges Rule</li>
+                    <li><i class="bi bi-check-circle text-success me-1"></i> Police Public Interaction Policy</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,138 @@
+﻿{% extends "base.html" %}
+{% block title %}Correspondence Register{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-envelope-paper"></i> Correspondence Register</h2>
+    <a href="{{ url_for('correspondence.new_correspondence') }}" class="btn btn-primary">
+      <i class="bi bi-plus-circle"></i> New Correspondence
+    </a>
+  </div>
+
+  {% if case is defined and case %}
+  <div class="alert alert-info">
+    <i class="bi bi-folder2-open me-1"></i>
+    Showing correspondence for case: <strong>{{ case_id }}</strong>
+    {% if case.offence_type %} &mdash; {{ case.offence_type }}{% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Filters -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Case Reference No.</label>
+          <input type="text" name="case_id" class="form-control" value="{{ filter_case_id }}"
+                 placeholder="Filter by case reference no.">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Direction</label>
+          <select name="direction" class="form-select">
+            <option value="">All Directions</option>
+            {% for d in directions %}
+            <option value="{{ d }}" {% if filter_direction == d %}selected{% endif %}>{{ d }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Action Status</label>
+          <select name="status" class="form-select">
+            <option value="">All Statuses</option>
+            {% for s in action_statuses %}
+            <option value="{{ s }}" {% if filter_status == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-outline-primary me-2">
+            <i class="bi bi-funnel"></i> Filter
+          </button>
+          <a href="{{ url_for('correspondence.correspondence_list') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-x-circle"></i> Clear
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="card">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover table-striped">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Date</th>
+              <th>Direction</th>
+              <th>Subject</th>
+              <th>From / To</th>
+              <th>Case</th>
+              <th>Document Type</th>
+              <th>Action Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+            <tr>
+              <td>{{ item.id }}</td>
+              <td>{{ item.date }}</td>
+              <td>
+                {% if item.direction == 'Incoming' %}
+                <span class="badge bg-info">
+                  <i class="bi bi-box-arrow-in-down"></i> Incoming
+                </span>
+                {% else %}
+                <span class="badge bg-primary">
+                  <i class="bi bi-box-arrow-up"></i> Outgoing
+                </span>
+                {% endif %}
+              </td>
+              <td>{{ item.subject }}</td>
+              <td>
+                {% if item.direction == 'Incoming' %}
+                  {{ item.from_entity or 'â€”' }}
+                {% else %}
+                  {{ item.to_entity or 'â€”' }}
+                {% endif %}
+              </td>
+              <td>{{ item.case_id or 'â€”' }}</td>
+              <td>{{ item.document_type or 'â€”' }}</td>
+              <td>
+                {% if item.action_status == 'Completed' %}
+                <span class="badge bg-success">Completed</span>
+                {% elif item.action_status == 'In Progress' %}
+                <span class="badge bg-warning text-dark">In Progress</span>
+                {% elif item.action_status == 'Pending' %}
+                <span class="badge bg-secondary">Pending</span>
+                {% else %}
+                <span class="badge bg-light text-dark">N/A</span>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{{ url_for('correspondence.correspondence_detail', id=item.id) }}"
+                   class="btn btn-sm btn-outline-primary" title="View">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a href="{{ url_for('correspondence.edit_correspondence', id=item.id) }}"
+                   class="btn btn-sm btn-outline-secondary" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </a>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="9" class="text-center text-muted py-4">No correspondence records found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="text-muted mb-0">{{ items | length }} record(s) found.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

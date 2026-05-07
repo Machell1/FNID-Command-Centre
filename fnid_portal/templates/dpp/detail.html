@@ -1,0 +1,218 @@
+﻿{% extends "base.html" %}
+{% block title %}DPP Submission â€” {{ entry.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-briefcase"></i> DPP Submission #{{ entry.id }}</h2>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('dpp.edit_dpp', id=entry.id) }}" class="btn btn-outline-secondary">
+                <i class="bi bi-pencil"></i> Edit
+            </a>
+            <a href="{{ url_for('dpp.dpp_home') }}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Back to Pipeline
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Submission Details -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header"><h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Submission Details</h5></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <strong>Linked Case Reference No.:</strong><br>
+                            {% if entry.linked_case_id %}
+                            <a href="{{ url_for('cases.case_detail', case_id=entry.linked_case_id) }}">{{ entry.linked_case_id }}</a>
+                            {% else %}â€”{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Classification:</strong><br>{{ entry.classification or 'â€”' }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>OIC Name:</strong><br>{{ entry.oic_name or 'â€”' }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Suspect Name:</strong><br>{{ entry.suspect_name or 'â€”' }}
+                        </div>
+                        <div class="col-md-12">
+                            <strong>Offence Summary:</strong><br>{{ entry.offence_summary or 'â€”' }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>DPP File Date:</strong><br>{{ entry.dpp_file_date or 'â€”' }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Crown Counsel:</strong><br>{{ entry.crown_counsel or 'â€”' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sufficiency & Assessments -->
+            <div class="card mb-4">
+                <div class="card-header"><h5 class="mb-0"><i class="bi bi-check2-square me-2"></i>Assessments</h5></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <strong>Evidential Sufficiency:</strong><br>
+                            {% if entry.evidential_sufficiency == 'Yes' %}
+                            <span class="badge bg-success">Yes</span>
+                            {% else %}
+                            <span class="badge bg-danger">No</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Public Interest Met:</strong><br>
+                            {% if entry.public_interest_met == 'Yes' %}
+                            <span class="badge bg-success">Yes</span>
+                            {% else %}
+                            <span class="badge bg-danger">No</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Voluntary Bill:</strong><br>
+                            <span class="badge bg-{{ 'success' if entry.voluntary_bill == 'Yes' else 'secondary' }}">{{ entry.voluntary_bill or 'No' }}</span>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Prelim Exam:</strong><br>
+                            <span class="badge bg-{{ 'success' if entry.prelim_exam == 'Yes' else 'secondary' }}">{{ entry.prelim_exam or 'No' }}</span>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Returned for Investigation:</strong><br>
+                            {% if entry.returned_for_investigation == 'Yes' %}
+                            <span class="badge bg-danger">Yes</span>
+                            {% else %}
+                            <span class="badge bg-secondary">No</span>
+                            {% endif %}
+                        </div>
+                        {% if entry.return_reason %}
+                        <div class="col-md-12">
+                            <strong>Return Reason:</strong><br>{{ entry.return_reason }}
+                        </div>
+                        {% endif %}
+                        {% if entry.resubmission_date %}
+                        <div class="col-md-4">
+                            <strong>Resubmission Date:</strong><br>{{ entry.resubmission_date }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ruling -->
+            <div class="card mb-4">
+                <div class="card-header"><h5 class="mb-0"><i class="bi bi-hammer me-2"></i>DPP Ruling</h5></div>
+                <div class="card-body">
+                    {% if entry.ruling_date %}
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <strong>Ruling Date:</strong><br>{{ entry.ruling_date }}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Ruling Outcome:</strong><br>
+                            {% if entry.ruling_outcome == 'Approved' %}
+                            <span class="badge bg-success">{{ entry.ruling_outcome }}</span>
+                            {% elif entry.ruling_outcome == 'Rejected' %}
+                            <span class="badge bg-danger">{{ entry.ruling_outcome }}</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">{{ entry.ruling_outcome }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-12">
+                            <strong>Ruling Notes:</strong><br>{{ entry.ruling_notes or 'â€”' }}
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-3">No ruling recorded yet.</p>
+                    <form method="post" action="{{ url_for('dpp.record_ruling', id=entry.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Ruling Date <span class="text-danger">*</span></label>
+                                <input type="date" name="ruling_date" class="form-control" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Ruling Outcome <span class="text-danger">*</span></label>
+                                <select name="ruling_outcome" class="form-select" required>
+                                    <option value="">Select Outcome</option>
+                                    <option value="Approved">Approved</option>
+                                    <option value="Rejected">Rejected</option>
+                                    <option value="Returned for Further Investigation">Returned for Further Investigation</option>
+                                    <option value="No Further Action">No Further Action</option>
+                                </select>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Ruling Notes</label>
+                                <textarea name="ruling_notes" class="form-control" rows="3"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-hammer"></i> Record Ruling
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Status Card -->
+            <div class="card mb-4">
+                <div class="card-header"><h5 class="mb-0">Status</h5></div>
+                <div class="card-body">
+                    <p><strong>DPP Status:</strong><br>
+                        {% if entry.dpp_status == 'Approved' %}
+                        <span class="badge bg-success">{{ entry.dpp_status }}</span>
+                        {% elif entry.dpp_status == 'Awaiting Ruling' %}
+                        <span class="badge bg-warning text-dark">{{ entry.dpp_status }}</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ entry.dpp_status or 'Draft' }}</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Record Status:</strong><br>
+                        <span class="badge bg-info">{{ entry.record_status or 'Draft' }}</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Linked Case -->
+            {% if linked_case %}
+            <div class="card mb-4">
+                <div class="card-header"><h5 class="mb-0">Linked Case</h5></div>
+                <div class="card-body">
+                    <p><strong>Case Reference No.:</strong><br>
+                        <a href="{{ url_for('cases.case_detail', case_id=linked_case.case_id) }}">{{ linked_case.case_id }}</a>
+                    </p>
+                    <p><strong>Classification:</strong><br>{{ linked_case.classification or 'â€”' }}</p>
+                    <p><strong>Status:</strong><br>{{ linked_case.status or 'â€”' }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Metadata -->
+            <div class="card">
+                <div class="card-header"><h5 class="mb-0">Metadata</h5></div>
+                <div class="card-body">
+                    <p><strong>Submitted By:</strong><br>{{ entry.submitted_by or 'â€”' }}</p>
+                    <p><strong>Submitted Date:</strong><br>{{ entry.submitted_date or 'â€”' }}</p>
+                    <p><strong>Created By:</strong><br>{{ entry.created_by or 'â€”' }}</p>
+                    <p><strong>Created At:</strong><br>{{ entry.created_at or 'â€”' }}</p>
+                    <p class="mb-0"><strong>Updated At:</strong><br>{{ entry.updated_at or 'â€”' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if entry.notes %}
+    <div class="card mt-4">
+        <div class="card-header"><h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Notes</h5></div>
+        <div class="card-body">{{ entry.notes }}</div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

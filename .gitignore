@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Application data (generated at runtime)
+fnid_portal/data/
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# Local secrets
+fnid_portal/secret_keys.py
+*.pem
+*.key
+
+# Old fnid_web directory (superseded by fnid_portal)
+fnid_web/
+
+# Generated Excel files
+*.xlsx
+!fnid_portal/static/forms/registers/*.xlsx
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Docker
+.dockerignore
+
+# Frontend (React SPA)
+frontend/node_modules/
+frontend/dist/
+fnid_portal/static/spa/
+
+# Misc
+*.log

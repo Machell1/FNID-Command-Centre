@@ -1,0 +1,176 @@
+﻿{% extends "base.html" %}
+{% block title %}Witness Statements{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-person-lines-fill"></i> Witness Statements</h2>
+        <a href="{{ url_for('witnesses.new_witness') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> New Statement
+        </a>
+    </div>
+
+    <!-- Case Summary Stats (case view) -->
+    {% if is_case_view is defined and is_case_view %}
+    <div class="row g-3 mb-4">
+        <div class="col-md-2">
+            <div class="card border-primary h-100">
+                <div class="card-body text-center">
+                    <h3 class="text-primary mb-1">{{ total }}</h3>
+                    <small class="text-muted">Total Witnesses</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-success h-100">
+                <div class="card-body text-center">
+                    <h3 class="text-success mb-1">{{ signed }}</h3>
+                    <small class="text-muted">Signed</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-info h-100">
+                <div class="card-body text-center">
+                    <h3 class="text-info mb-1">{{ willing }}</h3>
+                    <small class="text-muted">Willing</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-warning h-100">
+                <div class="card-body text-center">
+                    <h3 class="text-warning mb-1">{{ available }}</h3>
+                    <small class="text-muted">Available for Court</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-danger h-100">
+                <div class="card-body text-center">
+                    <h3 class="text-danger mb-1">{{ special_measures }}</h3>
+                    <small class="text-muted">Special Measures</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card h-100">
+                <div class="card-body">
+                    <strong class="d-block mb-1">By Type</strong>
+                    {% for t, c in type_counts.items() %}
+                    <span class="badge bg-secondary me-1">{{ t }}: {{ c }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Filter by Case Reference No.</label>
+                    <input type="text" name="case_id" class="form-control"
+                           value="{{ case_filter }}" placeholder="Enter case reference no.">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Witness Type</label>
+                    <select name="witness_type" class="form-select">
+                        <option value="">All Types</option>
+                        {% for t in types %}
+                        <option value="{{ t }}" {% if t == type_filter %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-funnel"></i> Filter
+                    </button>
+                </div>
+                {% if case_filter or type_filter %}
+                <div class="col-md-2">
+                    <a href="{{ url_for('witnesses.witness_list') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </a>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- Witnesses Table -->
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Statement ID</th>
+                            <th>Case Reference No.</th>
+                            <th>Witness Name</th>
+                            <th>Type</th>
+                            <th>Statement Date</th>
+                            <th>Signed</th>
+                            <th>Willing</th>
+                            <th>Court Available</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for w in witnesses %}
+                        <tr>
+                            <td>{{ w.statement_id }}</td>
+                            <td>{{ w.linked_case_id or 'â€”' }}</td>
+                            <td>{{ w.witness_name or 'â€”' }}</td>
+                            <td>{{ w.witness_type or 'â€”' }}</td>
+                            <td>{{ w.statement_date or 'â€”' }}</td>
+                            <td>
+                                {% if w.statement_signed == 'Yes' %}
+                                <span class="badge bg-success">Yes</span>
+                                {% else %}
+                                <span class="badge bg-danger">No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if w.witness_willing == 'Yes' %}
+                                <span class="badge bg-success">Yes</span>
+                                {% else %}
+                                <span class="badge bg-danger">No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if w.available_for_court == 'Yes' %}
+                                <span class="badge bg-success">Yes</span>
+                                {% else %}
+                                <span class="badge bg-danger">No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if w.record_status == 'Final' else ('info' if w.record_status == 'Submitted' else 'secondary') }}">
+                                    {{ w.record_status or 'Draft' }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('witnesses.witness_detail', statement_id=w.statement_id) }}" class="btn btn-sm btn-outline-primary" title="View">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('witnesses.edit_witness', statement_id=w.statement_id) }}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="10" class="text-center text-muted py-4">No witness statements found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

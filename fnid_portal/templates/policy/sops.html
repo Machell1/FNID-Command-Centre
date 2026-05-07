@@ -1,0 +1,171 @@
+﻿{% extends "base.html" %}
+{% block title %}Standard Operating Procedures{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-clipboard-check me-2"></i>9.0 Standard Operating Procedures</h4>
+        <small class="text-muted">JCF Case Management Policy - JCF/FW/PL/C&S/0001/2024</small>
+    </div>
+    <a href="{{ url_for('policy.policy_home') }}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Policy
+    </a>
+</div>
+
+<!-- 9.1 Appreciating Customer's Report -->
+<div class="card mb-3">
+    <div class="card-header bg-fnid-navy text-white">
+        <i class="bi bi-person-check me-2"></i>9.1 Appreciating Customer's Report
+    </div>
+    <div class="card-body">
+        <p>When a member of the public makes a report of a crime or incident, the police shall:</p>
+        <ol>
+            <li class="mb-2">Greet the customer per the JCF Police Public Interaction Policy (JCF/FW/PL/Gen/0002/2021)</li>
+            <li class="mb-2">Inform supervisor, who shall establish whether investigation is by uniformed or non-uniformed personnel (including C-TOC, CISOCA etc.) per Appendix 5</li>
+            <li class="mb-2">Take appropriate action or refer for required investigator</li>
+            <li class="mb-2">Where non-uniformed investigators unavailable, refer to supervisor for preliminary investigation by uniformed personnel</li>
+            <li class="mb-2">Record statement and complete appropriate CR forms</li>
+            <li class="mb-2">Record entry in Crime Diary or Station Diary/SRMS and relevant registers</li>
+            <li class="mb-2">Where applicable, send email/radio message in timely manner</li>
+            <li class="mb-2">Complete and issue <strong>Customer Reference Form (CR 10)</strong> to complainant</li>
+            <li class="mb-2">Complete <strong>Stolen Property Form (CR 4)</strong> in triplicate where property is reported stolen/recovered</li>
+        </ol>
+
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>NB:</strong> A customer should not be referred to another station to make a report, but be promptly attended to per the JCF Police Public Interaction Policy.
+        </div>
+
+        <h6 class="mt-3">9.1.10 Recording of Witness or Complainant Statement</h6>
+        <ul>
+            <li>Every effort shall be made to record a statement in the initial stage</li>
+            <li>Record a detailed, chronological account of events</li>
+            <li>For all major crimes, a <strong>Witness Bio-Data Form (CR 3)</strong> must be completed</li>
+            <li>Complete and attach <strong>Investigator's Worksheet (CR 1)</strong> and <strong>Action Sheet (CR 2)</strong></li>
+        </ul>
+
+        <h6 class="mt-3">9.1.12 Submission Timelines</h6>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered">
+                <thead class="table-dark"><tr><th>Submission Type</th><th>Timeline</th></tr></thead>
+                <tbody>
+                    {% for key, timeline in vetting_timelines.items() %}
+                    <tr>
+                        <td>{{ key.replace('_', ' ').title() }}</td>
+                        <td><span class="badge bg-warning text-dark">{{ timeline }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <h6 class="mt-3">9.1.13 Case Reference No.</h6>
+        <p>Each case file will be assigned a unique Case Reference No. (CR#). The format for DCRR files:</p>
+        <div class="bg-light p-2 border rounded mb-2">
+            <code>{DCRR consecutive#}_{yyyy/mm/dd}/{station initial}/{SD or CD}{entry#}/{division code}</code>
+        </div>
+        <p class="small"><strong>Example 1:</strong> <code>32_2014/03/05/LT/SD45/M</code> (Lionel Town, Station Diary #45, Manchester)</p>
+        <p class="small"><strong>Example 2:</strong> <code>43_2017/06/10/HWT/CD52/SAC</code> (Half Way Tree, Crime Diary #52, St. Andrew Central)</p>
+    </div>
+</div>
+
+<!-- 9.2 Case Assignment -->
+<div class="card mb-3">
+    <div class="card-header bg-fnid-navy text-white">
+        <i class="bi bi-person-plus me-2"></i>9.2 Case Assignment
+    </div>
+    <div class="card-body">
+        <h6>9.2.1 Preliminary Vetting</h6>
+        <ul>
+            <li>Registrar and Station Manager shall review contents and ensure all CR forms are completed</li>
+            <li>Cases must be properly classified (uniformed or non-uniformed)</li>
+            <li>Tasks shall be generated on the <strong>Action Sheet (CR 2)</strong> with specific timelines</li>
+        </ul>
+
+        <h6>9.2.2 Assignment Factors</h6>
+        <p>When assigning cases, the Registrar or Station Manager shall consider:</p>
+        <div class="row">
+            <div class="col-md-6">
+                <ul>
+                    <li><strong>Competence</strong> of the intended investigator</li>
+                    <li><strong>Expertise</strong> relevant to the crime type</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <ul>
+                    <li><strong>Availability</strong> of the investigator</li>
+                    <li><strong>Workload</strong> of the intended investigator</li>
+                </ul>
+            </div>
+        </div>
+        <p class="small text-muted">The Divisional Commander or Crime Officer reserves the right to make the final assignment decision.</p>
+    </div>
+</div>
+
+<!-- 9.3 Management of Cases -->
+<div class="card mb-3">
+    <div class="card-header bg-fnid-navy text-white">
+        <i class="bi bi-kanban me-2"></i>9.3 Management of Cases and Investigations
+    </div>
+    <div class="card-body">
+        <h6>9.3.2 Morning Crime Report (CR 7)</h6>
+        <ul>
+            <li>Summary of all major and minor crimes over a 24-hour period (5:30am to 5:30am)</li>
+            <li>Prepared and sent to SIMU via <strong>statistics@jcf.gov.jm</strong> and copied to CIB HQ via <strong>cmu.cibhq@jcf.gov.jm</strong> by 6:00am daily</li>
+            <li>Information protected under the Data Protection Act, 2020 - shall not be transmitted via unauthorized medium</li>
+        </ul>
+
+        <h6>9.3.3 Case Review Timelines</h6>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered">
+                <thead class="table-dark"><tr><th>Review Type</th><th>Timeline</th></tr></thead>
+                <tbody>
+                    {% for key, timeline in review_timelines.items() %}
+                    <tr>
+                        <td>{{ key.replace('_', ' ').title() }}</td>
+                        <td><span class="badge bg-primary">{{ timeline }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Criminal investigation will only be accepted as 'completed' when the Divisional Crime Officer is satisfied that there are no other tasks or outstanding work.
+        </div>
+
+        <h6>9.3.4 Interviews and Confessions</h6>
+        <ul>
+            <li>Questioning of suspects recorded using <strong>Q&A Suspect Form (CR 8)</strong></li>
+            <li>Questioning of accused recorded using <strong>Q&A Accused Form (CR 9)</strong></li>
+            <li>Confessions recorded using <strong>Confession Statement Form (CR 11)</strong></li>
+            <li>Where practicable, confessions shall be audio-visually recorded</li>
+            <li>All confessions shall be investigated to determine truthfulness</li>
+        </ul>
+
+        <h6>9.3.6 Submission of Cases and Court Attendance</h6>
+        <ul>
+            <li>Case files submitted to DCR with first responding and arresting officers' statements</li>
+            <li>DCR should receive file at least <strong>48 hours</strong> prior to court deadline</li>
+            <li>Major and minor crimes submitted with <strong>Major and Minor Case Report Form (CR 12)</strong></li>
+            <li>Case files submitted with <strong>Court Case File Checklist (CR 13)</strong></li>
+            <li><strong>JCF Profile Form (CR 14)</strong> completed for ALL case files to court</li>
+            <li><strong>Application for Remand or Bail Conditions (CR 15)</strong> where applicable</li>
+        </ul>
+
+        <h6>9.3.7 Case Closure</h6>
+        <p>Per Section 6.3.4, a case may be closed when circumstances are satisfied. The Registrar or Divisional Crime Officer within the Division are empowered to declare a case closed. ACP CIB, Director of Investigations CIB HQ and Area Crime Officer may also declare a case closed.</p>
+        <p class="small text-muted">All cases declared closed shall be recorded in <span class="text-danger fw-bold">RED</span> on the Major and Minor Case Report Form (CR 12).</p>
+
+        <h6>9.3.9 Case Suspended</h6>
+        <p>When all investigative leads have been exhausted, the IO submits a written report recommending suspension. Suspended cases shall be reviewed every <strong>90 days</strong>.</p>
+
+        <h6>9.3.10 Cold Case</h6>
+        <p>A Divisional Crime Officer may deem a case cold after it has been <strong>suspended for 3 years</strong>. Cold cases may be reviewed when new information is unearthed, technology advances, or it serves the public interest.</p>
+
+        <h6>9.3.11 Disposition of Case Reports</h6>
+        <p>Case files closed for a continuous period of <strong>7 years</strong> may be disposed of per the JCF Records Information Management Policy. ACP Administration Branch has overall responsibility for destruction of files.</p>
+    </div>
+</div>
+{% endblock %}

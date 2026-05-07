@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+{% block title %}Seizure Analytics{% endblock %}
+
+{% block head %}
+<style>
+    .chart-container {
+        position: relative;
+        height: 320px;
+    }
+    @media print {
+        .no-print { display: none !important; }
+        .chart-container { height: 250px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0"><i class="bi bi-shield-exclamation me-2"></i>Seizure Analytics</h2>
+        <small class="text-muted">Firearms, narcotics, and forensic hit rates</small>
+    </div>
+    <div class="no-print">
+        <a href="{{ url_for('analytics.analytics_home') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Analytics Home
+        </a>
+    </div>
+</div>
+
+<!-- Date Range Selector -->
+<div class="card mb-4 no-print">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label class="form-label form-label-sm mb-0">Start Date</label>
+                <input type="date" class="form-control form-control-sm" name="start_date" value="{{ start_date }}">
+            </div>
+            <div class="col-auto">
+                <label class="form-label form-label-sm mb-0">End Date</label>
+                <input type="date" class="form-control form-control-sm" name="end_date" value="{{ end_date }}">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-funnel me-1"></i>Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-start border-4 border-danger h-100">
+            <div class="card-body text-center">
+                <div class="fs-2 fw-bold text-danger">{{ total_firearms }}</div>
+                <small class="text-muted text-uppercase">Total Firearms Seized</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-start border-4 border-primary h-100">
+            <div class="card-body text-center">
+                <div class="fs-2 fw-bold text-primary">{{ ibis_rate }}%</div>
+                <small class="text-muted text-uppercase">IBIS Hit Rate</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-start border-4 border-info h-100">
+            <div class="card-body text-center">
+                <div class="fs-2 fw-bold text-info">{{ etrace_rate }}%</div>
+                <small class="text-muted text-uppercase">eTrace Hit Rate</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-start border-4 border-purple h-100" style="border-color: #6f42c1 !important;">
+            <div class="card-body text-center">
+                <div class="fs-2 fw-bold" style="color: #6f42c1;">{{ narcotics_monthly|length }}</div>
+                <small class="text-muted text-uppercase">Months with Narcotics Data</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 1: Monthly Trends -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Firearms Seized by Month</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="firearmsMonthlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Narcotics Seized by Month</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="narcoticsMonthlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 2: Calibres + Drug Types -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-bullseye me-2"></i>Top Calibres Recovered</h6>
+            </div>
+            <div class="card-body">
+                {% if top_calibres %}
+                <div class="chart-container">
+                    <canvas id="calibreChart"></canvas>
+                </div>
+                {% else %}
+                <p class="text-muted text-center mt-4">No calibre data available for this period.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-capsule me-2"></i>Drug Types by Quantity</h6>
+            </div>
+            <div class="card-body">
+                {% if drug_types %}
+                <table class="table table-sm table-striped">
+                    <thead>
+                        <tr>
+                            <th>Drug Type</th>
+                            <th class="text-end">Total Quantity</th>
+                            <th>Unit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in drug_types %}
+                        <tr>
+                            <td>{{ row.drug_type }}</td>
+                            <td class="text-end fw-bold">{{ row.total_qty or 0 }}</td>
+                            <td>{{ row.unit or 'N/A' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted text-center mt-4">No narcotics data available for this period.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Parish Breakdown Table -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-geo-alt me-2"></i>Firearms by Parish</h6>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-striped mb-0">
+                    <thead>
+                        <tr><th>Parish</th><th class="text-end">Count</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for row in parish_firearms %}
+                        <tr>
+                            <td>{{ row.parish }}</td>
+                            <td class="text-end fw-bold">{{ row.cnt }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if not parish_firearms %}
+                        <tr><td colspan="2" class="text-center text-muted py-3">No data</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-geo-alt me-2"></i>Narcotics by Parish</h6>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-striped mb-0">
+                    <thead>
+                        <tr><th>Parish</th><th class="text-end">Count</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for row in parish_narcotics %}
+                        <tr>
+                            <td>{{ row.parish }}</td>
+                            <td class="text-end fw-bold">{{ row.cnt }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if not parish_narcotics %}
+                        <tr><td colspan="2" class="text-center text-muted py-3">No data</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Firearms by Month
+    var fLabels = {{ firearms_monthly|map(attribute='month')|list|tojson }};
+    var fData = {{ firearms_monthly|map(attribute='cnt')|list|tojson }};
+    fnidChart('firearmsMonthlyChart', 'bar', fLabels, [{
+        label: 'Firearms Seized',
+        data: fData,
+        backgroundColor: '#dc3545'
+    }], {
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+    });
+
+    // Narcotics by Month
+    var nLabels = {{ narcotics_monthly|map(attribute='month')|list|tojson }};
+    var nData = {{ narcotics_monthly|map(attribute='cnt')|list|tojson }};
+    fnidChart('narcoticsMonthlyChart', 'bar', nLabels, [{
+        label: 'Narcotics Seizures',
+        data: nData,
+        backgroundColor: '#6f42c1'
+    }], {
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+    });
+
+    // Calibre Pie Chart
+    {% if top_calibres %}
+    var cLabels = {{ top_calibres|map(attribute='calibre')|list|tojson }};
+    var cData = {{ top_calibres|map(attribute='cnt')|list|tojson }};
+    var colors = ['#1F3864','#C5A23C','#dc3545','#198754','#0d6efd','#fd7e14','#6f42c1','#20c997','#6c757d','#e83e8c'];
+    fnidChart('calibreChart', 'pie', cLabels, [{
+        data: cData,
+        backgroundColor: colors.slice(0, cLabels.length)
+    }]);
+    {% endif %}
+});
+</script>
+{% endblock %}

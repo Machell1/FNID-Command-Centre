@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% from "macros.html" import select_field, text_field, textarea_field %}
+{% block title %}Case Review - {{ case.case_id }}{% endblock %}
+
+{% block content %}
+{# --- Page Header --- #}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-clipboard-check me-2" style="color: var(--fnid-navy);"></i>
+            Case Review
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('cases.case_list') }}">Cases</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('cases.case_detail', case_id=case.case_id) }}">{{ case.case_id }}</a></li>
+                <li class="breadcrumb-item active">Review</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('cases.case_detail', case_id=case.case_id) }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Case
+        </a>
+    </div>
+</div>
+
+{# Case reference bar #}
+<div class="form-section">
+    <div class="row align-items-center">
+        <div class="col-md-3">
+            <strong>Case:</strong> {{ case.case_id }}
+        </div>
+        <div class="col-md-3">
+            <strong>Classification:</strong> {{ case.classification or '-' }}
+        </div>
+        <div class="col-md-3">
+            <strong>Stage:</strong>
+            <span class="badge bg-primary">{{ (case.current_stage or 'intake')|replace('_', ' ')|title }}</span>
+        </div>
+        <div class="col-md-3 text-md-end">
+            <strong>Last Review:</strong> {{ case.last_review_date or 'None' }}
+        </div>
+    </div>
+</div>
+
+{# --- Pending / Scheduled Reviews --- #}
+{% set pending_reviews = reviews|selectattr('status', 'ne', 'Completed')|list %}
+{% if pending_reviews %}
+<div class="form-section">
+    <div class="form-section-title">
+        <i class="bi bi-calendar-event me-2"></i>Scheduled Reviews
+    </div>
+    <table class="table table-sm table-hover mb-3">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Review Type</th>
+                <th>Scheduled Date</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in pending_reviews %}
+            <tr>
+                <td>{{ r.id }}</td>
+                <td>{{ r.review_type or '-' }}</td>
+                <td>
+                    <strong>{{ r.scheduled_date or '-' }}</strong>
+                </td>
+                <td>
+                    {% if r.status == 'Overdue' %}
+                    <span class="badge bg-danger">Overdue</span>
+                    {% else %}
+                    <span class="badge bg-warning text-dark">{{ r.status or 'Scheduled' }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-primary"
+                            onclick="document.getElementById('review_id').value='{{ r.id }}';
+                                     document.getElementById('reviewForm').scrollIntoView({behavior:'smooth'});">
+                        <i class="bi bi-pencil-square me-1"></i> Record Review
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{# --- Record Review Form --- #}
+<div class="form-section" id="reviewForm">
+    <div class="form-section-title">
+        <i class="bi bi-pencil-square me-2"></i>Record Review
+    </div>
+    <form method="POST" action="{{ url_for('cases.case_review', case_id=case.case_id) }}" class="needs-validation" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" id="review_id" name="review_id"
+               value="{% if pending_reviews %}{{ pending_reviews[0].id }}{% endif %}">
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="review_select" class="form-label">
+                        Select Review <span class="required">*</span>
+                    </label>
+                    <select class="form-select" id="review_select" onchange="document.getElementById('review_id').value=this.value;" required>
+                        <option value="">-- Select Scheduled Review --</option>
+                        {% for r in pending_reviews %}
+                        <option value="{{ r.id }}">
+                            {{ r.review_type or 'Review' }} - {{ r.scheduled_date or 'Unscheduled' }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="outcome" class="form-label">
+                        Outcome <span class="required">*</span>
+                    </label>
+                    <select class="form-select" id="outcome" name="outcome" required>
+                        <option value="">-- Select Outcome --</option>
+                        <option value="Satisfactory Progress">Satisfactory Progress</option>
+                        <option value="Unsatisfactory - Requires Improvement">Unsatisfactory - Requires Improvement</option>
+                        <option value="Recommend Closure">Recommend Closure</option>
+                        <option value="Recommend Suspension">Recommend Suspension</option>
+                        <option value="Recommend Reassignment">Recommend Reassignment</option>
+                        <option value="Recommend Court Preparation">Recommend Court Preparation</option>
+                        <option value="Escalate to Senior Officer">Escalate to Senior Officer</option>
+                        <option value="Further Investigation Required">Further Investigation Required</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4">
+                {{ text_field("next_review_date", "Next Review Date", type="date",
+                              help="Date for the next scheduled review") }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                {{ textarea_field("findings", "Findings", required=true, rows=4,
+                                  help="Summary of findings from this review") }}
+            </div>
+            <div class="col-md-6">
+                {{ textarea_field("directives", "Directives / Instructions", rows=4,
+                                  help="Instructions for the investigating officer") }}
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-check-lg me-1"></i> Submit Review
+            </button>
+            <a href="{{ url_for('cases.case_detail', case_id=case.case_id) }}" class="btn btn-outline-secondary">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+{# --- Completed Reviews History --- #}
+{% set completed_reviews = reviews|selectattr('status', 'equalto', 'Completed')|list %}
+<div class="form-section">
+    <div class="form-section-title">
+        <i class="bi bi-clock-history me-2"></i>Review History
+    </div>
+    {% if completed_reviews %}
+    <table class="table table-sm table-hover">
+        <thead>
+            <tr>
+                <th>Review Type</th>
+                <th>Scheduled</th>
+                <th>Actual Date</th>
+                <th>Reviewer</th>
+                <th>Outcome</th>
+                <th>Findings</th>
+                <th>Directives</th>
+                <th>Next Review</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in completed_reviews %}
+            <tr>
+                <td>{{ r.review_type or '-' }}</td>
+                <td>{{ r.scheduled_date or '-' }}</td>
+                <td>{{ r.actual_date or '-' }}</td>
+                <td>{{ r.reviewer_name or '-' }}</td>
+                <td>
+                    {% if 'Satisfactory' in (r.outcome or '') %}
+                    <span class="badge bg-success">{{ r.outcome }}</span>
+                    {% elif 'Unsatisfactory' in (r.outcome or '') %}
+                    <span class="badge bg-danger">{{ r.outcome }}</span>
+                    {% elif 'Recommend' in (r.outcome or '') %}
+                    <span class="badge bg-info text-dark">{{ r.outcome }}</span>
+                    {% else %}
+                    <span class="badge bg-secondary">{{ r.outcome or '-' }}</span>
+                    {% endif %}
+                </td>
+                <td><small>{{ r.findings or '-' }}</small></td>
+                <td><small>{{ r.directives or '-' }}</small></td>
+                <td>{{ r.next_review_date or '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted text-center mb-0">
+        <i class="bi bi-info-circle me-1"></i>
+        No completed reviews for this case.
+    </p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+{% block title %}Performance Analytics{% endblock %}
+
+{% block head %}
+<style>
+    .kpi-card {
+        border-left: 4px solid #1F3864;
+        background: #f8f9fa;
+    }
+    .kpi-card .kpi-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1F3864;
+    }
+    .kpi-card .kpi-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .chart-container {
+        position: relative;
+        height: 320px;
+    }
+    @media print {
+        .no-print { display: none !important; }
+        .chart-container { height: 250px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0"><i class="bi bi-graph-up-arrow me-2"></i>Performance Analytics</h2>
+        <small class="text-muted">Advanced analytics for command staff</small>
+    </div>
+    <div class="no-print">
+        <a href="{{ url_for('reports.reports_home') }}" class="btn btn-outline-secondary btn-sm me-2">
+            <i class="bi bi-file-earmark-text me-1"></i>Reports
+        </a>
+    </div>
+</div>
+
+<!-- Date Range Selector -->
+<div class="card mb-4 no-print">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label class="form-label form-label-sm mb-0">Start Date</label>
+                <input type="date" class="form-control form-control-sm" name="start_date" value="{{ start_date }}">
+            </div>
+            <div class="col-auto">
+                <label class="form-label form-label-sm mb-0">End Date</label>
+                <input type="date" class="form-control form-control-sm" name="end_date" value="{{ end_date }}">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-funnel me-1"></i>Filter</button>
+            </div>
+            <div class="col-auto">
+                <a href="{{ url_for('analytics.analytics_home') }}" class="btn btn-sm btn-outline-secondary">Reset (30 days)</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- KPI Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card kpi-card h-100">
+            <div class="card-body text-center">
+                <div class="kpi-value">{{ total_cases }}</div>
+                <div class="kpi-label">Total Cases</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card kpi-card h-100">
+            <div class="card-body text-center">
+                <div class="kpi-value">{{ closed_cases }}</div>
+                <div class="kpi-label">Closed Cases</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card kpi-card h-100" style="border-left-color: {% if clearance_rate >= 50 %}#198754{% elif clearance_rate >= 25 %}#ffc107{% else %}#dc3545{% endif %};">
+            <div class="card-body text-center">
+                <div class="kpi-value">{{ clearance_rate }}%</div>
+                <div class="kpi-label">Clearance Rate</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card kpi-card h-100">
+            <div class="card-body text-center">
+                <div class="kpi-value">{{ avg_close|length if avg_close else 0 }}</div>
+                <div class="kpi-label">Classifications Tracked</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 1: Pipeline Funnel + Trends -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-funnel me-2"></i>Case Pipeline Funnel</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="funnelChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-graph-up me-2"></i>Monthly Trends</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="trendsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 2: Parish Comparison + Avg Time-to-Close -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-geo-alt me-2"></i>Parish Comparison</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="parishChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-clock-history me-2"></i>Average Time-to-Close by Classification</h6>
+            </div>
+            <div class="card-body">
+                {% if avg_close %}
+                <table class="table table-sm table-striped">
+                    <thead>
+                        <tr>
+                            <th>Classification</th>
+                            <th class="text-end">Avg Days to Close</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in avg_close %}
+                        <tr>
+                            <td>{{ row.classification or 'Unclassified' }}</td>
+                            <td class="text-end">
+                                <span class="badge {% if row.avg_days and row.avg_days > 90 %}bg-danger{% elif row.avg_days and row.avg_days > 30 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                    {{ row.avg_days or 'N/A' }} days
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted text-center mt-4">No closed cases in this period.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Links -->
+<div class="row g-3 mb-4 no-print">
+    <div class="col-md-3">
+        <a href="{{ url_for('analytics.io_performance') }}" class="card text-decoration-none h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-people fs-2 text-primary"></i>
+                <h6 class="mt-2 text-dark">IO Performance</h6>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('analytics.seizure_analytics') }}" class="card text-decoration-none h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-shield-exclamation fs-2 text-danger"></i>
+                <h6 class="mt-2 text-dark">Seizure Analytics</h6>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('analytics.court_pipeline') }}" class="card text-decoration-none h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-bank fs-2 text-warning"></i>
+                <h6 class="mt-2 text-dark">Court Pipeline</h6>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('reports.reports_home') }}" class="card text-decoration-none h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-file-earmark-bar-graph fs-2 text-success"></i>
+                <h6 class="mt-2 text-dark">Generate Reports</h6>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Pipeline Funnel Chart
+    fnidChart('funnelChart', 'bar',
+        {{ stages|tojson }},
+        [{
+            label: 'Cases at Stage',
+            data: [{% for s in stages %}{{ funnel[s] }}{% if not loop.last %},{% endif %}{% endfor %}],
+            backgroundColor: ['#6c757d', '#17a2b8', '#ffc107', '#0d6efd', '#fd7e14', '#198754']
+        }],
+        {
+            indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: { x: { beginAtZero: true } }
+        }
+    );
+
+    // Monthly Trends Chart
+    fnidChart('trendsChart', 'line',
+        {{ trends.labels|tojson }},
+        [
+            {
+                label: 'New Cases',
+                data: {{ trends.new_cases|tojson }},
+                borderColor: '#1F3864',
+                backgroundColor: 'rgba(31,56,100,0.1)',
+                fill: true,
+                tension: 0.3
+            },
+            {
+                label: 'Closures',
+                data: {{ trends.closures|tojson }},
+                borderColor: '#198754',
+                backgroundColor: 'rgba(25,135,84,0.1)',
+                fill: true,
+                tension: 0.3
+            },
+            {
+                label: 'Seizures',
+                data: {{ trends.seizures|tojson }},
+                borderColor: '#dc3545',
+                backgroundColor: 'rgba(220,53,69,0.1)',
+                fill: true,
+                tension: 0.3
+            }
+        ],
+        { scales: { y: { beginAtZero: true } } }
+    );
+
+    // Parish Comparison Chart
+    fnidChart('parishChart', 'doughnut',
+        {{ parish_data.keys()|list|tojson }},
+        [{
+            data: {{ parish_data.values()|list|tojson }},
+            backgroundColor: ['#1F3864', '#C5A23C', '#198754']
+        }]
+    );
+});
+</script>
+{% endblock %}

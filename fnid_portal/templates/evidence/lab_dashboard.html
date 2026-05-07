@@ -1,0 +1,519 @@
+﻿{% extends "base.html" %}
+{% block title %}Lab Tracking Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-flask me-2"></i>Lab Tracking Dashboard</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('evidence.evidence_dashboard') }}">Evidence</a></li>
+                <li class="breadcrumb-item active">Lab Tracking</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('evidence.new_lab_submission') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-circle me-1"></i> New Lab Submission
+        </a>
+        <a href="{{ url_for('evidence.evidence_dashboard') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Evidence Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card">
+            <div class="kpi-value">{{ total }}</div>
+            <div class="kpi-label">Total Submissions</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-info">
+            <div class="kpi-value">{{ pending_count }}</div>
+            <div class="kpi-label">Pending Results</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-danger">
+            <div class="kpi-value">{{ overdue_count }}</div>
+            <div class="kpi-label">Certificates Overdue</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-success">
+            <div class="kpi-value">{{ issued_count }}</div>
+            <div class="kpi-label">Certificates Issued</div>
+        </div>
+    </div>
+</div>
+
+{% if is_new_form is defined and is_new_form %}
+<!-- New Lab Submission Form -->
+<div class="card mb-4">
+    <div class="card-header bg-fnid-navy text-white">
+        <h6 class="mb-0"><i class="bi bi-plus-circle me-2"></i>New Lab Submission</h6>
+    </div>
+    <div class="card-body">
+        <form method="post" action="{{ url_for('evidence.new_lab_submission') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-section">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Exhibit Tag <span class="text-danger">*</span></label>
+                        <select name="exhibit_tag" class="form-select" required>
+                            <option value="">Select Exhibit</option>
+                            {% for e in exhibits %}
+                            <option value="{{ e.exhibit_tag }}">
+                                {{ e.exhibit_tag }} - {{ e.description[:30] if e.description else 'No description' }}
+                                {% if e.linked_case_id %} ({{ e.linked_case_id }}){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Linked Case Reference No.</label>
+                        <input type="text" name="linked_case_id" class="form-control"
+                               placeholder="Case reference">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Submission Date</label>
+                        <input type="date" name="submission_date" class="form-control">
+                    </div>
+                </div>
+                <div class="row g-3 mt-1">
+                    <div class="col-md-4">
+                        <label class="form-label">Lab Name</label>
+                        <select name="lab_name" class="form-select">
+                            <option value="IFSLM">IFSLM (Institute of Forensic Science and Legal Medicine)</option>
+                            <option value="External Lab">External Lab</option>
+                            <option value="JDF Lab">JDF Lab</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Analysis Type <span class="text-danger">*</span></label>
+                        <select name="analysis_type" class="form-select" required>
+                            <option value="">Select Type</option>
+                            {% for t in ['Ballistic Analysis', 'DNA Analysis', 'Fingerprint Analysis',
+                                         'Drug Analysis', 'Toxicology', 'Document Examination',
+                                         'Digital Forensics', 'Firearm Examination',
+                                         'Trace Evidence', 'Blood Pattern Analysis', 'Other'] %}
+                            <option value="{{ t }}">{{ t }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Expected Completion</label>
+                        <input type="date" name="expected_completion" class="form-control">
+                    </div>
+                </div>
+                <div class="row g-3 mt-1">
+                    <div class="col-md-12">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="2"
+                                  placeholder="Additional notes or instructions"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle me-1"></i> Submit to Lab
+                </button>
+                <a href="{{ url_for('evidence.lab_dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle me-1"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- Tabs -->
+<ul class="nav nav-tabs" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link {{ 'active' if overdue }}" data-bs-toggle="tab" href="#overdue-tab">
+            <i class="bi bi-exclamation-triangle me-1"></i> Overdue
+            <span class="badge bg-danger ms-1">{{ overdue|length }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{ 'active' if not overdue }}" data-bs-toggle="tab" href="#pending-tab">
+            <i class="bi bi-hourglass-split me-1"></i> Pending
+            <span class="badge bg-warning text-dark ms-1">{{ pending|length }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#completed-tab">
+            <i class="bi bi-check-circle me-1"></i> Completed
+            <span class="badge bg-success ms-1">{{ completed|length }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#all-tab">
+            <i class="bi bi-list-ul me-1"></i> All
+            <span class="badge bg-secondary ms-1">{{ all_records|length }}</span>
+        </a>
+    </li>
+</ul>
+
+<div class="tab-content mt-3">
+    <!-- Overdue Tab -->
+    <div class="tab-pane fade {{ 'show active' if overdue }}" id="overdue-tab">
+        <div class="card">
+            <div class="card-body">
+                {% if overdue %}
+                <div class="table-responsive">
+                    <table class="table table-hover fnid-table">
+                        <thead>
+                            <tr>
+                                <th>Lab Ref</th>
+                                <th>Exhibit</th>
+                                <th>Case</th>
+                                <th>Lab</th>
+                                <th>Analysis</th>
+                                <th>Submitted</th>
+                                <th>Expected</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in overdue %}
+                            <tr class="table-danger">
+                                <td><strong>{{ r.lab_ref }}</strong></td>
+                                <td>{{ r.exhibit_tag or '-' }}</td>
+                                <td>
+                                    {% if r.linked_case_id %}
+                                    <a href="{{ url_for('cases.case_detail', case_id=r.linked_case_id) }}">{{ r.linked_case_id }}</a>
+                                    {% else %}-{% endif %}
+                                </td>
+                                <td>{{ r.lab_name or '-' }}</td>
+                                <td>{{ r.analysis_type or '-' }}</td>
+                                <td>{{ r.submission_date or '-' }}</td>
+                                <td><span class="text-danger fw-bold">{{ r.expected_completion }}</span></td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                            data-bs-toggle="modal" data-bs-target="#updateModal{{ loop.index }}">
+                                        <i class="bi bi-pencil"></i> Update
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3 mb-0">No overdue certificates.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Tab -->
+    <div class="tab-pane fade {{ 'show active' if not overdue }}" id="pending-tab">
+        <div class="card">
+            <div class="card-body">
+                {% if pending %}
+                <div class="table-responsive">
+                    <table class="table table-hover fnid-table">
+                        <thead>
+                            <tr>
+                                <th>Lab Ref</th>
+                                <th>Exhibit</th>
+                                <th>Case</th>
+                                <th>Lab</th>
+                                <th>Analysis</th>
+                                <th>Submitted</th>
+                                <th>Expected</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in pending %}
+                            <tr>
+                                <td><strong>{{ r.lab_ref }}</strong></td>
+                                <td>{{ r.exhibit_tag or '-' }}</td>
+                                <td>
+                                    {% if r.linked_case_id %}
+                                    <a href="{{ url_for('cases.case_detail', case_id=r.linked_case_id) }}">{{ r.linked_case_id }}</a>
+                                    {% else %}-{% endif %}
+                                </td>
+                                <td>{{ r.lab_name or '-' }}</td>
+                                <td>{{ r.analysis_type or '-' }}</td>
+                                <td>{{ r.submission_date or '-' }}</td>
+                                <td>{{ r.expected_completion or '-' }}</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                            data-bs-toggle="modal" data-bs-target="#updatePendingModal{{ loop.index }}">
+                                        <i class="bi bi-pencil"></i> Update
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3 mb-0">No pending submissions.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Completed Tab -->
+    <div class="tab-pane fade" id="completed-tab">
+        <div class="card">
+            <div class="card-body">
+                {% if completed %}
+                <div class="table-responsive">
+                    <table class="table table-hover fnid-table">
+                        <thead>
+                            <tr>
+                                <th>Lab Ref</th>
+                                <th>Exhibit</th>
+                                <th>Case</th>
+                                <th>Analysis</th>
+                                <th>Certificate Date</th>
+                                <th>Certificate Ref</th>
+                                <th>Result</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in completed %}
+                            <tr>
+                                <td><strong>{{ r.lab_ref }}</strong></td>
+                                <td>{{ r.exhibit_tag or '-' }}</td>
+                                <td>
+                                    {% if r.linked_case_id %}
+                                    <a href="{{ url_for('cases.case_detail', case_id=r.linked_case_id) }}">{{ r.linked_case_id }}</a>
+                                    {% else %}-{% endif %}
+                                </td>
+                                <td>{{ r.analysis_type or '-' }}</td>
+                                <td>{{ r.certificate_date or '-' }}</td>
+                                <td>{{ r.certificate_ref or '-' }}</td>
+                                <td>{{ r.result_summary or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3 mb-0">No completed submissions.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- All Records Tab -->
+    <div class="tab-pane fade" id="all-tab">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover fnid-table" id="allLabTable" data-datatable-manual="true">
+                        <thead>
+                            <tr>
+                                <th>Lab Ref</th>
+                                <th>Exhibit</th>
+                                <th>Case</th>
+                                <th>Lab</th>
+                                <th>Analysis</th>
+                                <th>Submitted</th>
+                                <th>Certificate</th>
+                                <th>Result</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in all_records %}
+                            <tr>
+                                <td><strong>{{ r.lab_ref }}</strong></td>
+                                <td>{{ r.exhibit_tag or '-' }}</td>
+                                <td>
+                                    {% if r.linked_case_id %}
+                                    <a href="{{ url_for('cases.case_detail', case_id=r.linked_case_id) }}">{{ r.linked_case_id }}</a>
+                                    {% else %}-{% endif %}
+                                </td>
+                                <td>{{ r.lab_name or '-' }}</td>
+                                <td>{{ r.analysis_type or '-' }}</td>
+                                <td>{{ r.submission_date or '-' }}</td>
+                                <td>
+                                    {% if r.certificate_status in ('Issued', 'Received') %}
+                                    <span class="badge bg-success">{{ r.certificate_status }}</span>
+                                    {% elif r.certificate_status == 'Submitted' %}
+                                    <span class="badge bg-info">{{ r.certificate_status }}</span>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark">{{ r.certificate_status or 'Pending' }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ r.result_summary or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- By Analysis Type Summary -->
+<div class="row g-4 mt-3">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Submissions by Analysis Type</h6></div>
+            <div class="card-body">
+                <canvas id="typeChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Analysis Type Breakdown</h6></div>
+            <div class="card-body">
+                <table class="table table-sm fnid-table">
+                    <thead><tr><th>Analysis Type</th><th class="text-end">Count</th></tr></thead>
+                    <tbody>
+                        {% for r in by_type %}
+                        <tr><td>{{ r.analysis_type or 'Unknown' }}</td><td class="text-end">{{ r.cnt }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Modals for Overdue -->
+{% for r in overdue %}
+<div class="modal fade" id="updateModal{{ loop.index }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{{ url_for('evidence.update_lab_status', lab_ref=r.lab_ref) }}">
+                <div class="modal-header bg-fnid-navy text-white">
+                    <h6 class="modal-title">Update: {{ r.lab_ref }}</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Certificate Status</label>
+                        <select name="certificate_status" class="form-select">
+                            <option value="Submitted">Submitted</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Issued">Issued</option>
+                            <option value="Received">Received</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Certificate Date</label>
+                        <input type="date" name="certificate_date" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Certificate Reference</label>
+                        <input type="text" name="certificate_ref" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Result Summary</label>
+                        <textarea name="result_summary" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Update Modals for Pending -->
+{% for r in pending %}
+<div class="modal fade" id="updatePendingModal{{ loop.index }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{{ url_for('evidence.update_lab_status', lab_ref=r.lab_ref) }}">
+                <div class="modal-header bg-fnid-navy text-white">
+                    <h6 class="modal-title">Update: {{ r.lab_ref }}</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Certificate Status</label>
+                        <select name="certificate_status" class="form-select">
+                            <option value="Submitted">Submitted</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Issued">Issued</option>
+                            <option value="Received">Received</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Certificate Date</label>
+                        <input type="date" name="certificate_date" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Certificate Reference</label>
+                        <input type="text" name="certificate_ref" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Result Summary</label>
+                        <textarea name="result_summary" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    var table = document.getElementById('allLabTable');
+    if (!table || $.fn.DataTable.isDataTable(table)) return;
+    $(table).DataTable({
+        paging: true, pageLength: 25, ordering: true,
+        info: true, searching: true,
+        language: { search: "Quick filter:" }
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const chartColors = ['#1b2a4a', '#2c4a7c', '#3d6a9f', '#5e8ab4', '#7faac9', '#a0cadf',
+                         '#c9a84c', '#d4b86a', '#dfc888', '#e9d8a6', '#dc3545'];
+
+    new Chart(document.getElementById('typeChart'), {
+        type: 'bar',
+        data: {
+            labels: [{% for r in by_type %}'{{ r.analysis_type or "Unknown" }}'{{ ', ' if not loop.last }}{% endfor %}],
+            datasets: [{
+                label: 'Submissions',
+                data: [{% for r in by_type %}{{ r.cnt }}{{ ', ' if not loop.last }}{% endfor %}],
+                backgroundColor: chartColors
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { x: { ticks: { maxRotation: 45 } } }
+        }
+    });
+});
+</script>
+{% endblock %}

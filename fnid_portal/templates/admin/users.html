@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}User Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-people me-2" style="color: #1F3864;"></i>User Management</h4>
+        <small class="text-muted">Manage officer accounts and access roles</small>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('admin.new_user') }}" class="btn btn-primary btn-sm" style="background-color: #1F3864; border-color: #1F3864;">
+            <i class="bi bi-person-plus me-1"></i> New User
+        </a>
+        <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Admin
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover fnid-table">
+            <thead>
+                <tr>
+                    <th>Badge</th>
+                    <th>Name</th>
+                    <th>Rank</th>
+                    <th>Section</th>
+                    <th>Role</th>
+                    <th>Active</th>
+                    <th>Last Login</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for officer in officers %}
+                <tr>
+                    <td><strong>{{ officer.badge_number }}</strong></td>
+                    <td>{{ officer.full_name }}</td>
+                    <td>{{ officer.rank or '-' }}</td>
+                    <td>{{ officer.section or '-' }}</td>
+                    <td>
+                        {% if officer.role == 'admin' %}
+                        <span class="badge bg-danger">Admin</span>
+                        {% elif officer.role == 'supervisor' %}
+                        <span class="badge bg-warning text-dark">Supervisor</span>
+                        {% elif officer.role == 'investigator' %}
+                        <span class="badge" style="background-color: #1F3864;">Investigator</span>
+                        {% elif officer.role == 'analyst' %}
+                        <span class="badge bg-info">Analyst</span>
+                        {% elif officer.role == 'registry' %}
+                        <span class="badge bg-secondary">Registry</span>
+                        {% elif officer.role == 'viewer' %}
+                        <span class="badge bg-light text-dark">Viewer</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ officer.role or 'None' }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if officer.is_active %}
+                        <span class="badge bg-success">Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td><small>{{ officer.last_login or 'Never' }}</small></td>
+                    <td>
+                        <a href="{{ url_for('admin.edit_user', badge=officer.badge_number) }}"
+                           class="btn btn-sm btn-outline-primary" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">No officers found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

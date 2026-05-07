@@ -1,0 +1,43 @@
+{# Included in unit home templates when user is a single-unit workspace user #}
+{% if is_unit_workspace %}
+<div class="card bg-light border-0 mb-3">
+    <div class="card-body py-2">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+                <i class="bi {{ portal.icon }} me-2 fs-5" style="color: {{ portal.color }};"></i>
+                <strong>{{ current_user.rank }} {{ current_user.full_name }}</strong>
+                <span class="text-muted ms-2">&mdash; {{ current_user.section }}</span>
+                <span class="badge bg-secondary ms-2">{{ roles.get(current_user.role, current_user.role) }}</span>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('assistants.workstation') }}" class="btn btn-warning btn-sm">
+                    <i class="bi bi-cpu me-1"></i> AI Assistant
+                </a>
+                {% if current_user.role in ('admin', 'dco') %}
+                <a href="{{ url_for('assistants.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-shield-check me-1"></i> Harness
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if alerts %}
+<div class="mb-3">
+    {% for alert in alerts[:5] %}
+    <div class="alert alert-{{ 'danger' if alert['severity'] == 'critical' else ('warning' if alert['severity'] == 'warning' else 'info') }} py-2 mb-2 d-flex align-items-center" role="alert">
+        <i class="bi {{ 'bi-exclamation-triangle-fill' if alert['severity'] == 'critical' else 'bi-bell-fill' }} me-2"></i>
+        <div class="flex-grow-1">
+            <strong>{{ alert['title'] }}</strong>
+            {% if alert['message'] %} &mdash; {{ alert['message'][:120] }}{% endif %}
+        </div>
+        <small class="text-muted ms-2">{{ alert['created_at'][:10] if alert['created_at'] else '' }}</small>
+    </div>
+    {% endfor %}
+    {% if alerts|length > 5 %}
+    <small class="text-muted">and {{ alerts|length - 5 }} more alerts&hellip;</small>
+    {% endif %}
+</div>
+{% endif %}

@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% block title %}Command Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-bar-chart-line me-2" style="color: #1F3864;"></i>FNID Area 3 - Command Dashboard</h4>
+        <small class="text-muted">Aggregated operational view | Manchester | St. Elizabeth | Clarendon</small>
+    </div>
+    <a href="{{ url_for('data.export_workbook') }}" class="btn btn-outline-success btn-sm no-print">
+        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export FO 4032 Workbook
+    </a>
+</div>
+
+<!-- KPI Row 1 -->
+<div class="row g-3 mb-3">
+    <div class="col-lg-2 col-md-4"><div class="kpi-card"><div class="kpi-value">{{ stats.cases or 0 }}</div><div class="kpi-label">Active Cases</div></div></div>
+    <div class="col-lg-2 col-md-4"><div class="kpi-card kpi-info"><div class="kpi-value">{{ stats.intel or 0 }}</div><div class="kpi-label">Intel Reports</div></div></div>
+    <div class="col-lg-2 col-md-4"><div class="kpi-card kpi-warning"><div class="kpi-value">{{ stats.operations or 0 }}</div><div class="kpi-label">Operations</div></div></div>
+    <div class="col-lg-2 col-md-4"><div class="kpi-card kpi-danger"><div class="kpi-value">{{ stats.firearms or 0 }}</div><div class="kpi-label">Firearms Seized</div></div></div>
+    <div class="col-lg-2 col-md-4"><div class="kpi-card"><div class="kpi-value">{{ stats.narcotics or 0 }}</div><div class="kpi-label">Narcotics Entries</div></div></div>
+    <div class="col-lg-2 col-md-4"><div class="kpi-card kpi-success"><div class="kpi-value">{{ stats.arrests or 0 }}</div><div class="kpi-label">Arrests</div></div></div>
+</div>
+
+<!-- KPI Row 2 -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-2 col-md-4"><div class="kpi-card kpi-success"><div class="kpi-value">{{ stats.compliant_48 or 0 }}</div><div class="kpi-label">48hr Compliant</div></div></div>
+    <div class="col-lg-2 col-md-4"><div class="kpi-card kpi-info"><div class="kpi-value">{{ stats.at_dpp or 0 }}</div><div class="kpi-label">Cases at DPP</div></div></div>
+    <div class="col-lg-2 col-md-4"><div class="kpi-card"><div class="kpi-value">{{ stats.exhibits or 0 }}</div><div class="kpi-label">Exhibits Tracked</div></div></div>
+    <div class="col-lg-2 col-md-4"><div class="kpi-card kpi-warning"><div class="kpi-value">{{ stats.pending_reviews or 0 }}</div><div class="kpi-label">Pending Reviews</div></div></div>
+    <div class="col-lg-2 col-md-4"><div class="kpi-card kpi-danger"><div class="kpi-value">{{ stats.overdue_files or 0 }}</div><div class="kpi-label">Overdue Files</div></div></div>
+    <div class="col-lg-2 col-md-4"><div class="kpi-card"><div class="kpi-value">{{ stats.active_alerts or 0 }}</div><div class="kpi-label">Active Alerts</div></div></div>
+</div>
+
+<!-- Charts -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="chart-container" style="height:380px;">
+            <h6 class="text-muted mb-2">Cases by Status</h6>
+            <canvas id="statusChart"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="chart-container" style="height:380px;">
+            <h6 class="text-muted mb-2">Cases by Parish</h6>
+            <canvas id="parishChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="chart-container" style="height:380px;">
+            <h6 class="text-muted mb-2">Firearm Seizures by Parish</h6>
+            <canvas id="seizureParishChart"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="chart-container" style="height:380px;">
+            <h6 class="text-muted mb-2">Case Lifecycle Pipeline</h6>
+            <canvas id="stageChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Monthly Trends -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-12">
+        <div class="chart-container" style="height:350px;">
+            <h6 class="text-muted mb-2">Monthly Trends (Cases, Seizures, Arrests)</h6>
+            <canvas id="trendChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-fnid-navy text-white">
+                <i class="bi bi-grid-3x3-gap me-2"></i>Quick Access
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% for key, portal in portals.items() %}
+                    <a href="{{ url_for('units.unit_home', unit=key) }}" class="btn btn-outline-primary btn-sm text-start">
+                        <i class="bi {{ portal.icon }} me-2" style="color: {{ portal.color }};"></i>
+                        {{ portal.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-fnid-navy text-white">
+                <i class="bi bi-link-45deg me-2"></i>Analytics & Reports
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('analytics.analytics_home') }}" class="btn btn-outline-primary btn-sm text-start">
+                        <i class="bi bi-graph-up-arrow me-2"></i>Performance Analytics
+                    </a>
+                    <a href="{{ url_for('analytics.io_performance') }}" class="btn btn-outline-primary btn-sm text-start">
+                        <i class="bi bi-people me-2"></i>IO Performance
+                    </a>
+                    <a href="{{ url_for('reports.reports_home') }}" class="btn btn-outline-primary btn-sm text-start">
+                        <i class="bi bi-file-earmark-bar-graph me-2"></i>Reports
+                    </a>
+                    <a href="{{ url_for('evidence.evidence_dashboard') }}" class="btn btn-outline-primary btn-sm text-start">
+                        <i class="bi bi-fingerprint me-2"></i>Evidence Manager
+                    </a>
+                    <a href="{{ url_for('transport.fleet') }}" class="btn btn-outline-primary btn-sm text-start">
+                        <i class="bi bi-truck me-2"></i>Transport Fleet
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Legislation Reference -->
+<div class="card">
+    <div class="card-header bg-fnid-navy text-white">
+        <i class="bi bi-book me-2"></i>Applicable Legislation & Protocols
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <h6 class="fw-bold">Primary Statutes</h6>
+                <ul class="small">
+                    <li>Firearms (Prohibition, Restriction & Regulation) Act, 2022</li>
+                    <li>Dangerous Drugs Act (as amended 2015, 2020)</li>
+                    <li>Gun Court Act, 1974</li>
+                    <li>Proceeds of Crime Act (POCA), 2007</li>
+                    <li>Bail Act, 2023</li>
+                    <li>Constabulary Force Act s.15 (48-Hour Rule)</li>
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h6 class="fw-bold">DPP Protocols</h6>
+                <ul class="small">
+                    <li>Prosecution Protocol (April 2012) - Two-Stage Test</li>
+                    <li>Disclosure Protocol (September 2013)</li>
+                    <li>Stage 1: Evidential Sufficiency</li>
+                    <li>Stage 2: Public Interest Test</li>
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h6 class="fw-bold">Evidence & Forensics</h6>
+                <ul class="small">
+                    <li>Evidence Act (Amendment 2021)</li>
+                    <li>Evidence (Special Measures) Act</li>
+                    <li>IFSLM - Institute of Forensic Science & Legal Medicine</li>
+                    <li>IBIS (Integrated Ballistics Identification System)</li>
+                    <li>ATF eTrace (Electronic Firearms Tracing)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var colors = ['#1F3864','#C00000','#BF8F00','#538135','#7030A0','#00B0F0','#8B4513','#FF6600','#006400'];
+
+    {% if charts.cases_by_status %}
+    fnidChart('statusChart', 'bar',
+        {{ charts.cases_by_status|map(attribute=0)|list|tojson }},
+        [{ data: {{ charts.cases_by_status|map(attribute=1)|list|tojson }}, backgroundColor: colors }],
+        { indexAxis: 'y', plugins: { legend: { display: false } } });
+    {% endif %}
+
+    {% if charts.cases_by_parish %}
+    fnidChart('parishChart', 'pie',
+        {{ charts.cases_by_parish|map(attribute=0)|list|tojson }},
+        [{ data: {{ charts.cases_by_parish|map(attribute=1)|list|tojson }}, backgroundColor: ['#1F3864','#BF8F00','#C00000'] }]);
+    {% endif %}
+
+    {% if charts.seizures_by_parish %}
+    fnidChart('seizureParishChart', 'bar',
+        {{ charts.seizures_by_parish|map(attribute=0)|list|tojson }},
+        [{ data: {{ charts.seizures_by_parish|map(attribute=1)|list|tojson }}, backgroundColor: ['#1F3864','#BF8F00','#C00000'] }],
+        { plugins: { legend: { display: false } } });
+    {% endif %}
+
+    {% if charts.cases_by_stage %}
+    fnidChart('stageChart', 'bar',
+        {{ charts.cases_by_stage|map(attribute=0)|list|tojson }},
+        [{ label: 'Cases', data: {{ charts.cases_by_stage|map(attribute=1)|list|tojson }},
+           backgroundColor: ['#e3f2fd','#f3e5f5','#fff3e0','#e8f5e9','#e1f5fe','#fce4ec','#ede7f6','#f9fbe7','#ffebee','#eceff1'] }],
+        { plugins: { legend: { display: false } } });
+    {% endif %}
+
+    {% if charts.monthly_cases %}
+    var months = {{ charts.monthly_cases|map(attribute=0)|list|reverse|list|tojson }};
+    fnidChart('trendChart', 'line', months, [
+        { label: 'Cases', data: {{ charts.monthly_cases|map(attribute=1)|list|reverse|list|tojson }}, borderColor: '#1F3864', fill: false, tension: 0.3 },
+        {% if charts.monthly_seizures %}
+        { label: 'Seizures', data: {{ charts.monthly_seizures|map(attribute=1)|list|reverse|list|tojson }}, borderColor: '#C00000', fill: false, tension: 0.3 },
+        {% endif %}
+        {% if charts.monthly_arrests %}
+        { label: 'Arrests', data: {{ charts.monthly_arrests|map(attribute=1)|list|reverse|list|tojson }}, borderColor: '#538135', fill: false, tension: 0.3 },
+        {% endif %}
+    ]);
+    {% endif %}
+});
+</script>
+{% endblock %}

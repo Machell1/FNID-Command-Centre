@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% from "macros.html" import select_field, text_field, textarea_field, number_field, submit_controls %}
+{% block title %}{% if is_new %}New Operation{% else %}Edit Operation{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-bullseye me-2" style="color: {{ portal.color }};"></i>
+            {% if is_new %}New Operation Record{% else %}Edit Operation {{ record.op_id if record else '' }}{% endif %}
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('units.unit_home', unit='operations') }}">Operations</a></li>
+                <li class="breadcrumb-item active">{% if is_new %}New{% else %}Edit{% endif %}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<form method="POST" class="needs-validation" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <!-- Operation Details -->
+    <div class="form-section">
+        <div class="form-section-title"><i class="bi bi-bullseye me-2"></i>Operation Details</div>
+        <div class="row">
+            <div class="col-md-3">
+                {{ text_field("op_name", "Operation Name", record.op_name if record else "", required=true,
+                              placeholder="e.g. Operation Ironclad") }}
+            </div>
+            <div class="col-md-3">
+                {{ text_field("op_date", "Operation Date", record.op_date if record else '', type="date", required=true) }}
+            </div>
+            <div class="col-md-3">
+                {{ select_field("op_type", "Operation Type", cfg.OPERATION_TYPES,
+                                record.op_type if record else "", required=true,
+                                help="Search Warrant, Snap Raid, Interdiction, etc.") }}
+            </div>
+            <div class="col-md-3">
+                {{ select_field("parish", "Parish", cfg.ALL_PARISHES,
+                                record.parish if record else "", required=true) }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                {{ text_field("target_location", "Target Location / Address", record.target_location if record else "") }}
+            </div>
+            <div class="col-md-4">
+                {{ text_field("target_person", "Target Person / Subject", record.target_person if record else "") }}
+            </div>
+            <div class="col-md-4">
+                {{ text_field("linked_intel_id", "Linked Intelligence ID", record.linked_intel_id if record else "",
+                              placeholder="INT-2025-XXX") }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Warrant & Legal Basis -->
+    <div class="form-section">
+        <div class="form-section-title"><i class="bi bi-file-earmark-lock me-2"></i>Warrant & Legal Basis</div>
+        <div class="row">
+            <div class="col-md-4">
+                {{ select_field("warrant_basis", "Warrant / Legal Basis", cfg.WARRANT_BASIS,
+                                record.warrant_basis if record else "",
+                                help="Statutory authority for the search or operation") }}
+            </div>
+            <div class="col-md-4">
+                {{ text_field("warrant_number", "Warrant Number", record.warrant_number if record else "",
+                              placeholder="e.g. JP/MCH/2025/001") }}
+            </div>
+            <div class="col-md-4">
+                {{ text_field("issuing_jp", "Issuing Justice of the Peace", record.issuing_jp if record else "") }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Team & Execution -->
+    <div class="form-section">
+        <div class="form-section-title"><i class="bi bi-people me-2"></i>Team & Execution</div>
+        <div class="row">
+            <div class="col-md-3">
+                {{ text_field("team_lead", "Team Leader", record.team_lead if record else session.get('officer_name',''), required=true) }}
+            </div>
+            <div class="col-md-3">
+                {{ select_field("team_lead_rank", "Team Leader Rank", cfg.JCF_RANKS,
+                                record.team_lead_rank if record else session.get('officer_rank','')) }}
+            </div>
+            <div class="col-md-3">
+                {{ number_field("team_size", "Team Size", record.team_size if record else "", min=1,
+                                help="Total officers deployed") }}
+            </div>
+            <div class="col-md-3">
+                {{ text_field("joint_agency", "Joint Agency (if applicable)", record.joint_agency if record else "",
+                              placeholder="e.g. JCA, JDF, MOCA, DEA") }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                {{ text_field("start_time", "Start Time", record.start_time if record else '', type="time") }}
+            </div>
+            <div class="col-md-3">
+                {{ text_field("end_time", "End Time", record.end_time if record else '', type="time") }}
+            </div>
+            <div class="col-md-3">
+                {{ number_field("duration_hrs", "Duration (hrs)", record.duration_hrs if record else "", step=0.5) }}
+            </div>
+            <div class="col-md-3">
+                {{ textarea_field("risk_assessment", "Risk Assessment Notes", record.risk_assessment if record else "", rows=2) }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Results & Outcome -->
+    <div class="form-section">
+        <div class="form-section-title"><i class="bi bi-trophy me-2"></i>Results & Outcome</div>
+        <div class="row">
+            <div class="col-md-4">
+                {{ select_field("outcome", "Operation Outcome", cfg.OPERATION_OUTCOMES,
+                                record.outcome if record else "", required=true,
+                                help="Successful, Negative, Aborted, etc.") }}
+            </div>
+            <div class="col-md-4">
+                {{ select_field("body_cam", "Body Camera Used?", cfg.YES_NO,
+                                record.body_cam if record else "No") }}
+            </div>
+            <div class="col-md-4">
+                {{ select_field("evidence_tagged", "Evidence Tagged at Scene?", cfg.YES_NO,
+                                record.evidence_tagged if record else "No") }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                {{ number_field("firearms_seized", "Firearms Seized", record.firearms_seized if record else 0, min=0) }}
+            </div>
+            <div class="col-md-3">
+                {{ number_field("ammo_seized", "Ammunition Seized (rounds)", record.ammo_seized if record else 0, min=0) }}
+            </div>
+            <div class="col-md-3">
+                {{ number_field("narcotics_seized", "Narcotics Seized (qty)", record.narcotics_seized if record else 0, min=0) }}
+            </div>
+            <div class="col-md-3">
+                {{ number_field("cash_seized", "Cash Seized (JMD)", record.cash_seized if record else 0, min=0, step=0.01) }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                {{ number_field("arrests_made", "Arrests Made", record.arrests_made if record else 0, min=0) }}
+            </div>
+            <div class="col-md-9">
+                {{ textarea_field("outcome_notes", "Outcome Notes / Debrief Summary", record.outcome_notes if record else "", rows=3,
+                                  help="Details of what was found, circumstances, and any notable events") }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="form-section">
+        <div class="form-section-title"><i class="bi bi-chat-left-text me-2"></i>Additional Notes</div>
+        {{ textarea_field("notes", "Notes / Remarks", record.notes if record else "", rows=3) }}
+    </div>
+
+    {{ submit_controls(record.record_status if record else "Draft") }}
+</form>
+{% endblock %}

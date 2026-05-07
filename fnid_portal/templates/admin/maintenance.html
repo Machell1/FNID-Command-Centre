@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Maintenance Dashboard{% endblock %}
+{% block content %}
+<h4><i class="bi bi-wrench me-2"></i>System Maintenance (Tier 1)</h4>
+
+<div class="row mt-3">
+    <div class="col-md-2"><div class="card text-center p-3"><h3>{{ stats.total_officers }}</h3><small>Total Officers</small></div></div>
+    <div class="col-md-2"><div class="card text-center p-3"><h3>{{ stats.active_officers }}</h3><small>Active</small></div></div>
+    <div class="col-md-2"><div class="card text-center p-3 {% if stats.pending_count > 0 %}border-warning{% endif %}"><h3>{{ stats.pending_count }}</h3><small>Pending</small></div></div>
+    <div class="col-md-2"><div class="card text-center p-3 {% if stats.locked_count > 0 %}border-danger{% endif %}"><h3>{{ stats.locked_count }}</h3><small>Locked</small></div></div>
+    <div class="col-md-2"><div class="card text-center p-3"><h3>{{ stats.total_cases }}</h3><small>Cases</small></div></div>
+    <div class="col-md-2"><div class="card text-center p-3"><h3>{{ stats.db_size_mb }} MB</h3><small>DB Size</small></div></div>
+</div>
+
+{% if pending_users %}
+<div class="card mt-4">
+    <div class="card-header bg-warning text-dark"><h6 class="mb-0">Pending Verification</h6></div>
+    <div class="card-body">
+        <table class="table table-sm">
+            <thead><tr><th>Badge</th><th>Name</th><th>Rank</th><th>Registered</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for u in pending_users %}
+                <tr>
+                    <td>{{ u.badge_number }}</td><td>{{ u.full_name }}</td><td>{{ u.rank }}</td>
+                    <td>{{ u.registered_at[:16] if u.registered_at else 'N/A' }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('admin.approve_user', badge=u.badge_number) }}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-sm btn-success">Approve</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('admin.deactivate_user', badge=u.badge_number) }}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-sm btn-danger">Reject</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if locked_users %}
+<div class="card mt-4">
+    <div class="card-header bg-danger text-white"><h6 class="mb-0">Locked Accounts</h6></div>
+    <div class="card-body">
+        <table class="table table-sm">
+            <thead><tr><th>Badge</th><th>Name</th><th>Locked At</th><th>Failed Attempts</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for u in locked_users %}
+                <tr>
+                    <td>{{ u.badge_number }}</td><td>{{ u.full_name }}</td>
+                    <td>{{ u.locked_at[:16] if u.locked_at else 'N/A' }}</td>
+                    <td>{{ u.failed_attempts }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('admin.unlock_user', badge=u.badge_number) }}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-sm btn-warning">Unlock</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<div class="card mt-4">
+    <div class="card-header"><h6 class="mb-0">Database Operations</h6></div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('admin.vacuum_db') }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-outline-primary"><i class="bi bi-gear me-1"></i> Optimize Database (VACUUM)</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

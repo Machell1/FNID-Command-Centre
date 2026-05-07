@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Assistant Workstation{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-person-workspace me-2"></i>Assistant Workstation</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('assistants.dashboard') }}">Assistants</a></li>
+                <li class="breadcrumb-item active">Workstation</li>
+            </ol>
+        </nav>
+    </div>
+    <a href="{{ url_for('assistants.dashboard') }}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-cpu me-1"></i> Harness
+    </a>
+</div>
+
+{% if not global_enabled %}
+<div class="alert alert-warning">
+    AI automation is currently off. Users can still see queues, but assistant runs will be blocked until the master switch is enabled.
+</div>
+{% endif %}
+
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="form-section mb-3">
+            <div class="form-section-title">
+                <i class="bi bi-briefcase me-2"></i>Investigator Pipeline
+            </div>
+            <p class="text-muted small">
+                Assigned cases flow from the IO workstation back to Registry for tasking, vetting, and continuous review.
+            </p>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr><th>Case</th><th>Stage</th><th>Next Review</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        {% for c in assigned_cases %}
+                        <tr>
+                            <td><a href="{{ url_for('cases.case_detail', case_id=c.case_id) }}">{{ c.case_id }}</a></td>
+                            <td>{{ c.current_stage|replace('_', ' ')|title }}</td>
+                            <td>{{ c.next_review_date or '-' }}</td>
+                            <td>
+                                <form method="POST" action="{{ url_for('assistants.run', agent_key=default_agent) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="case_id" value="{{ c.case_id }}">
+                                    <input type="hidden" name="guidance" value="Check IO workstation readiness and propose registry pipeline tasks only.">
+                                    <button class="btn btn-outline-primary btn-sm" type="submit">
+                                        <i class="bi bi-cpu"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="4" class="text-muted">No cases assigned to your workstation.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-title">
+                <i class="bi bi-inbox me-2"></i>My Proposed Work
+            </div>
+            {% for a in proposed_actions %}
+            <div class="border rounded p-2 mb-2">
+                <strong>{{ a.title }}</strong><br>
+                <small class="text-muted">{{ a.description }}</small><br>
+                <a href="{{ url_for('assistants.run_detail', run_id=a.run_id) }}">Review proposal</a>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No assistant proposals assigned to you.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="form-section">
+            <div class="form-section-title">
+                <i class="bi bi-journal-check me-2"></i>Registry Continuous Vetting Queue
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr><th>Case</th><th>IO</th><th>Status</th><th>Proposals</th><th>Registry Control</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for c in registry_queue %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('cases.case_detail', case_id=c.case_id) }}">{{ c.case_id }}</a><br>
+                                <small class="text-muted">{{ c.classification }}</small>
+                            </td>
+                            <td>{{ c.assigned_io_badge or c.oic_badge }}</td>
+                            <td>{{ c.case_status }}<br><small class="text-muted">{{ c.current_stage|replace('_', ' ')|title }}</small></td>
+                            <td><span class="badge bg-secondary">{{ c.assistant_action_count }}</span></td>
+                            <td>
+                                <form method="POST" action="{{ url_for('assistants.run', agent_key='dcr_vetting') }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="case_id" value="{{ c.case_id }}">
+                                    <input type="hidden" name="guidance" value="Conduct continuous registry vetting. Propose only tasks, review schedules, or vetting flags.">
+                                    <button class="btn btn-primary btn-sm" type="submit">
+                                        <i class="bi bi-search me-1"></i> Vet
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-muted">No registry cases found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

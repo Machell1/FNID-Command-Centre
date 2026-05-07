@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block title %}Seizures Unit{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-shield-lock me-2" style="color: {{ portal.color }};"></i>
+            Seizures Unit - Firearms & Narcotics Documentation
+        </h4>
+        {% if not is_unit_workspace %}
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item active">Seizures</li>
+            </ol>
+        </nav>
+        {% endif %}
+    </div>
+    <div class="d-flex gap-2">
+        {% if is_unit_workspace %}
+        <a href="{{ url_for('upload.submit_report') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-robot me-1"></i> Upload Report
+        </a>
+        {% else %}
+        <a href="{{ url_for('units.new_record', unit='seizures', subtype='firearms') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-circle me-1"></i> New Firearm Seizure
+        </a>
+        <a href="{{ url_for('units.new_record', unit='seizures', subtype='narcotics') }}" class="btn btn-success btn-sm">
+            <i class="bi bi-plus-circle me-1"></i> New Narcotics Seizure
+        </a>
+        {% endif %}
+        <a href="{{ url_for('units.unit_dashboard', unit='seizures') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-graph-up me-1"></i> Dashboard
+        </a>
+        <a href="{{ url_for('data.export_unit', unit='seizures') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-download me-1"></i> Export
+        </a>
+    </div>
+</div>
+
+{% include "_unit_workspace_header.html" %}
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card">
+            <div class="kpi-value">{{ (data.firearms|length if data.firearms else 0) + (data.narcotics|length if data.narcotics else 0) }}</div>
+            <div class="kpi-label">Total Seizures</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-danger">
+            <div class="kpi-value">{{ data.firearms|length if data.firearms else 0 }}</div>
+            <div class="kpi-label">Firearms Seized</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-info">
+            <div class="kpi-value">{{ data.narcotics|length if data.narcotics else 0 }}</div>
+            <div class="kpi-label">Narcotics Seizures</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-success">
+            <div class="kpi-value">
+                {{ data.firearms|selectattr('ibis_status', 'defined')|selectattr('ibis_status', 'search', 'Hit')|list|length if data.firearms else 0 }}
+            </div>
+            <div class="kpi-label">IBIS Hits</div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs for Firearms and Narcotics -->
+<ul class="nav nav-tabs" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="tab" href="#firearms-tab">
+            <i class="bi bi-crosshair me-1"></i> Firearms
+            <span class="badge bg-secondary ms-1">{{ data.firearms|length if data.firearms else 0 }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#narcotics-tab">
+            <i class="bi bi-capsule me-1"></i> Narcotics
+            <span class="badge bg-secondary ms-1">{{ data.narcotics|length if data.narcotics else 0 }}</span>
+        </a>
+    </li>
+</ul>
+
+<div class="tab-content mt-3">
+    <!-- Firearms Tab -->
+    <div class="tab-pane fade show active" id="firearms-tab">
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-hover fnid-table">
+                    <thead>
+                        <tr>
+                            <th>Seizure ID</th>
+                            <th>Date</th>
+                            <th>Firearm Type</th>
+                            <th>Calibre</th>
+                            <th>Serial #</th>
+                            <th>Parish</th>
+                            <th>Ammo</th>
+                            <th>IBIS</th>
+                            <th>eTrace</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in data.firearms %}
+                        <tr>
+                            <td><strong>{{ r.seizure_id }}</strong></td>
+                            <td>{{ r.seizure_date }}</td>
+                            <td>{{ r.firearm_type or '-' }}</td>
+                            <td>{{ r.calibre or '-' }}</td>
+                            <td>
+                                {% if r.serial_number %}
+                                <code>{{ r.serial_number }}</code>
+                                {% else %}
+                                <span class="text-danger">Obliterated/None</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ r.parish or '-' }}</td>
+                            <td>{{ r.ammo_count or 0 }}</td>
+                            <td>
+                                {% if 'Hit' in (r.ibis_status or '') %}
+                                <span class="badge bg-success">Hit</span>
+                                {% elif 'No Match' in (r.ibis_status or '') %}
+                                <span class="badge bg-secondary">No Match</span>
+                                {% elif 'Submitted' in (r.ibis_status or '') %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                                {% else %}
+                                <span class="badge bg-light text-dark">{{ r.ibis_status or 'Not Submitted' }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if 'Traced' in (r.etrace_status or '') %}
+                                <span class="badge bg-success">Traced</span>
+                                {% elif 'Submitted' in (r.etrace_status or '') %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                                {% else %}
+                                <span class="badge bg-light text-dark">{{ r.etrace_status or 'Not Submitted' }}</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge" data-status="{{ r.record_status }}">{{ r.record_status }}</span></td>
+                            <td>
+                                <a href="{{ url_for('units.edit_record', unit='seizures', record_id=r.id, subtype='firearms') }}"
+                                   class="btn btn-sm btn-outline-primary" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Narcotics Tab -->
+    <div class="tab-pane fade" id="narcotics-tab">
+        <div class="d-flex justify-content-between mb-3">
+            <h6 class="text-muted">Narcotics Seizure Records (per Dangerous Drugs Act)</h6>
+            <a href="{{ url_for('units.new_record', unit='seizures', subtype='narcotics') }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle me-1"></i> New Narcotics Seizure
+            </a>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-hover fnid-table">
+                    <thead>
+                        <tr>
+                            <th>Seizure ID</th>
+                            <th>Date</th>
+                            <th>Drug Type</th>
+                            <th>Quantity</th>
+                            <th>Unit</th>
+                            <th>Parish</th>
+                            <th>Est. Street Value</th>
+                            <th>Lab Status</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in data.narcotics %}
+                        <tr>
+                            <td><strong>{{ r.seizure_id }}</strong></td>
+                            <td>{{ r.seizure_date }}</td>
+                            <td>{{ r.drug_type or '-' }}</td>
+                            <td>{{ r.quantity or '-' }}</td>
+                            <td>{{ r.unit or '-' }}</td>
+                            <td>{{ r.parish or '-' }}</td>
+                            <td>
+                                {% if r.est_street_value %}
+                                J${{ "{:,.0f}".format(r.est_street_value) }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if 'Issued' in (r.lab_cert_status or '') %}
+                                <span class="badge bg-success">Cert Issued</span>
+                                {% elif 'In Progress' in (r.lab_cert_status or '') %}
+                                <span class="badge bg-warning text-dark">In Progress</span>
+                                {% elif 'Submitted' in (r.lab_cert_status or '') %}
+                                <span class="badge bg-info">Submitted</span>
+                                {% else %}
+                                <span class="badge bg-light text-dark">{{ r.lab_cert_status or 'Pending' }}</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge" data-status="{{ r.record_status }}">{{ r.record_status }}</span></td>
+                            <td>
+                                <a href="{{ url_for('units.edit_record', unit='seizures', record_id=r.id, subtype='narcotics') }}"
+                                   class="btn btn-sm btn-outline-primary" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

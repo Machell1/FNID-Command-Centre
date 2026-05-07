@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Investigator Cards{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-person-badge"></i> Investigator Cards</h2>
+    <a href="{{ url_for('inv_cards.new_card') }}" class="btn btn-primary">
+      <i class="bi bi-plus-circle"></i> New Card
+    </a>
+  </div>
+
+  {% if officer is defined and officer %}
+  <div class="alert alert-info">
+    <i class="bi bi-person me-1"></i>
+    Showing cards for officer: <strong>{{ officer.name }}</strong> ({{ officer.badge_number }})
+  </div>
+  {% endif %}
+
+  <!-- Filters -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label">Officer</label>
+          <select name="officer_badge" class="form-select">
+            <option value="">All Officers</option>
+            {% for o in officers %}
+            <option value="{{ o.badge_number }}"
+              {% if filter_officer_badge == o.badge_number %}selected{% endif %}
+            >{{ o.name }} ({{ o.badge_number }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Status</label>
+          <select name="status" class="form-select">
+            <option value="">All Statuses</option>
+            {% for s in statuses %}
+            <option value="{{ s }}" {% if filter_status == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <button type="submit" class="btn btn-outline-primary me-2">
+            <i class="bi bi-funnel"></i> Filter
+          </button>
+          <a href="{{ url_for('inv_cards.card_list') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-x-circle"></i> Clear
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="card">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover table-striped">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Officer</th>
+              <th>Case</th>
+              <th>Assignment</th>
+              <th>Status</th>
+              <th>Next Action</th>
+              <th>Next Action Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for card in cards %}
+            <tr>
+              <td>{{ card.id }}</td>
+              <td>{{ card.officer_name or card.officer_badge }}</td>
+              <td>
+                <small>{{ card.case_id }}</small>
+                {% if card.offence_type %}
+                <br><small class="text-muted">{{ card.offence_type }}</small>
+                {% endif %}
+              </td>
+              <td><span class="badge bg-secondary">{{ card.assignment_type }}</span></td>
+              <td>
+                {% if card.status == 'Active' %}
+                <span class="badge bg-success">Active</span>
+                {% elif card.status == 'Completed' %}
+                <span class="badge bg-primary">Completed</span>
+                {% elif card.status == 'Suspended' %}
+                <span class="badge bg-warning text-dark">Suspended</span>
+                {% else %}
+                <span class="badge bg-info">{{ card.status }}</span>
+                {% endif %}
+              </td>
+              <td>{{ card.next_action or '—' }}</td>
+              <td>{{ card.next_action_date or '—' }}</td>
+              <td>
+                <a href="{{ url_for('inv_cards.card_detail', id=card.id) }}"
+                   class="btn btn-sm btn-outline-primary" title="View">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a href="{{ url_for('inv_cards.edit_card', id=card.id) }}"
+                   class="btn btn-sm btn-outline-secondary" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </a>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="8" class="text-center text-muted py-4">No investigator cards found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="text-muted mb-0">{{ cards | length }} card(s) found.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

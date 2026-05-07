@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}My Dashboard{% endblock %}
+
+{% block breadcrumb %}
+<nav class="fnid-breadcrumb" aria-label="Breadcrumb">
+    <div class="container-fluid">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item active" aria-current="page"><i class="bi bi-house me-1"></i>My Dashboard</li>
+        </ol>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Welcome Banner -->
+<div class="welcome-banner">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h4><i class="bi bi-person-circle me-2"></i>Welcome, {{ current_user.rank }} {{ current_user.full_name }}</h4>
+            <p class="mb-0">FNID Area 3 Portal &mdash; Regular User Dashboard</p>
+        </div>
+        <div class="col-md-4 text-md-end mt-2 mt-md-0">
+            <span class="badge bg-secondary fs-6">
+                <i class="bi bi-shield-check me-1"></i>{{ roles.get(current_user.role, current_user.role) }}
+            </span>
+        </div>
+    </div>
+</div>
+
+{% if alerts %}
+<!-- Active Alerts -->
+<div class="mb-3" role="region" aria-label="Active alerts">
+    {% for alert in alerts[:5] %}
+    <div class="alert alert-{{ 'danger' if alert['severity'] == 'critical' else ('warning' if alert['severity'] == 'warning' else 'info') }} py-2 mb-2 d-flex align-items-center" role="alert">
+        <i class="bi {{ 'bi-exclamation-triangle-fill' if alert['severity'] == 'critical' else 'bi-bell-fill' }} me-2" aria-hidden="true"></i>
+        <div class="flex-grow-1">
+            <strong>{{ alert['title'] }}</strong>
+            {% if alert['message'] %} &mdash; {{ alert['message'][:120] }}{% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card h-100" style="border-left: 4px solid #1F3864;">
+            <div class="card-body text-center">
+                <div class="fs-2 fw-bold text-primary">{{ stats.get('cases', 0) }}</div>
+                <div class="text-muted small text-uppercase">Total Cases</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100" style="border-left: 4px solid #198754;">
+            <div class="card-body text-center">
+                <div class="fs-2 fw-bold text-success">{{ stats.get('operations', 0) }}</div>
+                <div class="text-muted small text-uppercase">Operations</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100" style="border-left: 4px solid #dc3545;">
+            <div class="card-body text-center">
+                <div class="fs-2 fw-bold text-danger">{{ stats.get('seizures', 0) }}</div>
+                <div class="text-muted small text-uppercase">Seizures</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100" style="border-left: 4px solid #fd7e14;">
+            <div class="card-body text-center">
+                <div class="fs-2 fw-bold" style="color: #fd7e14;">{{ stats.get('arrests', 0) }}</div>
+                <div class="text-muted small text-uppercase">Arrests</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Links for Regular Users -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-fnid-navy text-white">
+                <i class="bi bi-eye me-2" aria-hidden="true"></i>View Records
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% for key, portal in visible_portals.items() %}
+                    <a href="{{ url_for('units.unit_home', unit=key) }}" class="btn btn-outline-primary btn-sm text-start">
+                        <i class="bi {{ portal.icon }} me-2" aria-hidden="true"></i>{{ portal.name }}
+                        <span class="badge bg-light text-dark float-end">{{ stats.get(key, 0) }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-fnid-navy text-white">
+                <i class="bi bi-info-circle me-2" aria-hidden="true"></i>Account Information
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted fw-bold">Name:</td>
+                        <td>{{ current_user.rank }} {{ current_user.full_name }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-bold">Badge:</td>
+                        <td>{{ current_user.badge_number }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-bold">Section:</td>
+                        <td>{{ current_user.section }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-bold">Role:</td>
+                        <td>{{ roles.get(current_user.role, current_user.role) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-bold">Access:</td>
+                        <td>Read-only access to cases, operations, seizures, and arrests</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-bold">Session:</td>
+                        <td>{{ now.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                </table>
+                <hr>
+                <a href="{{ url_for('auth.change_password') }}" class="btn btn-outline-secondary btn-sm w-100">
+                    <i class="bi bi-key me-1"></i> Change Password
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-fnid-navy text-white">
+                <i class="bi bi-clock-history me-2" aria-hidden="true"></i>Recent Activity
+            </div>
+            <div class="card-body p-0">
+                {% if recent %}
+                <div class="list-group list-group-flush">
+                    {% for entry in recent %}
+                    <div class="list-group-item py-2 px-3">
+                        <div class="d-flex justify-content-between">
+                            <small>
+                                <span class="badge bg-{{ 'success' if entry['action'] == 'INSERT' else ('warning text-dark' if entry['action'] == 'UPDATE' else 'secondary') }}">
+                                    {{ entry['action'] }}
+                                </span>
+                                {{ entry['table_name'] }}
+                            </small>
+                            <small class="text-muted">{{ entry['timestamp'][:16] if entry['timestamp'] else '' }}</small>
+                        </div>
+                        <small class="text-muted">{{ entry['officer_name'] or '' }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state py-4">
+                    <i class="bi bi-clock-history d-block"></i>
+                    <p class="mb-0">No recent activity to display</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-fnid-navy text-white">
+                <i class="bi bi-shield-shaded me-2" aria-hidden="true"></i>Division Info
+            </div>
+            <div class="card-body">
+                <p class="small text-muted mb-2">FNID Area 3 covers:</p>
+                <ul class="list-unstyled small">
+                    <li><i class="bi bi-geo-alt me-1 text-primary"></i> Manchester</li>
+                    <li><i class="bi bi-geo-alt me-1 text-primary"></i> St. Elizabeth</li>
+                    <li><i class="bi bi-geo-alt me-1 text-primary"></i> Clarendon</li>
+                </ul>
+                <hr>
+                <p class="small text-muted mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Contact your supervisor to request elevated access.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}{% if is_overdue_view is defined and is_overdue_view %}Overdue Reviews{% else %}Case Reviews{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+      <i class="bi bi-clipboard-check"></i>
+      {% if is_overdue_view is defined and is_overdue_view %}Overdue Reviews{% else %}Case Reviews{% endif %}
+    </h2>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('reviews.new_review') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Schedule Review
+      </a>
+      <a href="{{ url_for('reviews.review_calendar') }}" class="btn btn-outline-info">
+        <i class="bi bi-calendar-week"></i> Calendar
+      </a>
+      <a href="{{ url_for('reviews.overdue_reviews') }}" class="btn btn-outline-danger">
+        <i class="bi bi-exclamation-triangle"></i> Overdue
+      </a>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label">Status</label>
+          <select name="status" class="form-select">
+            <option value="">All Statuses</option>
+            {% for s in review_statuses %}
+            <option value="{{ s }}" {% if filter_status == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Review Type</label>
+          <select name="review_type" class="form-select">
+            <option value="">All Types</option>
+            {% for rt in review_types %}
+            <option value="{{ rt }}" {% if filter_review_type == rt %}selected{% endif %}>{{ rt }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <button type="submit" class="btn btn-outline-primary me-2">
+            <i class="bi bi-funnel"></i> Filter
+          </button>
+          <a href="{{ url_for('reviews.review_list') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-x-circle"></i> Clear
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="card">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover table-striped">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Case</th>
+              <th>Review Type</th>
+              <th>Scheduled Date</th>
+              <th>Reviewer</th>
+              <th>Status</th>
+              <th>Outcome</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for review in reviews %}
+            <tr class="{% if review.status == 'Overdue' %}table-danger{% endif %}">
+              <td>{{ review.id }}</td>
+              <td>
+                <small>{{ review.case_id }}</small>
+                {% if review.offence_type %}
+                <br><small class="text-muted">{{ review.offence_type }}</small>
+                {% endif %}
+              </td>
+              <td>{{ review.review_type }}</td>
+              <td>{{ review.scheduled_date }}</td>
+              <td>{{ review.reviewer_name or '—' }}</td>
+              <td>
+                {% if review.status == 'Completed' %}
+                <span class="badge bg-success">Completed</span>
+                {% elif review.status == 'Overdue' %}
+                <span class="badge bg-danger">Overdue</span>
+                {% else %}
+                <span class="badge bg-info">Scheduled</span>
+                {% endif %}
+              </td>
+              <td>{{ review.outcome or '—' }}</td>
+              <td>
+                <a href="{{ url_for('reviews.review_detail', id=review.id) }}"
+                   class="btn btn-sm btn-outline-primary" title="View">
+                  <i class="bi bi-eye"></i>
+                </a>
+                {% if review.status != 'Completed' %}
+                <a href="{{ url_for('reviews.complete_review', id=review.id) }}"
+                   class="btn btn-sm btn-outline-success" title="Complete">
+                  <i class="bi bi-check-circle"></i>
+                </a>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="8" class="text-center text-muted py-4">No reviews found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="text-muted mb-0">{{ reviews | length }} review(s) found.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

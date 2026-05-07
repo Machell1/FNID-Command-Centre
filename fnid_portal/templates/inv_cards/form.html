@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}{% if is_edit %}Edit Investigator Card{% else %}New Investigator Card{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+      <i class="bi bi-person-badge"></i>
+      {% if is_edit %}Edit Investigator Card #{{ record_id }}{% else %}New Investigator Card{% endif %}
+    </h2>
+    <a href="{{ url_for('inv_cards.card_list') }}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </a>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <form method="post"
+            action="{% if is_edit %}{{ url_for('inv_cards.edit_card', id=record_id) }}{% else %}{{ url_for('inv_cards.new_card') }}{% endif %}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label class="form-label">Officer <span class="text-danger">*</span></label>
+            <select name="officer_badge" class="form-select" required>
+              <option value="">Select Officer</option>
+              {% for o in officers %}
+              <option value="{{ o.badge_number }}"
+                {% if card and card.officer_badge is defined and card.officer_badge == o.badge_number %}selected
+                {% elif card and card.get and card.get('officer_badge') == o.badge_number %}selected{% endif %}
+              >{{ o.name }} ({{ o.badge_number }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Case <span class="text-danger">*</span></label>
+            <select name="case_id" class="form-select" required>
+              <option value="">Select Case</option>
+              {% for c in cases %}
+              <option value="{{ c.case_id }}"
+                {% if card and card.case_id is defined and card.case_id == c.case_id %}selected
+                {% elif card and card.get and card.get('case_id') == c.case_id %}selected{% endif %}
+              >{{ c.case_id }} — {{ c.offence_type or 'N/A' }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Assigned Date <span class="text-danger">*</span></label>
+            <input type="date" name="assigned_date" class="form-control" required
+                   value="{{ card.assigned_date if card and card.assigned_date is defined else (card.get('assigned_date', '') if card and card.get else '') }}">
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label class="form-label">Assignment Type</label>
+            <select name="assignment_type" class="form-select">
+              {% for at in assignment_types %}
+              <option value="{{ at }}"
+                {% if card and card.assignment_type is defined and card.assignment_type == at %}selected
+                {% elif card and card.get and card.get('assignment_type') == at %}selected{% endif %}
+              >{{ at | capitalize }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Supervisor</label>
+            <select name="supervisor_badge" class="form-select">
+              <option value="">Select Supervisor</option>
+              {% for o in officers %}
+              <option value="{{ o.badge_number }}"
+                {% if card and card.supervisor_badge is defined and card.supervisor_badge == o.badge_number %}selected
+                {% elif card and card.get and card.get('supervisor_badge') == o.badge_number %}selected{% endif %}
+              >{{ o.name }} ({{ o.badge_number }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% if is_edit and statuses is defined %}
+          <div class="col-md-4">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select">
+              {% for s in statuses %}
+              <option value="{{ s }}"
+                {% if card and card.status is defined and card.status == s %}selected{% endif %}
+              >{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Tasks Assigned</label>
+          <textarea name="tasks_assigned" class="form-control" rows="3"
+                    placeholder="List tasks assigned to the investigator">{{ card.tasks_assigned if card and card.tasks_assigned is defined else (card.get('tasks_assigned', '') if card and card.get else '') }}</textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Tasks Completed</label>
+          <textarea name="tasks_completed" class="form-control" rows="3"
+                    placeholder="List tasks completed so far">{{ card.tasks_completed if card and card.tasks_completed is defined else (card.get('tasks_completed', '') if card and card.get else '') }}</textarea>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-8">
+            <label class="form-label">Next Action</label>
+            <input type="text" name="next_action" class="form-control"
+                   placeholder="What is the next action needed?"
+                   value="{{ card.next_action if card and card.next_action is defined else (card.get('next_action', '') if card and card.get else '') }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Next Action Date</label>
+            <input type="date" name="next_action_date" class="form-control"
+                   value="{{ card.next_action_date if card and card.next_action_date is defined else (card.get('next_action_date', '') if card and card.get else '') }}">
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle"></i> {% if is_edit %}Update{% else %}Create{% endif %} Card
+          </button>
+          <a href="{{ url_for('inv_cards.card_list') }}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,349 @@
+﻿{% extends "base.html" %}
+{% block title %}Exhibit â€” {{ exhibit.exhibit_tag }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-box-seam me-2"></i>Exhibit: {{ exhibit.exhibit_tag }}</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('evidence.evidence_dashboard') }}">Evidence</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('evidence.exhibit_list') }}">Exhibits</a></li>
+                <li class="breadcrumb-item active">{{ exhibit.exhibit_tag }}</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        {% if exhibit.linked_case_id %}
+        <a href="{{ url_for('evidence.chain_audit', case_id=exhibit.linked_case_id) }}"
+           class="btn btn-outline-info btn-sm">
+            <i class="bi bi-shield-check me-1"></i> Chain Audit
+        </a>
+        {% endif %}
+        <a href="{{ url_for('evidence.exhibit_list') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </a>
+    </div>
+</div>
+
+{% if gaps %}
+<div class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <strong>Chain Gap Detected:</strong> {{ gaps|length }} gap(s) found in the chain of custody for this exhibit.
+    {% for g in gaps %}
+    <br><small>Gap: {{ g.from_time }} to {{ g.to_time }} ({{ g.hours }} hrs) - Last known: {{ g.last_known_location }}</small>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="row g-4">
+    <!-- Exhibit Details -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header bg-fnid-navy text-white">
+                <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Exhibit Details</h6>
+            </div>
+            <div class="card-body">
+                <div class="form-section">
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Exhibit Tag</div>
+                        <div class="col-md-8">{{ exhibit.exhibit_tag }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Type</div>
+                        <div class="col-md-8">{{ exhibit.exhibit_type or '-' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Description</div>
+                        <div class="col-md-8">{{ exhibit.description or '-' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Linked Case</div>
+                        <div class="col-md-8">
+                            {% if exhibit.linked_case_id %}
+                            <a href="{{ url_for('cases.case_detail', case_id=exhibit.linked_case_id) }}">
+                                {{ exhibit.linked_case_id }}
+                            </a>
+                            {% else %}-{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="form-section">
+                    <h6 class="text-muted mb-3">Recovery Information</h6>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Location Found</div>
+                        <div class="col-md-8">{{ exhibit.location_found or '-' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Recovered By</div>
+                        <div class="col-md-8">{{ exhibit.recovered_by_name or '-' }} ({{ exhibit.recovered_by_badge or '-' }})</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Recovery Date/Time</div>
+                        <div class="col-md-8">{{ exhibit.recovery_date or '-' }} {{ exhibit.recovery_time or '' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Seal Number</div>
+                        <div class="col-md-8">{{ exhibit.seal_number or '-' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Packaging Method</div>
+                        <div class="col-md-8">{{ exhibit.packaging_method or '-' }}</div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="form-section">
+                    <h6 class="text-muted mb-3">Current Status</h6>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Current Location</div>
+                        <div class="col-md-8">{{ exhibit.current_location or '-' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Transfer Count</div>
+                        <div class="col-md-8">{{ exhibit.transfer_count or 0 }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Last Transfer</div>
+                        <div class="col-md-8">
+                            {{ exhibit.last_transfer_date or '-' }}
+                            {% if exhibit.last_transfer_to %} to {{ exhibit.last_transfer_to }}{% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Disposal Status</div>
+                        <div class="col-md-8">
+                            {% if exhibit.disposal_status == 'Held as Evidence' %}
+                            <span class="badge bg-primary">Held as Evidence</span>
+                            {% elif exhibit.disposal_status == 'Destroyed' %}
+                            <span class="badge bg-dark">Destroyed</span>
+                            {% elif exhibit.disposal_status == 'Returned' %}
+                            <span class="badge bg-success">Returned</span>
+                            {% else %}
+                            <span class="badge bg-light text-dark">{{ exhibit.disposal_status or 'Pending' }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if exhibit.disposal_date %}
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Disposal Date</div>
+                        <div class="col-md-8">{{ exhibit.disposal_date }}</div>
+                    </div>
+                    {% endif %}
+                    {% if exhibit.disposal_authorized_by %}
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Disposal Authorized By</div>
+                        <div class="col-md-8">{{ exhibit.disposal_authorized_by }}</div>
+                    </div>
+                    {% endif %}
+                    {% if exhibit.photo_reference %}
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Photo Reference</div>
+                        <div class="col-md-8">{{ exhibit.photo_reference }}</div>
+                    </div>
+                    {% endif %}
+                    {% if exhibit.notes %}
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Notes</div>
+                        <div class="col-md-8">{{ exhibit.notes }}</div>
+                    </div>
+                    {% endif %}
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Record Status</div>
+                        <div class="col-md-8"><span class="badge" data-status="{{ exhibit.record_status }}">{{ exhibit.record_status }}</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chain of Custody Timeline -->
+        <div class="card mb-4">
+            <div class="card-header bg-fnid-navy text-white">
+                <h6 class="mb-0"><i class="bi bi-clock-history me-2"></i>Chain of Custody Timeline</h6>
+            </div>
+            <div class="card-body">
+                {% if transfers %}
+                <div class="timeline">
+                    {% for t in transfers %}
+                    <div class="d-flex mb-3">
+                        <div class="me-3 text-center" style="min-width: 80px;">
+                            <small class="text-muted">{{ t.created_at[:10] if t.created_at else '-' }}</small>
+                            <br>
+                            <small class="text-muted">{{ t.created_at[11:16] if t.created_at and t.created_at|length > 11 else '' }}</small>
+                        </div>
+                        <div class="border-start border-2 ps-3 pb-3
+                            {{ 'border-success' if t.action == 'CREATE' else 'border-primary' if t.action == 'TRANSFER' else 'border-secondary' }}">
+                            <div>
+                                {% if t.action == 'CREATE' %}
+                                <span class="badge bg-success">Registered</span>
+                                {% elif t.action == 'TRANSFER' %}
+                                <span class="badge bg-primary">Transfer</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ t.action }}</span>
+                                {% endif %}
+                                <small class="text-muted ms-2">by {{ t.officer_name or t.officer_badge or '-' }}</small>
+                            </div>
+                            <div class="mt-1">
+                                <small>{{ t.details or '-' }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">No transfer history recorded.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Lab Records -->
+        {% if lab_records %}
+        <div class="card">
+            <div class="card-header bg-fnid-navy text-white">
+                <h6 class="mb-0"><i class="bi bi-flask me-2"></i>Lab Submissions</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm fnid-table">
+                    <thead>
+                        <tr>
+                            <th>Lab Ref</th>
+                            <th>Lab</th>
+                            <th>Analysis Type</th>
+                            <th>Submitted</th>
+                            <th>Expected</th>
+                            <th>Certificate</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for l in lab_records %}
+                        <tr>
+                            <td><strong>{{ l.lab_ref }}</strong></td>
+                            <td>{{ l.lab_name or '-' }}</td>
+                            <td>{{ l.analysis_type or '-' }}</td>
+                            <td>{{ l.submission_date or '-' }}</td>
+                            <td>{{ l.expected_completion or '-' }}</td>
+                            <td>
+                                {% if l.certificate_status == 'Issued' or l.certificate_status == 'Received' %}
+                                <span class="badge bg-success">{{ l.certificate_status }}</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">{{ l.certificate_status or 'Pending' }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ l.result_summary or '-' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Transfer Form -->
+        <div class="card mb-4">
+            <div class="card-header bg-fnid-navy text-white">
+                <h6 class="mb-0"><i class="bi bi-arrow-left-right me-2"></i>Record Transfer</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('evidence.transfer_exhibit', exhibit_tag=exhibit.exhibit_tag) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">New Location <span class="text-danger">*</span></label>
+                        <input type="text" name="new_location" class="form-control" required
+                               placeholder="Where is the exhibit going?">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Transferred To <span class="text-danger">*</span></label>
+                        <input type="text" name="transferred_to" class="form-control" required
+                               placeholder="Person receiving the exhibit">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reason</label>
+                        <input type="text" name="reason" class="form-control"
+                               placeholder="Reason for transfer">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Seal Check</label>
+                        <select name="seal_check" class="form-select">
+                            <option value="Intact">Seal Intact</option>
+                            <option value="Broken">Seal Broken</option>
+                            <option value="Re-sealed">Re-sealed</option>
+                            <option value="N/A">Not Applicable</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-arrow-left-right me-1"></i> Record Transfer
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Linked Case -->
+        <div class="card mb-4">
+            <div class="card-header bg-fnid-navy text-white">
+                <h6 class="mb-0"><i class="bi bi-link-45deg me-2"></i>Linked Case</h6>
+            </div>
+            <div class="card-body">
+                {% if case %}
+                <div class="mb-2"><strong>Case Reference No.:</strong>
+                    <a href="{{ url_for('cases.case_detail', case_id=case.case_id) }}">{{ case.case_id }}</a>
+                </div>
+                <div class="mb-2"><strong>Classification:</strong> {{ case.classification or '-' }}</div>
+                <div class="mb-2"><strong>Status:</strong>
+                    <span class="badge bg-info">{{ case.case_status or '-' }}</span>
+                </div>
+                <div class="mb-2"><strong>OIC:</strong> {{ case.oic_name or '-' }}</div>
+                <a href="{{ url_for('cases.case_detail', case_id=case.case_id) }}"
+                   class="btn btn-outline-primary btn-sm mt-2 w-100">
+                    <i class="bi bi-folder2-open me-1"></i> View Case
+                </a>
+                {% else %}
+                <p class="text-muted mb-0">
+                    {% if exhibit.linked_case_id %}
+                    Case {{ exhibit.linked_case_id }} not found.
+                    {% else %}
+                    No case linked.
+                    {% endif %}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Integrity Check -->
+        <div class="card">
+            <div class="card-header {{ 'bg-danger' if gaps else 'bg-success' }} text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-shield-check me-2"></i>
+                    Chain Integrity: {{ 'FAIL' if gaps else 'PASS' }}
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if gaps %}
+                <p class="text-danger fw-bold mb-2">Chain Gap Detected</p>
+                <ul class="list-unstyled mb-0">
+                    {% for g in gaps %}
+                    <li class="mb-2">
+                        <i class="bi bi-exclamation-triangle text-danger me-1"></i>
+                        <small>{{ g.hours }} hrs unaccounted ({{ g.from_time }} - {{ g.to_time }})</small>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-success mb-0">
+                    <i class="bi bi-check-circle me-1"></i>
+                    No chain gaps detected. Custody is continuous.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

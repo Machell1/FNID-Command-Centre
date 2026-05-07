@@ -1,0 +1,164 @@
+﻿{% extends "base.html" %}
+{% block title %}{% if is_edit %}Edit Witness Statement{% else %}New Witness Statement{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="bi bi-person-lines-fill"></i>
+            {% if is_edit %}Edit Statement {{ entry.statement_id }}{% else %}New Witness Statement{% endif %}
+        </h2>
+        <a href="{{ url_for('witnesses.witness_list') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to List
+        </a>
+    </div>
+
+    <form method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <!-- Witness Information -->
+        <div class="card mb-4">
+            <div class="card-header"><h5 class="mb-0"><i class="bi bi-person me-2"></i>Witness Information</h5></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Witness Name <span class="text-danger">*</span></label>
+                        <input type="text" name="witness_name" class="form-control" required
+                               value="{{ entry.witness_name if is_edit else '' }}"
+                               placeholder="Full name of witness">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Witness Type <span class="text-danger">*</span></label>
+                        <select name="witness_type" class="form-select" required>
+                            <option value="">Select Type</option>
+                            {% for t in ['Eyewitness', 'Expert', 'Character', 'Complainant', 'Police Officer', 'Civilian', 'Professional', 'Other'] %}
+                            <option value="{{ t }}" {% if is_edit and entry.witness_type == t %}selected{% endif %}>{{ t }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Address</label>
+                        <input type="text" name="witness_address" class="form-control"
+                               value="{{ entry.witness_address if is_edit else '' }}"
+                               placeholder="Witness address">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Phone</label>
+                        <input type="text" name="witness_phone" class="form-control"
+                               value="{{ entry.witness_phone if is_edit else '' }}"
+                               placeholder="Contact number">
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Relation to Case</label>
+                        <input type="text" name="relation_to_case" class="form-control"
+                               value="{{ entry.relation_to_case if is_edit else '' }}"
+                               placeholder="How the witness relates to the case">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statement Details -->
+        <div class="card mb-4">
+            <div class="card-header"><h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Statement Details</h5></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Linked Case Reference No. <span class="text-danger">*</span></label>
+                        <input type="text" name="linked_case_id" class="form-control" required
+                               value="{{ entry.linked_case_id if is_edit else case_id }}"
+                               placeholder="e.g. MAND/SD/A3/FNID/2026/0001">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Statement Date</label>
+                        <input type="date" name="statement_date" class="form-control"
+                               value="{{ entry.statement_date if is_edit else '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Statement Taken By</label>
+                        <input type="text" name="statement_taken_by" class="form-control"
+                               value="{{ entry.statement_taken_by if is_edit else '' }}"
+                               placeholder="Officer who took the statement">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Number of Pages</label>
+                        <input type="number" name="statement_pages" class="form-control"
+                               value="{{ entry.statement_pages if is_edit else '' }}" min="1">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Statement Signed</label>
+                        <select name="statement_signed" class="form-select">
+                            <option value="No" {% if is_edit and entry.statement_signed == 'No' %}selected{% endif %}>No</option>
+                            <option value="Yes" {% if is_edit and entry.statement_signed == 'Yes' %}selected{% endif %}>Yes</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Availability & Special Measures -->
+        <div class="card mb-4">
+            <div class="card-header"><h5 class="mb-0"><i class="bi bi-shield-check me-2"></i>Availability & Special Measures</h5></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Witness Willing</label>
+                        <select name="witness_willing" class="form-select">
+                            <option value="Yes" {% if is_edit and entry.witness_willing == 'Yes' %}selected{% elif not is_edit %}selected{% endif %}>Yes</option>
+                            <option value="No" {% if is_edit and entry.witness_willing == 'No' %}selected{% endif %}>No</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Available for Court</label>
+                        <select name="available_for_court" class="form-select">
+                            <option value="Yes" {% if is_edit and entry.available_for_court == 'Yes' %}selected{% elif not is_edit %}selected{% endif %}>Yes</option>
+                            <option value="No" {% if is_edit and entry.available_for_court == 'No' %}selected{% endif %}>No</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Special Measures Needed</label>
+                        <select name="special_measures_needed" class="form-select">
+                            <option value="No" {% if is_edit and entry.special_measures_needed == 'No' %}selected{% elif not is_edit %}selected{% endif %}>No</option>
+                            <option value="Yes" {% if is_edit and entry.special_measures_needed == 'Yes' %}selected{% endif %}>Yes</option>
+                        </select>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Special Measures Type</label>
+                        <input type="text" name="special_measures_type" class="form-control"
+                               value="{{ entry.special_measures_type if is_edit else '' }}"
+                               placeholder="e.g. Screen, Video Link, Intermediary">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status & Notes -->
+        <div class="card mb-4">
+            <div class="card-header"><h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Status & Notes</h5></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Record Status</label>
+                        <select name="record_status" class="form-select">
+                            {% for s in ['Draft', 'Submitted', 'Final'] %}
+                            <option value="{{ s }}" {% if is_edit and entry.record_status == s %}selected{% endif %}>{{ s }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="4"
+                                  placeholder="Additional notes or observations">{{ entry.notes if is_edit else '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle"></i> {% if is_edit %}Update Statement{% else %}Create Statement{% endif %}
+            </button>
+            <a href="{{ url_for('witnesses.witness_list') }}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

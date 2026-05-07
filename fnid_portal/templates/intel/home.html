@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Intelligence Unit{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-eye me-2" style="color: {{ portal.color }};"></i>
+            Intelligence Unit - Reports & Triage
+        </h4>
+        {% if not is_unit_workspace %}
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item active">Intelligence</li>
+            </ol>
+        </nav>
+        {% endif %}
+    </div>
+    <div class="d-flex gap-2">
+        {% if is_unit_workspace %}
+        <a href="{{ url_for('upload.submit_report') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-robot me-1"></i> Upload Report
+        </a>
+        {% else %}
+        <a href="{{ url_for('units.new_record', unit='intel') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-circle me-1"></i> New Intel Report
+        </a>
+        {% endif %}
+        <a href="{{ url_for('units.unit_dashboard', unit='intel') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-graph-up me-1"></i> Dashboard
+        </a>
+        <a href="{{ url_for('data.export_unit', unit='intel') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-download me-1"></i> Export
+        </a>
+    </div>
+</div>
+
+{% include "_unit_workspace_header.html" %}
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card">
+            <div class="kpi-value">{{ data.records|length if data.records else 0 }}</div>
+            <div class="kpi-label">Total Intel Reports</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-danger">
+            <div class="kpi-value">
+                {{ data.records|selectattr('priority', 'equalto', 'Critical')|list|length if data.records else 0 }}
+            </div>
+            <div class="kpi-label">Critical Priority</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-success">
+            <div class="kpi-value">
+                {{ data.records|selectattr('triage_decision', 'defined')|selectattr('triage_decision', 'search', 'Action')|list|length if data.records else 0 }}
+            </div>
+            <div class="kpi-label">Actioned</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-warning">
+            <div class="kpi-value">
+                {{ data.records|selectattr('priority', 'equalto', 'High')|list|length if data.records else 0 }}
+            </div>
+            <div class="kpi-label">High Priority</div>
+        </div>
+    </div>
+</div>
+
+<!-- Intel Reports Table -->
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover fnid-table">
+            <thead>
+                <tr>
+                    <th>Intel ID</th>
+                    <th>Date</th>
+                    <th>Source</th>
+                    <th>Priority</th>
+                    <th>Parish</th>
+                    <th>Subject</th>
+                    <th>Triage Decision</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in data.records %}
+                <tr>
+                    <td><strong>{{ r.intel_id }}</strong></td>
+                    <td>{{ r.report_date }}</td>
+                    <td>{{ r.source or '-' }}</td>
+                    <td>
+                        {% if r.priority == 'Critical' %}
+                        <span class="badge badge-critical">{{ r.priority }}</span>
+                        {% elif r.priority == 'High' %}
+                        <span class="badge badge-high">{{ r.priority }}</span>
+                        {% elif r.priority == 'Medium' %}
+                        <span class="badge badge-medium">{{ r.priority }}</span>
+                        {% elif r.priority == 'Low' %}
+                        <span class="badge badge-low">{{ r.priority }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ r.parish or '-' }}</td>
+                    <td>{{ r.subject_name or '-' }}</td>
+                    <td>{{ r.triage_decision or 'Pending' }}</td>
+                    <td><span class="badge" data-status="{{ r.record_status }}">{{ r.record_status }}</span></td>
+                    <td>
+                        <a href="{{ url_for('units.edit_record', unit='intel', record_id=r.id) }}"
+                           class="btn btn-sm btn-outline-primary" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

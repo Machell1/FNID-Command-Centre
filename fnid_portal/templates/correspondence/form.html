@@ -1,0 +1,137 @@
+﻿{% extends "base.html" %}
+{% block title %}{% if is_edit %}Edit Correspondence{% else %}New Correspondence{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+      <i class="bi bi-envelope-paper"></i>
+      {% if is_edit %}Edit Correspondence #{{ record_id }}{% else %}New Correspondence{% endif %}
+    </h2>
+    <a href="{{ url_for('correspondence.correspondence_list') }}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </a>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <form method="post"
+            action="{% if is_edit %}{{ url_for('correspondence.edit_correspondence', id=record_id) }}{% else %}{{ url_for('correspondence.new_correspondence') }}{% endif %}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label class="form-label">Direction <span class="text-danger">*</span></label>
+            <select name="direction" class="form-select" required>
+              <option value="">Select Direction</option>
+              {% for d in directions %}
+              <option value="{{ d }}"
+                {% if item and item.direction is defined %}
+                  {% if item.direction == d %}selected{% endif %}
+                {% elif item and item.get and item.get('direction') == d %}selected{% endif %}
+              >{{ d }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Date <span class="text-danger">*</span></label>
+            <input type="date" name="date" class="form-control" required
+                   value="{{ item.date if item and item.date is defined else (item.get('date', '') if item and item.get else '') }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Reference Number</label>
+            <input type="text" name="reference_number" class="form-control"
+                   placeholder="e.g. JCF/HQ/2026/001"
+                   value="{{ item.reference_number if item and item.reference_number is defined else (item.get('reference_number', '') if item and item.get else '') }}">
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-12">
+            <label class="form-label">Subject <span class="text-danger">*</span></label>
+            <input type="text" name="subject" class="form-control" required
+                   placeholder="Brief description of correspondence"
+                   value="{{ item.subject if item and item.subject is defined else (item.get('subject', '') if item and item.get else '') }}">
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label class="form-label">From</label>
+            <input type="text" name="from_entity" class="form-control"
+                   placeholder="Sender entity/person"
+                   value="{{ item.from_entity if item and item.from_entity is defined else (item.get('from_entity', '') if item and item.get else '') }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">To</label>
+            <input type="text" name="to_entity" class="form-control"
+                   placeholder="Recipient entity/person"
+                   value="{{ item.to_entity if item and item.to_entity is defined else (item.get('to_entity', '') if item and item.get else '') }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Document Type</label>
+            <select name="document_type" class="form-select">
+              <option value="">Select Type</option>
+              {% for dt in document_types %}
+              <option value="{{ dt }}"
+                {% if item and item.document_type is defined %}
+                  {% if item.document_type == dt %}selected{% endif %}
+                {% elif item and item.get and item.get('document_type') == dt %}selected{% endif %}
+              >{{ dt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Case Reference No.</label>
+            <input type="text" name="case_id" class="form-control"
+                   placeholder="Link to case (optional)"
+                   value="{{ item.case_id if item and item.case_id is defined else (item.get('case_id', '') if item and item.get else '') }}">
+          </div>
+          {% if is_edit and action_statuses is defined %}
+          <div class="col-md-6">
+            <label class="form-label">Action Status</label>
+            <select name="action_status" class="form-select">
+              {% for s in action_statuses %}
+              <option value="{{ s }}"
+                {% if item and item.action_status is defined and item.action_status == s %}selected{% endif %}
+              >{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Action Required</label>
+            <input type="text" name="action_required" class="form-control"
+                   placeholder="Describe required action"
+                   value="{{ item.action_required if item and item.action_required is defined else (item.get('action_required', '') if item and item.get else '') }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Action Deadline</label>
+            <input type="date" name="action_deadline" class="form-control"
+                   value="{{ item.action_deadline if item and item.action_deadline is defined else (item.get('action_deadline', '') if item and item.get else '') }}">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Notes</label>
+          <textarea name="notes" class="form-control" rows="3"
+                    placeholder="Additional notes">{{ item.notes if item and item.notes is defined else (item.get('notes', '') if item and item.get else '') }}</textarea>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle"></i> {% if is_edit %}Update{% else %}Create{% endif %} Correspondence
+          </button>
+          <a href="{{ url_for('correspondence.correspondence_list') }}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

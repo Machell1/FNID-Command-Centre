@@ -1,0 +1,71 @@
+<div class="row g-3">
+    <div class="col-md-4">
+        <label class="form-label">Seizure Date</label>
+        <input type="date" class="form-control" name="seizure_date" value="{{ fields.get('seizure_date', '') }}">
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Parish</label>
+        <select class="form-select" name="parish">
+            <option value="">-- Select --</option>
+            {% for p in cfg.ALL_PARISHES %}
+            <option value="{{ p }}" {{ 'selected' if p == fields.get('parish') }}>{{ p }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Seizure Location</label>
+        <select class="form-select" name="location">
+            <option value="">-- Select --</option>
+            {% for l in cfg.SEIZURE_LOCATIONS %}
+            <option value="{{ l }}" {{ 'selected' if l == fields.get('location') }}>{{ l }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+<div class="row g-3 mt-1">
+    <div class="col-md-4">
+        <label class="form-label">Firearm Type</label>
+        <select class="form-select" name="firearm_type">
+            <option value="">-- Select --</option>
+            {% for t in cfg.FIREARM_TYPES %}
+            <option value="{{ t }}" {{ 'selected' if t == fields.get('firearm_type') }}>{{ t }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Make</label>
+        <input type="text" class="form-control" name="make" value="{{ fields.get('make', '') }}">
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Model</label>
+        <input type="text" class="form-control" name="model" value="{{ fields.get('model', '') }}">
+    </div>
+</div>
+<div class="row g-3 mt-1">
+    <div class="col-md-3">
+        <label class="form-label">Serial Number</label>
+        <input type="text" class="form-control" name="serial_number" value="{{ fields.get('serial_number', '') }}">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Calibre</label>
+        <select class="form-select" name="calibre">
+            <option value="">-- Select --</option>
+            {% for c in cfg.FIREARM_CALIBRES %}
+            <option value="{{ c }}" {{ 'selected' if c == fields.get('calibre') }}>{{ c }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Ammunition Count</label>
+        <input type="number" class="form-control" name="ammo_count" value="{{ fields.get('ammo_count', '') }}" min="0">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">IBIS Status</label>
+        <select class="form-select" name="ibis_status">
+            <option value="">-- Select --</option>
+            {% for s in cfg.IBIS_STATUS %}
+            <option value="{{ s }}" {{ 'selected' if s == fields.get('ibis_status') }}>{{ s }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>

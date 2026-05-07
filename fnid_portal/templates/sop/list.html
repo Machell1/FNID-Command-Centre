@@ -1,0 +1,101 @@
+﻿{% extends "base.html" %}
+{% block title %}SOP Compliance Checklists{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-clipboard-check"></i> SOP Compliance Checklists</h2>
+        <a href="{{ url_for('sop.new_sop') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> New Checklist
+        </a>
+    </div>
+
+    <!-- Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Filter by Case Reference No.</label>
+                    <input type="text" name="case_id" class="form-control"
+                           value="{{ case_filter }}" placeholder="Enter case reference no.">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-funnel"></i> Filter
+                    </button>
+                </div>
+                {% if case_filter %}
+                <div class="col-md-2">
+                    <a href="{{ url_for('sop.sop_list') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </a>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- Checklists Table -->
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Case Reference No.</th>
+                            <th>OIC</th>
+                            <th>Checklist Date</th>
+                            <th>Compliance</th>
+                            <th>Record Status</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in checklist_data %}
+                        <tr>
+                            <td>{{ item.entry.id }}</td>
+                            <td>{{ item.entry.linked_case_id or 'â€”' }}</td>
+                            <td>{{ item.entry.oic_name or 'â€”' }}</td>
+                            <td>{{ item.entry.checklist_date or 'â€”' }}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 20px;">
+                                        <div class="progress-bar
+                                            {% if item.compliance >= 80 %}bg-success
+                                            {% elif item.compliance >= 50 %}bg-warning
+                                            {% else %}bg-danger{% endif %}"
+                                            role="progressbar" style="width: {{ item.compliance }}%">
+                                            {{ item.compliance }}%
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if item.entry.record_status == 'Final' else ('info' if item.entry.record_status == 'Submitted' else 'secondary') }}">
+                                    {{ item.entry.record_status or 'Draft' }}
+                                </span>
+                            </td>
+                            <td>{{ item.entry.created_at or 'â€”' }}</td>
+                            <td>
+                                <a href="{{ url_for('sop.sop_detail', id=item.entry.id) }}" class="btn btn-sm btn-outline-primary" title="View">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('sop.edit_sop', id=item.entry.id) }}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">No SOP checklists found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

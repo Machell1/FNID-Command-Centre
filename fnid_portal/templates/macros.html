@@ -1,0 +1,96 @@
+{% macro select_field(name, label, options, value="", required=false, help="") %}
+<div class="mb-3">
+    <label for="{{ name }}" class="form-label">
+        {{ label }}{% if required %} <span class="required">*</span>{% endif %}
+    </label>
+    <select class="form-select" id="{{ name }}" name="{{ name }}" {% if required %}required{% endif %}>
+        <option value="">-- Select --</option>
+        {% for opt in options %}
+        <option value="{{ opt }}" {% if opt == value %}selected{% endif %}>{{ opt }}</option>
+        {% endfor %}
+    </select>
+    {% if help %}<div class="form-text">{{ help }}</div>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro text_field(name, label, value="", required=false, type="text", placeholder="", help="", readonly=false) %}
+<div class="mb-3">
+    <label for="{{ name }}" class="form-label">
+        {{ label }}{% if required %} <span class="required">*</span>{% endif %}
+    </label>
+    <input type="{{ type }}" class="form-control" id="{{ name }}" name="{{ name }}"
+           value="{{ value or '' }}" placeholder="{{ placeholder }}"
+           {% if required %}required{% endif %}
+           {% if readonly %}readonly{% endif %}>
+    {% if help %}<div class="form-text">{{ help }}</div>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro textarea_field(name, label, value="", required=false, rows=3, help="") %}
+<div class="mb-3">
+    <label for="{{ name }}" class="form-label">
+        {{ label }}{% if required %} <span class="required">*</span>{% endif %}
+    </label>
+    <textarea class="form-control" id="{{ name }}" name="{{ name }}"
+              rows="{{ rows }}" {% if required %}required{% endif %}>{{ value or '' }}</textarea>
+    {% if help %}<div class="form-text">{{ help }}</div>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro number_field(name, label, value="", required=false, min=0, step=1, help="") %}
+<div class="mb-3">
+    <label for="{{ name }}" class="form-label">
+        {{ label }}{% if required %} <span class="required">*</span>{% endif %}
+    </label>
+    <input type="number" class="form-control" id="{{ name }}" name="{{ name }}"
+           value="{{ value or '' }}" min="{{ min }}" step="{{ step }}"
+           {% if required %}required{% endif %}>
+    {% if help %}<div class="form-text">{{ help }}</div>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro status_badge(status) %}
+{% if status %}
+<span class="badge" data-status="{{ status }}">{{ status }}</span>
+{% endif %}
+{% endmacro %}
+
+{% macro priority_badge(priority) %}
+{% if priority == 'Critical' %}
+<span class="badge badge-critical">{{ priority }}</span>
+{% elif priority == 'High' %}
+<span class="badge badge-high">{{ priority }}</span>
+{% elif priority == 'Medium' %}
+<span class="badge badge-medium">{{ priority }}</span>
+{% elif priority == 'Low' %}
+<span class="badge badge-low">{{ priority }}</span>
+{% endif %}
+{% endmacro %}
+
+{% macro submit_controls(record_status="Draft") %}
+<div class="form-section">
+    <div class="form-section-title">
+        <i class="bi bi-check2-circle me-2"></i>Submission
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            <label for="record_status" class="form-label">Record Status <span class="required">*</span></label>
+            <select class="form-select" id="record_status" name="record_status" required>
+                <option value="Draft" {% if record_status == 'Draft' %}selected{% endif %}>Draft</option>
+                <option value="Submitted" {% if record_status == 'Submitted' %}selected{% endif %}>Submitted</option>
+                <option value="Edited" {% if record_status == 'Edited' %}selected{% endif %}>Edited</option>
+            </select>
+        </div>
+        <div class="col-md-8 d-flex align-items-end gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-floppy me-1"></i> Save as Draft
+            </button>
+            <button type="submit" class="btn btn-success btn-submit-record"
+                    onclick="document.getElementById('record_status').value='Submitted'">
+                <i class="bi bi-check-lg me-1"></i> Submit Record
+            </button>
+            <a href="javascript:history.back()" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </div>
+</div>
+{% endmacro %}

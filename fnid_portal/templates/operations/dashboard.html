@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Operations Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-graph-up me-2" style="color: {{ portal.color }};"></i>Operations Dashboard</h4>
+        <small class="text-muted">Operation planning, execution, and outcome analytics</small>
+    </div>
+    <a href="{{ url_for('units.unit_home', unit='operations') }}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Operations
+    </a>
+</div>
+
+<!-- KPIs -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card">
+            <div class="kpi-value">{{ charts.total or 0 }}</div>
+            <div class="kpi-label">Total Operations</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-success">
+            <div class="kpi-value">{{ charts.successful or 0 }}</div>
+            <div class="kpi-label">Successful Ops</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-danger">
+            <div class="kpi-value">{{ charts.firearms_total or 0 }}</div>
+            <div class="kpi-label">Firearms Seized</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-warning">
+            <div class="kpi-value">
+                {% if charts.total and charts.total > 0 %}
+                {{ ((charts.successful or 0) / charts.total * 100)|round|int }}%
+                {% else %}
+                0%
+                {% endif %}
+            </div>
+            <div class="kpi-label">Success Rate</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="chart-container" style="height: 350px;">
+            <h6 class="text-muted mb-2">Operations by Type</h6>
+            <canvas id="typeChart"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="chart-container" style="height: 350px;">
+            <h6 class="text-muted mb-2">Operations by Outcome</h6>
+            <canvas id="outcomeChart"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var colors = ['#1F3864','#C00000','#BF8F00','#538135','#7030A0','#00B0F0','#8B4513','#FF6600','#006400'];
+
+    {% if charts.by_type %}
+    fnidChart('typeChart', 'bar',
+        {{ charts.by_type|map(attribute=0)|list|tojson }},
+        [{ data: {{ charts.by_type|map(attribute=1)|list|tojson }},
+           backgroundColor: colors }],
+        { indexAxis: 'y', plugins: { legend: { display: false } } }
+    );
+    {% endif %}
+
+    {% if charts.by_outcome %}
+    fnidChart('outcomeChart', 'doughnut',
+        {{ charts.by_outcome|map(attribute=0)|list|tojson }},
+        [{ data: {{ charts.by_outcome|map(attribute=1)|list|tojson }},
+           backgroundColor: ['#28a745','#17a2b8','#ffc107','#dc3545','#6c757d','#fd7e14'] }]
+    );
+    {% endif %}
+});
+</script>
+{% endblock %}

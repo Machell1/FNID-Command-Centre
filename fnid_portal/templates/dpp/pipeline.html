@@ -1,0 +1,132 @@
+﻿{% extends "base.html" %}
+{% block title %}DPP Prosecution Pipeline{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-briefcase"></i> DPP Prosecution Pipeline</h2>
+        <a href="{{ url_for('dpp.new_dpp') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> New Submission
+        </a>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary h-100">
+                <div class="card-body text-center">
+                    <h3 class="text-primary mb-1">{{ total }}</h3>
+                    <small class="text-muted">Total Submissions</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning h-100">
+                <div class="card-body text-center">
+                    <h3 class="text-warning mb-1">{{ awaiting }}</h3>
+                    <small class="text-muted">Awaiting Ruling</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success h-100">
+                <div class="card-body text-center">
+                    <h3 class="text-success mb-1">{{ approved }}</h3>
+                    <small class="text-muted">Approved</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-danger h-100">
+                <div class="card-body text-center">
+                    <h3 class="text-danger mb-1">{{ returned }}</h3>
+                    <small class="text-muted">Returned for Investigation</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Filter by Status</label>
+                    <select name="dpp_status" class="form-select">
+                        <option value="">All Statuses</option>
+                        {% for s in statuses %}
+                        <option value="{{ s }}" {% if s == status_filter %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-funnel"></i> Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pipeline Table -->
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Case Reference No.</th>
+                            <th>Suspect</th>
+                            <th>Classification</th>
+                            <th>OIC</th>
+                            <th>Crown Counsel</th>
+                            <th>File Date</th>
+                            <th>Status</th>
+                            <th>Ruling</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for e in entries %}
+                        <tr>
+                            <td>{{ e.id }}</td>
+                            <td>{{ e.linked_case_id or 'â€”' }}</td>
+                            <td>{{ e.suspect_name or 'â€”' }}</td>
+                            <td>{{ e.classification or 'â€”' }}</td>
+                            <td>{{ e.oic_name or 'â€”' }}</td>
+                            <td>{{ e.crown_counsel or 'â€”' }}</td>
+                            <td>{{ e.dpp_file_date or 'â€”' }}</td>
+                            <td>
+                                {% if e.dpp_status == 'Approved' %}
+                                <span class="badge bg-success">{{ e.dpp_status }}</span>
+                                {% elif e.dpp_status == 'Awaiting Ruling' %}
+                                <span class="badge bg-warning text-dark">{{ e.dpp_status }}</span>
+                                {% elif e.dpp_status == 'Returned' or e.returned_for_investigation == 'Yes' %}
+                                <span class="badge bg-danger">{{ e.dpp_status }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ e.dpp_status or 'Draft' }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ e.ruling_outcome or 'â€”' }}</td>
+                            <td>
+                                <a href="{{ url_for('dpp.dpp_detail', id=e.id) }}" class="btn btn-sm btn-outline-primary" title="View">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('dpp.edit_dpp', id=e.id) }}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="10" class="text-center text-muted py-4">No DPP submissions found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

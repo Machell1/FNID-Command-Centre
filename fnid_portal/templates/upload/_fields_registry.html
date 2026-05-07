@@ -1,0 +1,54 @@
+<div class="row g-3">
+    <div class="col-md-4">
+        <label class="form-label">Registration Date</label>
+        <input type="date" class="form-control" name="registration_date" value="{{ fields.get('registration_date', '') }}">
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Classification</label>
+        <select class="form-select" name="classification">
+            <option value="">-- Select --</option>
+            {% for c in cfg.CASE_CLASSIFICATIONS %}
+            <option value="{{ c }}" {{ 'selected' if c == fields.get('classification') }}>{{ c }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Parish</label>
+        <select class="form-select" name="parish">
+            <option value="">-- Select --</option>
+            {% for p in cfg.ALL_PARISHES %}
+            <option value="{{ p }}" {{ 'selected' if p == fields.get('parish') }}>{{ p }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+<div class="row g-3 mt-1">
+    <div class="col-md-4">
+        <label class="form-label">Suspect Name</label>
+        <input type="text" class="form-control" name="suspect_name" value="{{ fields.get('suspect_name', '') }}">
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Law & Section</label>
+        <select class="form-select" name="law_and_section">
+            <option value="">-- Select --</option>
+            {% for o in cfg.ALL_OFFENCES %}
+            <option value="{{ o }}" {{ 'selected' if o == fields.get('law_and_section') }}>{{ o }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Case Status</label>
+        <select class="form-select" name="case_status">
+            <option value="">-- Select --</option>
+            {% for s in cfg.CASE_STATUS %}
+            <option value="{{ s }}" {{ 'selected' if s == fields.get('case_status') }}>{{ s }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+<div class="row g-3 mt-1">
+    <div class="col-12">
+        <label class="form-label">Offence Description</label>
+        <textarea class="form-control" name="offence_description" rows="2">{{ fields.get('offence_description', '') }}</textarea>
+    </div>
+</div>

@@ -1,0 +1,223 @@
+﻿{% extends "base.html" %}
+{% from "macros.html" import select_field, text_field, textarea_field, number_field, submit_controls %}
+{% block title %}{% if is_new %}New Arrest Record{% else %}Edit Arrest Record{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-person-badge me-2" style="color: {{ portal.color }};"></i>
+            {% if is_new %}New Arrest Record{% else %}Edit Arrest {{ record.arrest_id if record else '' }}{% endif %}
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('units.unit_home', unit='arrests') }}">Arrests</a></li>
+                <li class="breadcrumb-item active">{% if is_new %}New{% else %}Edit{% endif %}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- Arrest Charges Legal Reference -->
+<div class="card border-warning mb-3">
+    <div class="card-header bg-warning text-dark" role="button" data-bs-toggle="collapse" data-bs-target="#arrestLegalRef" aria-expanded="false">
+        <i class="bi bi-book me-2"></i>Charge Reference Guide â€” Select Correct Law & Section
+        <i class="bi bi-chevron-down float-end"></i>
+    </div>
+    <div class="collapse" id="arrestLegalRef">
+        <div class="card-body small">
+            <div class="row">
+                <div class="col-md-4">
+                    <strong class="text-danger">Firearms Act 2022 Charges:</strong>
+                    <ul class="mb-1">
+                        <li><strong>s.5</strong> â€” Possession of Prohibited Weapon</li>
+                        <li><strong>s.6</strong> â€” Stockpiling (3+ firearms / 50+ rounds)</li>
+                        <li><strong>s.7</strong> â€” Trafficking in Prohibited Weapon</li>
+                        <li><strong>s.10</strong> â€” Dealing (20+ rounds deemed dealing)</li>
+                        <li><strong>s.35</strong> â€” Unauthorised Possession of Firearm</li>
+                        <li><strong>s.36</strong> â€” Unauthorised Possession of Ammunition</li>
+                        <li><strong>s.42</strong> â€” Use of Firearm in Commission of Offence</li>
+                        <li><strong>s.43</strong> â€” Shooting with Intent</li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <strong class="text-info">Dangerous Drugs Act Charges:</strong>
+                    <ul class="mb-1">
+                        <li><strong>s.7A</strong> â€” Import/Export Ganja</li>
+                        <li><strong>s.7B</strong> â€” Dealing, Cultivation Ganja</li>
+                        <li><strong>s.7C</strong> â€” Possession Ganja >2oz</li>
+                        <li><strong>s.8</strong> â€” Import/Export Cocaine/Heroin</li>
+                        <li><strong>s.8A</strong> â€” Selling/Dealing Cocaine/Heroin</li>
+                        <li><strong>s.8B</strong> â€” Possession Cocaine/Heroin</li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <strong>Suspect Processing (CFA s.15):</strong>
+                    <ul class="mb-0">
+                        <li>Caution suspect (Judges' Rules)</li>
+                        <li>Advise constitutional rights (Ch. III)</li>
+                        <li>Facilitate access to attorney</li>
+                        <li>Record in Detainee Book</li>
+                        <li><strong>48-Hour Rule</strong> â€” charge or release</li>
+                        <li>Prepare Charge Sheet with correct law & section</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form method="POST" class="needs-validation" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <!-- Arrest Details -->
+    <div class="form-section">
+        <div class="form-section-title"><i class="bi bi-person-fill-lock me-2"></i>Arrest Details</div>
+        <div class="row">
+            <div class="col-md-3">
+                {{ text_field("arrest_date", "Arrest Date", record.arrest_date if record else '', type="date", required=true) }}
+            </div>
+            <div class="col-md-3">
+                {{ text_field("arrest_time", "Arrest Time", record.arrest_time if record else '', type="time") }}
+            </div>
+            <div class="col-md-3">
+                {{ select_field("parish", "Parish", cfg.ALL_PARISHES,
+                                record.parish if record else "", required=true) }}
+            </div>
+            <div class="col-md-3">
+                {{ text_field("arrest_location", "Arrest Location / Address", record.arrest_location if record else "") }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                {{ text_field("arresting_officer", "Arresting Officer", record.arresting_officer if record else session.get('officer_name',''), required=true) }}
+            </div>
+            <div class="col-md-4">
+                {{ select_field("arresting_officer_rank", "Arresting Officer Rank", cfg.JCF_RANKS,
+                                record.arresting_officer_rank if record else session.get('officer_rank','')) }}
+            </div>
+            <div class="col-md-4">
+                {{ text_field("linked_op_id", "Linked Operation ID", record.linked_op_id if record else "",
+                              placeholder="OP-2025-XXX") }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                {{ text_field("linked_case_id", "Linked Case Reference No.", record.linked_case_id if record else "",
+                              placeholder="CR-2025-XXX") }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Suspect Details -->
+    <div class="form-section">
+        <div class="form-section-title"><i class="bi bi-person me-2"></i>Suspect Details</div>
+        <div class="row">
+            <div class="col-md-3">
+                {{ text_field("suspect_name", "Suspect Full Name", record.suspect_name if record else "", required=true) }}
+            </div>
+            <div class="col-md-3">
+                {{ text_field("suspect_dob", "Date of Birth", record.suspect_dob if record else "", type="date") }}
+            </div>
+            <div class="col-md-3">
+                {{ text_field("suspect_address", "Address", record.suspect_address if record else "") }}
+            </div>
+            <div class="col-md-3">
+                {{ text_field("suspect_occupation", "Occupation", record.suspect_occupation if record else "") }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Offence Details -->
+    <div class="form-section">
+        <div class="form-section-title"><i class="bi bi-exclamation-triangle me-2"></i>Offence Details</div>
+        <div class="row">
+            <div class="col-md-6">
+                {{ select_field("offence_1", "Primary Offence", cfg.ALL_OFFENCES,
+                                record.offence_1 if record else "", required=true,
+                                help="Select from Firearms Act 2022, DDA, POCA, or other statutes") }}
+            </div>
+            <div class="col-md-6">
+                {{ text_field("law_section_1", "Law & Section (Primary)", record.law_section_1 if record else "",
+                              placeholder="e.g. s.5 Firearms Act 2022") }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                {{ select_field("offence_2", "Secondary Offence (if applicable)", cfg.ALL_OFFENCES,
+                                record.offence_2 if record else "") }}
+            </div>
+            <div class="col-md-6">
+                {{ text_field("law_section_2", "Law & Section (Secondary)", record.law_section_2 if record else "") }}
+            </div>
+        </div>
+    </div>
+
+    <!-- 48-Hour Rule & Charge -->
+    <div class="form-section">
+        <div class="form-section-title"><i class="bi bi-clock-history me-2"></i>48-Hour Rule Compliance (s.15 Constabulary Force Act)</div>
+        <div class="row">
+            <div class="col-md-3">
+                {{ text_field("deadline_48hr", "48hr Deadline", record.deadline_48hr if record else '', type="datetime-local",
+                              help="Statutory deadline to charge or release") }}
+            </div>
+            <div class="col-md-3">
+                {{ text_field("charge_date", "Charge Date", record.charge_date if record else '', type="date") }}
+            </div>
+            <div class="col-md-3">
+                {{ select_field("charge_within_48hr", "Charged within 48hrs?", cfg.YES_NO,
+                                record.charge_within_48hr if record else "",
+                                help="Mandatory compliance per s.15 CFA") }}
+            </div>
+            <div class="col-md-3">
+                {{ select_field("statements_taken", "All Statements Taken?", cfg.YES_NO,
+                                record.statements_taken if record else "No") }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                {{ number_field("witness_count", "Witness Count", record.witness_count if record else 0, min=0) }}
+            </div>
+            <div class="col-md-4">
+                {{ text_field("legal_representation", "Legal Representation", record.legal_representation if record else "",
+                              placeholder="Attorney name / Legal Aid") }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Bail & Court -->
+    <div class="form-section">
+        <div class="form-section-title"><i class="bi bi-bank me-2"></i>Bail & Court (per Bail Act 2023 / Gun Court Act 1974)</div>
+        <div class="row">
+            <div class="col-md-4">
+                {{ select_field("bail_status", "Bail Status", cfg.BAIL_STATUS,
+                                record.bail_status if record else "",
+                                help="Per Bail Act 2023 - firearms offences are generally non-bailable") }}
+            </div>
+            <div class="col-md-4">
+                {{ select_field("court_type", "Court Type", cfg.COURT_TYPES,
+                                record.court_type if record else "",
+                                help="Gun Court for firearms offences; Parish Court for summary drug offences") }}
+            </div>
+            <div class="col-md-4">
+                {{ text_field("first_court_date", "First Court Date", record.first_court_date if record else '', type="date") }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                {{ select_field("remand_location", "Remand Location", cfg.REMAND_LOCATIONS,
+                                record.remand_location if record else "",
+                                help="Lock-up or correctional centre where detainee is held") }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="form-section">
+        <div class="form-section-title"><i class="bi bi-chat-left-text me-2"></i>Additional Notes</div>
+        {{ textarea_field("notes", "Notes / Remarks", record.notes if record else "", rows=3) }}
+    </div>
+
+    {{ submit_controls(record.record_status if record else "Draft") }}
+</form>
+{% endblock %}

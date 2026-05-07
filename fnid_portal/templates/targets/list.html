@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Intelligence Targets{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-crosshair"></i> Intelligence Targets</h2>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('targets.new_target') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> New Target
+      </a>
+      <a href="{{ url_for('targets.target_map') }}" class="btn btn-outline-info">
+        <i class="bi bi-geo-alt"></i> Parish Map
+      </a>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Parish</label>
+          <select name="parish" class="form-select">
+            <option value="">All Parishes</option>
+            {% for p in parishes %}
+            <option value="{{ p }}" {% if filter_parish == p %}selected{% endif %}>{{ p }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Threat Level</label>
+          <select name="threat_level" class="form-select">
+            <option value="">All Levels</option>
+            {% for tl in threat_levels %}
+            <option value="{{ tl }}" {% if filter_threat_level == tl %}selected{% endif %}>{{ tl }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Status</label>
+          <select name="status" class="form-select">
+            <option value="">All Statuses</option>
+            {% for s in statuses %}
+            <option value="{{ s }}" {% if filter_status == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-outline-primary me-2">
+            <i class="bi bi-funnel"></i> Filter
+          </button>
+          <a href="{{ url_for('targets.target_list') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-x-circle"></i> Clear
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="card">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover table-striped">
+          <thead>
+            <tr>
+              <th>Target ID</th>
+              <th>Name</th>
+              <th>Aliases</th>
+              <th>Parish</th>
+              <th>Threat Level</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for target in targets %}
+            <tr>
+              <td><code>{{ target.target_id }}</code></td>
+              <td>{{ target.target_name }}</td>
+              <td>{{ target.aliases or '—' }}</td>
+              <td>{{ target.parish or '—' }}</td>
+              <td>
+                {% if target.threat_level == 'Low' %}
+                <span class="badge bg-success">Low</span>
+                {% elif target.threat_level == 'Medium' %}
+                <span class="badge bg-warning text-dark">Medium</span>
+                {% elif target.threat_level == 'High' %}
+                <span class="badge bg-danger">High</span>
+                {% elif target.threat_level == 'Critical' %}
+                <span class="badge bg-dark">Critical</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if target.status == 'Active' %}
+                <span class="badge bg-success">Active</span>
+                {% elif target.status == 'Inactive' %}
+                <span class="badge bg-secondary">Inactive</span>
+                {% elif target.status == 'Arrested' %}
+                <span class="badge bg-primary">Arrested</span>
+                {% else %}
+                <span class="badge bg-dark">{{ target.status }}</span>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{{ url_for('targets.target_detail', target_id=target.target_id) }}"
+                   class="btn btn-sm btn-outline-primary" title="View">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a href="{{ url_for('targets.edit_target', target_id=target.target_id) }}"
+                   class="btn btn-sm btn-outline-secondary" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </a>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" class="text-center text-muted py-4">No targets found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="text-muted mb-0">{{ targets | length }} target(s) found.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

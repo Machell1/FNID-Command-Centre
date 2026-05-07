@@ -1,0 +1,81 @@
+﻿{% extends "base.html" %}
+{% block title %}Bulk Schedule Reviews{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-calendar-check me-2"></i>Bulk Schedule Reviews</h4>
+        <nav aria-label="breadcrumb"><ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="{{ url_for('batch.batch_home') }}">Batch</a></li>
+            <li class="breadcrumb-item active">Reviews</li>
+        </ol></nav>
+    </div>
+</div>
+
+<form method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <label class="form-label fw-bold">Review Date</label>
+            <input type="date" name="review_date" class="form-control" required>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-bold">Review Type</label>
+            <select name="review_type" class="form-select">
+                <option value="28-day review">28-Day Review</option>
+                <option value="90-day suspended review">90-Day Suspended Review</option>
+                <option value="preliminary vetting">Preliminary Vetting</option>
+                <option value="supervisory review">Supervisory Review</option>
+            </select>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+            <button type="submit" class="btn btn-success" data-confirm="Schedule reviews for selected cases?">
+                <i class="bi bi-calendar-plus me-1"></i>Schedule Reviews
+            </button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-fnid-navy text-white d-flex justify-content-between">
+            <span><i class="bi bi-folder2 me-2"></i>Active Cases ({{ cases|length }})</span>
+            <button type="button" class="btn btn-sm btn-outline-light" onclick="document.getElementById('select-all').click()">Select All</button>
+        </div>
+        <div class="table-responsive">
+            <table class="table fnid-table mb-0">
+                <thead>
+                    <tr>
+                        <th width="40"><input type="checkbox" id="select-all"></th>
+                        <th>Case Reference No.</th>
+                        <th>Classification</th>
+                        <th>Parish</th>
+                        <th>Stage</th>
+                        <th>IO</th>
+                        <th>Last Review</th>
+                        <th>Next Review</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in cases %}
+                    <tr class="{{ 'table-warning' if not c.next_review_date else '' }}">
+                        <td><input type="checkbox" name="case_ids" value="{{ c.case_id }}"></td>
+                        <td><a href="{{ url_for('cases.case_detail', case_id=c.case_id) }}">{{ c.case_id }}</a></td>
+                        <td>{{ c.classification }}</td>
+                        <td>{{ c.parish }}</td>
+                        <td><span class="badge badge-stage-{{ c.current_stage or 'intake' }}">{{ c.current_stage or 'intake' }}</span></td>
+                        <td>{{ c.oic_name or '-' }}</td>
+                        <td>{{ c.last_review_date or 'Never' }}</td>
+                        <td>{{ c.next_review_date or 'Not scheduled' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('select-all').addEventListener('change', function() {
+    document.querySelectorAll('input[name="case_ids"]').forEach(function(cb) { cb.checked = this.checked; }.bind(this));
+});
+</script>
+{% endblock %}

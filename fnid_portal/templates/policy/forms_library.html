@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Case Reference Forms Library{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-file-earmark-text me-2"></i>Case Reference Forms Library</h4>
+        <small class="text-muted">JCF/FW/PL/C&S/0001/2024 Section 11.0 - All forms are Case Reference Forms (not Crime Reference Forms)</small>
+    </div>
+    <a href="{{ url_for('policy.policy_home') }}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Policy
+    </a>
+</div>
+
+<div class="alert alert-info mb-4">
+    <i class="bi bi-info-circle me-2"></i>
+    <strong>NB:</strong> All related forms of this Policy and SOP must be referred to as <strong>Case Reference Form</strong> and not Crime Reference Form. Forms may be completed electronically or manually. The old Crime Reference Forms (CR) shall continue to be in use until gradually phased out.
+</div>
+
+<!-- Forms Grid -->
+<div class="row g-3">
+    {% for form_type, form_name in cr_form_types.items() %}
+    {% set form_def = form_definitions.get(form_type) %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-header bg-fnid-navy text-white d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-file-earmark-text me-2"></i>{{ form_type }}</span>
+                {% if form_def %}
+                <span class="badge bg-success">Available</span>
+                {% else %}
+                <span class="badge bg-secondary">Coming Soon</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <h6 class="card-title">{{ form_name }}</h6>
+                {% if form_def %}
+                <p class="card-text small text-muted">{{ form_def.description }}</p>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-white">
+                {% if form_def %}
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ url_for('policy.blank_form', form_type=form_type) }}"
+                       class="btn btn-primary btn-sm flex-fill" title="Open exact uploaded Word template">
+                        <i class="bi bi-file-earmark-word me-1"></i> Exact DOCX
+                    </a>
+                    <a href="{{ url_for('policy.browser_form', form_type=form_type) }}"
+                       class="btn btn-outline-primary btn-sm flex-fill" title="Use browser workflow capture">
+                        <i class="bi bi-ui-checks me-1"></i> Workflow
+                    </a>
+                    <a href="{{ url_for('policy.download_form', form_type=form_type) }}"
+                       class="btn btn-outline-success btn-sm flex-fill" title="Download original Word template">
+                        <i class="bi bi-download me-1"></i> Download
+                    </a>
+                </div>
+                {% else %}
+                <button class="btn btn-outline-secondary btn-sm w-100" disabled>
+                    <i class="bi bi-hourglass-split me-1"></i> Form upload pending
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Relevant Charts & Registers -->
+<h5 class="mt-4 mb-3">12.0 Relevant Charts, Records & Registers</h5>
+<div class="form-section mb-3">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <div class="form-section-title mb-1">
+                <i class="bi bi-file-earmark-excel me-2"></i>Editable Registry Register Workbook
+            </div>
+            <small class="text-muted">Printable Excel replicas of the uploaded JCF register templates.</small>
+        </div>
+        <a href="{{ url_for('policy.download_registry_workbook') }}"
+           class="btn btn-outline-success btn-sm">
+            <i class="bi bi-file-earmark-excel me-1"></i> Download Workbook
+        </a>
+    </div>
+</div>
+<div class="row g-3">
+    {% set registers = [
+        ("Appendix 1", "Divisional Case Registry Organizational Chart (Non-super Division)"),
+        ("Appendix 2", "Divisional Case Registry Organizational Chart (Super Division)"),
+        ("Appendix 3", "Child Diversion Register"),
+        ("Appendix 5", "Summary List of Crimes and their Assigned Investigators"),
+        ("Appendix 11", "Major Crime Register"),
+        ("Appendix 12", "Minor Crime Register"),
+        ("Appendix 13", "Divisional Case Report Register (DCRR)"),
+        ("Appendix 14", "Case File Movement Register"),
+        ("Appendix 15", "Inward/Outward Correspondence Register"),
+        ("Appendix 23", "Case File Submission Register for Court"),
+    ] %}
+    {% for appendix, name in registers %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-body py-2">
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-secondary me-2">{{ appendix }}</span>
+                    <small>{{ name }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

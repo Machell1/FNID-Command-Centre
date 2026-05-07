@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Administration{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-gear me-2" style="color: #1F3864;"></i>Administration</h4>
+        <small class="text-muted">System administration and oversight</small>
+    </div>
+    <a href="{{ url_for('main.home') }}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Portal
+    </a>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card">
+            <div class="kpi-value">{{ stats.total_officers or 0 }}</div>
+            <div class="kpi-label">Total Officers</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-info">
+            <div class="kpi-value">{{ stats.total_cases or 0 }}</div>
+            <div class="kpi-label">Total Cases</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-danger">
+            <div class="kpi-value">{{ stats.active_alerts or 0 }}</div>
+            <div class="kpi-label">Active Alerts</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-warning">
+            <div class="kpi-value">{{ stats.audit_entries or 0 }}</div>
+            <div class="kpi-label">Audit Entries</div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Links -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <a href="{{ url_for('admin.settings') }}" class="card text-decoration-none h-100">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-sliders fs-1" style="color: #1F3864;"></i>
+                <h6 class="mt-2 mb-0 text-dark">Settings</h6>
+                <small class="text-muted">System configuration</small>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('admin.users') }}" class="card text-decoration-none h-100">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-people fs-1" style="color: #1F3864;"></i>
+                <h6 class="mt-2 mb-0 text-dark">Users</h6>
+                <small class="text-muted">Officer accounts</small>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('admin.backup') }}" class="card text-decoration-none h-100">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-hdd fs-1" style="color: #1F3864;"></i>
+                <h6 class="mt-2 mb-0 text-dark">Backup</h6>
+                <small class="text-muted">Database backups</small>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('admin.audit_log') }}" class="card text-decoration-none h-100">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-journal-text fs-1" style="color: #1F3864;"></i>
+                <h6 class="mt-2 mb-0 text-dark">Audit Log</h6>
+                <small class="text-muted">Activity history</small>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Recent Audit Log -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #1F3864; color: #fff;">
+        <h6 class="mb-0"><i class="bi bi-journal-text me-2"></i>Recent Audit Log</h6>
+        <a href="{{ url_for('admin.audit_log') }}" class="btn btn-sm btn-outline-light">View All</a>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover fnid-table mb-0">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Table</th>
+                    <th>Record ID</th>
+                    <th>Action</th>
+                    <th>Officer</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in recent_audit %}
+                <tr>
+                    <td><small>{{ entry.timestamp }}</small></td>
+                    <td><span class="badge bg-secondary">{{ entry.table_name }}</span></td>
+                    <td>{{ entry.record_id or '-' }}</td>
+                    <td>
+                        {% if entry.action == 'INSERT' %}
+                        <span class="badge bg-success">{{ entry.action }}</span>
+                        {% elif entry.action == 'UPDATE' %}
+                        <span class="badge bg-warning text-dark">{{ entry.action }}</span>
+                        {% elif entry.action == 'DELETE' %}
+                        <span class="badge bg-danger">{{ entry.action }}</span>
+                        {% else %}
+                        <span class="badge bg-info">{{ entry.action }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ entry.officer_name or '-' }}</td>
+                    <td><small class="text-muted">{{ entry.details|truncate(80) if entry.details else '-' }}</small></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">No audit entries found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Upload Report{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="page-header">
+            <div>
+                <h4><i class="bi bi-robot me-2"></i>Upload Report for Bot Processing</h4>
+                {% if single_unit %}
+                <small class="text-muted">
+                    <i class="bi {{ portals[single_unit].icon }} me-1" style="color: {{ portals[single_unit].color }}"></i>
+                    {{ portals[single_unit].name }}
+                </small>
+                {% else %}
+                <small class="text-muted">The bot will determine the appropriate unit automatically</small>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="alert alert-info py-2 mb-3">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>How it works:</strong> Upload your report and the FNID Bot will automatically extract
+                    key information (dates, names, offences, seizure details, etc.), route it to the correct unit,
+                    and provide operational guidance. You will review and confirm before the record is saved.
+                </div>
+
+                <form method="POST" enctype="multipart/form-data" action="{{ url_for('upload.submit_report') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Report File <span class="text-danger">*</span></label>
+                        <div class="border rounded p-4 text-center bg-light" id="drop-zone">
+                            <i class="bi bi-cloud-arrow-up fs-1 text-primary d-block mb-2"></i>
+                            <p class="mb-2">Drag and drop your report here, or click to browse</p>
+                            <input type="file" class="form-control" id="file" name="file" required
+                                   accept=".pdf,.docx,.doc,.txt,.jpg,.jpeg,.png">
+                            <div class="form-text mt-2">
+                                Accepted: PDF, DOCX, DOC, TXT, JPG, PNG &bull; Max 16 MB
+                            </div>
+                        </div>
+                        <div id="file-info" class="mt-2 d-none">
+                            <span class="badge bg-primary" id="file-name"></span>
+                            <span class="text-muted ms-2" id="file-size"></span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-robot me-2"></i>Process with Bot
+                        </button>
+                        {% if single_unit %}
+                        <a href="{{ url_for('units.unit_home', unit=single_unit) }}" class="btn btn-outline-secondary btn-lg">Cancel</a>
+                        {% else %}
+                        <a href="{{ url_for('main.home') }}" class="btn btn-outline-secondary btn-lg">Cancel</a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card border-0 bg-light">
+            <div class="card-body">
+                <h6 class="card-title"><i class="bi bi-lightbulb me-2"></i>What the Bot Extracts</h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <small class="text-muted d-block mb-1"><strong>Dates & Times</strong></small>
+                        <small>Report dates, seizure dates, arrest dates, court dates</small>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block mb-1"><strong>Persons & Officers</strong></small>
+                        <small>Suspect names, officer badge numbers, witness names</small>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block mb-1"><strong>Offences & Law</strong></small>
+                        <small>Firearms Act, DDA, POCA sections and offence types</small>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block mb-1"><strong>Seizure Details</strong></small>
+                        <small>Firearm types, calibres, serial numbers, drug types/quantities</small>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block mb-1"><strong>Locations</strong></small>
+                        <small>Parishes, seizure locations, addresses</small>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block mb-1"><strong>Guidance</strong></small>
+                        <small>SOP compliance, deadlines, required follow-ups</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// File input preview
+document.getElementById('file').addEventListener('change', function() {
+    var info = document.getElementById('file-info');
+    var nameEl = document.getElementById('file-name');
+    var sizeEl = document.getElementById('file-size');
+    if (this.files.length > 0) {
+        var f = this.files[0];
+        nameEl.textContent = f.name;
+        sizeEl.textContent = (f.size / 1024 / 1024).toFixed(2) + ' MB';
+        info.classList.remove('d-none');
+    } else {
+        info.classList.add('d-none');
+    }
+});
+</script>
+{% endblock %}

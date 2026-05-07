@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Fuel Consumption Report{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-fuel-pump me-2" style="color: var(--fnid-navy);"></i>
+            Fuel Consumption Report
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('transport.fleet') }}">Transport</a></li>
+                <li class="breadcrumb-item active">Fuel Report</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('transport.fleet') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-truck me-1"></i> Fleet
+        </a>
+        <a href="{{ url_for('transport.trip_log') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-journal-text me-1"></i> Trip Log
+        </a>
+    </div>
+</div>
+
+<!-- Date Filter -->
+<div class="form-section mb-3">
+    <form method="GET" class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label for="date_from" class="form-label">Date From</label>
+            <input type="date" class="form-control form-control-sm" id="date_from" name="date_from"
+                   value="{{ date_from }}">
+        </div>
+        <div class="col-md-3">
+            <label for="date_to" class="form-label">Date To</label>
+            <input type="date" class="form-control form-control-sm" id="date_to" name="date_to"
+                   value="{{ date_to }}">
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-sm btn-primary">
+                <i class="bi bi-funnel me-1"></i> Filter
+            </button>
+            <a href="{{ url_for('transport.fuel_report') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-x-circle me-1"></i> Clear
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Fuel Summary Table -->
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover fnid-table" id="fuelTable" data-datatable-manual="true">
+            <thead>
+                <tr>
+                    <th>Vehicle ID</th>
+                    <th>Registration</th>
+                    <th>Make / Model</th>
+                    <th>Trips</th>
+                    <th>Total Distance (km)</th>
+                    <th>Total Fuel (L)</th>
+                    <th>Avg Consumption (km/L)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set ns = namespace(grand_trips=0, grand_km=0, grand_fuel=0.0) %}
+                {% for row in fuel_data %}
+                {% set ns.grand_trips = ns.grand_trips + row.trip_count %}
+                {% set ns.grand_km = ns.grand_km + row.total_km %}
+                {% set ns.grand_fuel = ns.grand_fuel + row.total_fuel %}
+                <tr>
+                    <td><strong>{{ row.vehicle_id }}</strong></td>
+                    <td>{{ row.registration or '-' }}</td>
+                    <td>{{ row.make or '' }} {{ row.model or '' }}</td>
+                    <td>{{ row.trip_count }}</td>
+                    <td>{{ row.total_km|int }}</td>
+                    <td>{{ "%.1f"|format(row.total_fuel) }}</td>
+                    <td>
+                        {% if row.total_fuel > 0 %}
+                        {{ "%.1f"|format(row.total_km / row.total_fuel) }}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="table-dark">
+                    <td colspan="3"><strong>Totals</strong></td>
+                    <td><strong>{{ ns.grand_trips }}</strong></td>
+                    <td><strong>{{ ns.grand_km|int }}</strong></td>
+                    <td><strong>{{ "%.1f"|format(ns.grand_fuel) }}</strong></td>
+                    <td>
+                        <strong>
+                        {% if ns.grand_fuel > 0 %}
+                        {{ "%.1f"|format(ns.grand_km / ns.grand_fuel) }}
+                        {% else %}
+                        -
+                        {% endif %}
+                        </strong>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+
+        {% if not fuel_data %}
+        <p class="text-muted text-center mt-3">No fuel data available for the selected period.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var table = document.getElementById('fuelTable');
+    if (table && $.fn.DataTable && !$.fn.DataTable.isDataTable(table)) {
+        $(table).DataTable({
+            order: [[5, 'desc']],
+            pageLength: 25,
+            paging: false,
+            language: {
+                search: "Search vehicles:",
+                emptyTable: "No fuel consumption data available."
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

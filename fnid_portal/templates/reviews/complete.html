@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Complete Review #{{ review.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-clipboard-check"></i> Complete Review #{{ review.id }}</h2>
+    <a href="{{ url_for('reviews.review_detail', id=review.id) }}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back to Review
+    </a>
+  </div>
+
+  <!-- Review Summary -->
+  <div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Review Summary</h5></div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-3">
+          <strong>Case</strong>
+          <p>{{ review.case_id }}</p>
+        </div>
+        <div class="col-md-3">
+          <strong>Type</strong>
+          <p>{{ review.review_type }}</p>
+        </div>
+        <div class="col-md-3">
+          <strong>Scheduled</strong>
+          <p>{{ review.scheduled_date }}</p>
+        </div>
+        <div class="col-md-3">
+          <strong>Status</strong>
+          <p>
+            {% if review.status == 'Overdue' %}
+            <span class="badge bg-danger">Overdue</span>
+            {% else %}
+            <span class="badge bg-info">Scheduled</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Complete Form -->
+  <div class="card">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-check-circle me-2"></i>Record Review Outcome</h5></div>
+    <div class="card-body">
+      <form method="post" action="{{ url_for('reviews.complete_review', id=review.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Actual Date <span class="text-danger">*</span></label>
+            <input type="date" name="actual_date" class="form-control" required
+                   value="{{ form.get('actual_date', '') if form and form.get else '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Outcome <span class="text-danger">*</span></label>
+            <input type="text" name="outcome" class="form-control" required
+                   placeholder="e.g. Satisfactory, Further investigation needed"
+                   value="{{ form.get('outcome', '') if form and form.get else '' }}">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Findings</label>
+          <textarea name="findings" class="form-control" rows="4"
+                    placeholder="Record detailed findings from the review">{{ form.get('findings', '') if form and form.get else '' }}</textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Directives</label>
+          <textarea name="directives" class="form-control" rows="4"
+                    placeholder="Record any directives or instructions issued">{{ form.get('directives', '') if form and form.get else '' }}</textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Next Review Date</label>
+          <input type="date" name="next_review_date" class="form-control"
+                 value="{{ form.get('next_review_date', '') if form and form.get else '' }}">
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-circle"></i> Complete Review
+          </button>
+          <a href="{{ url_for('reviews.review_detail', id=review.id) }}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

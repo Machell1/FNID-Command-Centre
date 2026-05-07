@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Data Import{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-upload me-2" style="color: #1F3864;"></i>
+            Data Import - Upload Word / Excel Files
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item active">Import</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Upload Form -->
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header bg-fnid-navy text-white">
+                <i class="bi bi-cloud-arrow-up me-2"></i>Upload Data File
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="form-section">
+                        <div class="form-section-title"><i class="bi bi-file-earmark-arrow-up me-2"></i>File Selection</div>
+                        <div class="mb-3">
+                            <label for="file" class="form-label">
+                                Select File <span class="required">*</span>
+                            </label>
+                            <input type="file" class="form-control" id="file" name="file"
+                                   accept=".docx,.xlsx" required>
+                            <div class="form-text">
+                                Supported formats: Microsoft Word (.docx) and Excel (.xlsx) only.
+                                Maximum file size: 16MB.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="form-section-title"><i class="bi bi-bullseye me-2"></i>Target Unit</div>
+                        <div class="mb-3">
+                            <label for="target_unit" class="form-label">
+                                Import Destination <span class="required">*</span>
+                            </label>
+                            <select class="form-select" id="target_unit" name="target_unit" required>
+                                <option value="">-- Select Target Unit --</option>
+                                {% for key, portal in portals.items() %}
+                                <option value="{{ key }}">
+                                    {{ portal.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                Select which unit portal this data should be imported into.
+                                The import tool will attempt to map columns to the appropriate fields.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-upload me-1"></i> Upload File
+                        </button>
+                        <a href="{{ url_for('main.home') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header bg-fnid-navy text-white">
+                <i class="bi bi-info-circle me-2"></i>Import Instructions
+            </div>
+            <div class="card-body">
+                <h6 class="fw-bold">Supported File Types</h6>
+                <ul class="small">
+                    <li><strong>.xlsx (Excel)</strong> - Spreadsheet with column headers matching database fields</li>
+                    <li><strong>.docx (Word)</strong> - Structured document with tables or labelled sections</li>
+                </ul>
+
+                <h6 class="fw-bold mt-3">Excel Import Guidelines</h6>
+                <ul class="small">
+                    <li>First row must contain column headers</li>
+                    <li>Column names should match or closely approximate database field names</li>
+                    <li>Dates should be in YYYY-MM-DD format</li>
+                    <li>Use exact values from controlled dropdowns where possible</li>
+                </ul>
+
+                <h6 class="fw-bold mt-3">Unit Data Mappings</h6>
+                <table class="table table-sm small mb-0">
+                    <thead>
+                        <tr>
+                            <th>Unit</th>
+                            <th>Target Table</th>
+                            <th>ID Prefix</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Intelligence</td><td>intel_reports</td><td>INT-</td></tr>
+                        <tr><td>Operations</td><td>operations</td><td>OP-</td></tr>
+                        <tr><td>Seizures</td><td>firearm_seizures / narcotics_seizures</td><td>FS- / NS-</td></tr>
+                        <tr><td>Arrests</td><td>arrests</td><td>AR-</td></tr>
+                        <tr><td>Forensics</td><td>chain_of_custody / lab_tracking</td><td>EXH- / LAB-</td></tr>
+                        <tr><td>Registry</td><td>cases</td><td>CR-</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header bg-fnid-navy text-white">
+                <i class="bi bi-shield-exclamation me-2"></i>Important Notes
+            </div>
+            <div class="card-body">
+                <ul class="small mb-0">
+                    <li class="mb-1">
+                        <strong>Validation:</strong> Imported records will be created with
+                        <span class="badge bg-secondary">Draft</span> status and must be reviewed before submission.
+                    </li>
+                    <li class="mb-1">
+                        <strong>Duplicates:</strong> The system will generate new IDs for all imported records.
+                        Check for duplicates after import.
+                    </li>
+                    <li class="mb-1">
+                        <strong>Audit Trail:</strong> All imports are logged in the audit trail with the
+                        importing officer's credentials.
+                    </li>
+                    <li>
+                        <strong>Processing:</strong> After upload, use the CLI data import tool to process
+                        the file into the database.
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

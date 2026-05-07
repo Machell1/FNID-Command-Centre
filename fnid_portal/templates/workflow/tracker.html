@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Case Workflow - {{ case_id }}{% endblock %}
+{% block content %}
+<h4><i class="bi bi-diagram-3 me-2"></i>Case Workflow: {{ case_id }}</h4>
+
+<div class="row mt-3">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Current Stage: <span class="badge bg-primary fs-6">{{ status.current_stage|replace('_',' ')|title }}</span></h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Classification:</strong> {{ status.case.classification }}</p>
+                <p><strong>OIC:</strong> {{ status.case.oic_name }}</p>
+                <p><strong>Status:</strong> {{ status.case.case_status }}</p>
+
+                {% if status.possible_transitions %}
+                <h6 class="mt-4">Available Transitions:</h6>
+                {% for stage, info in status.possible_transitions.items() %}
+                <div class="card mb-2 {% if info.valid %}border-success{% else %}border-warning{% endif %}">
+                    <div class="card-body py-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ stage|replace('_',' ')|title }}</strong>
+                                {% if not info.valid %}
+                                <br><small class="text-danger">{{ info.errors|join('; ') }}</small>
+                                {% endif %}
+                            </div>
+                            {% if info.valid %}
+                            <form method="POST" action="{{ url_for('workflow.advance', case_id=case_id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="to_stage" value="{{ stage }}">
+                                <button class="btn btn-sm btn-success">Advance</button>
+                            </form>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">Blocked</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Linked Records</h6></div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for key, count in status.linked_records.items() %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>{{ key|replace('_',' ')|title }}</span>
+                        <span class="badge bg-{% if count > 0 %}primary{% else %}secondary{% endif %}">{{ count }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        {% if status.lifecycle %}
+        <div class="card mt-3">
+            <div class="card-header"><h6 class="mb-0">Stage History</h6></div>
+            <div class="card-body">
+                {% for entry in status.lifecycle %}
+                <div class="mb-2">
+                    <span class="badge bg-secondary">{{ entry.stage }}</span>
+                    <small class="text-muted d-block">{{ entry.entered_at[:16] }} by {{ entry.entered_by }}</small>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

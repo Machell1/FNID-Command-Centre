@@ -1,0 +1,57 @@
+<div class="row g-3">
+    <div class="col-md-4">
+        <label class="form-label">Operation Date</label>
+        <input type="date" class="form-control" name="op_date" value="{{ fields.get('op_date', '') }}">
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Operation Name</label>
+        <input type="text" class="form-control" name="op_name" value="{{ fields.get('op_name', '') }}" placeholder="e.g. Operation Kingpin">
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Operation Type</label>
+        <select class="form-select" name="op_type">
+            <option value="">-- Select --</option>
+            {% for t in cfg.OPERATION_TYPES %}
+            <option value="{{ t }}" {{ 'selected' if t == fields.get('op_type') }}>{{ t }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+<div class="row g-3 mt-1">
+    <div class="col-md-4">
+        <label class="form-label">Warrant / Legal Basis</label>
+        <select class="form-select" name="warrant_basis">
+            <option value="">-- Select --</option>
+            {% for w in cfg.WARRANT_BASIS %}
+            <option value="{{ w }}" {{ 'selected' if w == fields.get('warrant_basis') }}>{{ w }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Team Lead (Badge)</label>
+        <input type="text" class="form-control" name="team_lead" value="{{ fields.get('team_lead', '') }}" placeholder="JCF-XXXX">
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Linked Intel ID</label>
+        <input type="text" class="form-control" name="linked_intel_id" value="{{ fields.get('linked_intel_id', '') }}" placeholder="INT-2026-XXX">
+    </div>
+</div>
+<div class="row g-3 mt-1">
+    <div class="col-md-4">
+        <label class="form-label">Firearms Seized</label>
+        <input type="number" class="form-control" name="firearms_seized" value="{{ fields.get('firearms_seized', '') }}" min="0">
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Narcotics Seized</label>
+        <input type="text" class="form-control" name="narcotics_seized" value="{{ fields.get('narcotics_seized', '') }}" placeholder="e.g. 5 kg">
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Outcome</label>
+        <select class="form-select" name="outcome">
+            <option value="">-- Select --</option>
+            {% for o in cfg.OPERATION_OUTCOMES %}
+            <option value="{{ o }}" {{ 'selected' if o == fields.get('outcome') }}>{{ o }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>

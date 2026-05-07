@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Batch Operations{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-collection me-2"></i>Batch Operations</h4>
+        <small class="text-muted">Bulk case management actions</small>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-person-plus fs-1 text-primary"></i>
+                <h5 class="mt-2">Bulk Assign</h5>
+                <p class="text-muted small">Assign multiple unassigned cases to an investigating officer.</p>
+                <a href="{{ url_for('batch.bulk_assign') }}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-arrow-right me-1"></i>Open
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-arrow-left-right fs-1 text-warning"></i>
+                <h5 class="mt-2">Bulk Transition</h5>
+                <p class="text-muted small">Move multiple cases to a new lifecycle stage simultaneously.</p>
+                <a href="{{ url_for('batch.bulk_transition') }}" class="btn btn-warning btn-sm text-dark">
+                    <i class="bi bi-arrow-right me-1"></i>Open
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-calendar-check fs-1 text-success"></i>
+                <h5 class="mt-2">Bulk Schedule Reviews</h5>
+                <p class="text-muted small">Schedule case reviews for multiple cases at once.</p>
+                <a href="{{ url_for('batch.bulk_review') }}" class="btn btn-success btn-sm">
+                    <i class="bi bi-arrow-right me-1"></i>Open
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

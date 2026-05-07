@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+{% block title %}Link Analysis{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-diagram-3 me-2" style="color: #1F3864;"></i>Link Analysis &mdash; Last 90 Days</h4>
+        <small class="text-muted">Intelligence pattern analysis and frequency reports</small>
+    </div>
+    <a href="{{ url_for('intel.targets') }}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Targets
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- Parish Frequency -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header" style="background-color: #1F3864; color: #fff;">
+                <h6 class="mb-0"><i class="bi bi-geo-alt me-2"></i>Parish Frequency</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="parishChart" height="250"></canvas>
+                <div class="table-responsive mt-3">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Parish</th>
+                                <th class="text-end">Intel Reports</th>
+                                <th class="text-end">% of Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in parish_freq %}
+                            <tr>
+                                <td>{{ row.parish }}</td>
+                                <td class="text-end"><strong>{{ row.count }}</strong></td>
+                                <td class="text-end">
+                                    <div class="progress" style="height: 18px; min-width: 80px;">
+                                        <div class="progress-bar" role="progressbar"
+                                             style="width: {{ row.pct }}%; background-color: #1F3864;"
+                                             aria-valuenow="{{ row.pct }}" aria-valuemin="0" aria-valuemax="100">
+                                            {{ "%.1f"|format(row.pct) }}%
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="3" class="text-center text-muted">No data available.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Target Frequency -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header" style="background-color: #1F3864; color: #fff;">
+                <h6 class="mb-0"><i class="bi bi-crosshair me-2"></i>Target Frequency</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Target</th>
+                                <th>Parish</th>
+                                <th class="text-end">Mentions</th>
+                                <th>Threat</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in target_freq %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('intel.target_detail', target_id=row.id) }}">
+                                        <strong>{{ row.name }}</strong>
+                                    </a>
+                                </td>
+                                <td>{{ row.parish or '-' }}</td>
+                                <td class="text-end"><strong>{{ row.count }}</strong></td>
+                                <td>
+                                    {% if row.threat_level == 'Critical' %}
+                                    <span class="badge bg-danger">Critical</span>
+                                    {% elif row.threat_level == 'High' %}
+                                    <span class="badge bg-warning text-dark">High</span>
+                                    {% elif row.threat_level == 'Medium' %}
+                                    <span class="badge" style="background-color: #ffc107; color: #212529;">Medium</span>
+                                    {% elif row.threat_level == 'Low' %}
+                                    <span class="badge bg-success">Low</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No target frequency data.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-0">
+    <!-- Location Frequency -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header" style="background-color: #1F3864; color: #fff;">
+                <h6 class="mb-0"><i class="bi bi-pin-map me-2"></i>Location Frequency</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Location</th>
+                                <th>Parish</th>
+                                <th class="text-end">Reports</th>
+                                <th class="text-end">% of Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in location_freq %}
+                            <tr>
+                                <td><strong>{{ row.location }}</strong></td>
+                                <td>{{ row.parish or '-' }}</td>
+                                <td class="text-end">{{ row.count }}</td>
+                                <td class="text-end">
+                                    <div class="progress" style="height: 18px; min-width: 80px;">
+                                        <div class="progress-bar bg-info" role="progressbar"
+                                             style="width: {{ row.pct }}%;"
+                                             aria-valuenow="{{ row.pct }}" aria-valuemin="0" aria-valuemax="100">
+                                            {{ "%.1f"|format(row.pct) }}%
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No location frequency data.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Targets by Threat Level -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header" style="background-color: #1F3864; color: #fff;">
+                <h6 class="mb-0"><i class="bi bi-shield-exclamation me-2"></i>Active Targets by Threat Level</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Target</th>
+                                <th>Parish</th>
+                                <th>Aliases</th>
+                                <th>Threat</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in targets %}
+                            {% if t.status == 'Active' %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('intel.target_detail', target_id=t.id) }}">
+                                        <strong>{{ t.name }}</strong>
+                                    </a>
+                                </td>
+                                <td>{{ t.parish or '-' }}</td>
+                                <td><small>{{ t.aliases|truncate(30) if t.aliases else '-' }}</small></td>
+                                <td>
+                                    {% if t.threat_level == 'Critical' %}
+                                    <span class="badge bg-danger">Critical</span>
+                                    {% elif t.threat_level == 'High' %}
+                                    <span class="badge bg-warning text-dark">High</span>
+                                    {% elif t.threat_level == 'Medium' %}
+                                    <span class="badge" style="background-color: #ffc107; color: #212529;">Medium</span>
+                                    {% elif t.threat_level == 'Low' %}
+                                    <span class="badge bg-success">Low</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No active targets.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const parishData = {{ parish_freq|tojson if parish_freq else '[]'|safe }};
+    if (parishData.length > 0) {
+        const ctx = document.getElementById('parishChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: parishData.map(r => r.parish),
+                datasets: [{
+                    label: 'Intel Reports',
+                    data: parishData.map(r => r.count),
+                    backgroundColor: '#1F3864',
+                    borderColor: '#1F3864',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

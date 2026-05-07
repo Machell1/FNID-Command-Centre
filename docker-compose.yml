@@ -1,0 +1,17 @@
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - fnid_data:/app/data
+    environment:
+      - FLASK_ENV=production
+      - FNID_SECRET_KEY=${FNID_SECRET_KEY:?Set FNID_SECRET_KEY in .env}
+      - FNID_DB_PATH=/app/data/fnid.db
+      - FNID_UPLOAD_DIR=/app/data/uploads
+      - FNID_EXPORT_DIR=/app/data/exports
+    restart: unless-stopped
+
+volumes:
+  fnid_data:

@@ -1,0 +1,85 @@
+﻿{% extends "base.html" %}
+{% block title %}Policy Definitions{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-journal-text me-2"></i>6.0 Definitions</h4>
+        <small class="text-muted">JCF Case Management Policy - JCF/FW/PL/C&S/0001/2024</small>
+    </div>
+    <a href="{{ url_for('policy.policy_home') }}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Policy
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- General Definitions -->
+        {% set definitions = [
+            ("6.1 Accused", "A person who has been charged, on whom a warrant has been executed or he/she has been summoned to appear before a criminal court."),
+            ("6.2 Audit", "A systematic and independent examination of records, processes, services and operations of the investigations' management systems in order to provide an objective assessment of its accuracy, effectiveness and adherence to specific guidelines or standards (ISO 19011:2018)."),
+            ("6.3 Case", "A case is a report of a crime or incident under investigation."),
+            ("6.4 Case File", "A file that has been generated and assembled pertaining to a reported crime or incident under investigation."),
+            ("6.5 Case Management", "A system designed to provide quality assurance for investigative services and processes that records, assesses, monitors and evaluate all investigations."),
+            ("6.6 Case Review", "A session (meeting or otherwise) where an individual, or a team of investigators gather to assess or appraise a case and/or task and provide direction to case(s). Case Reviews may require managers, supervisors, investigators and other key stakeholders to meet at intervals during an investigation to assess any new development and/or provide updates."),
+            ("6.7 Case Conference", "A meeting which allows an investigation team to discuss, analyse, task and provide direction in a particular investigation with internal and external stakeholders (e.g. ODPP, IFSLM, INDECOM)."),
+            ("6.8 Case Reference No.", "A unique number that is assigned to each case in accordance with this Policy & SOPs."),
+            ("6.9 Crime", "A conduct (act or omission) that breaches any law (common or statute) which is punishable by law."),
+            ("6.10 Divisional Case Registry", "The central repository within a division that manages and operates a standardized and organized record keeping system that stores case files and records of reported crimes or incidents, complaints and related activities."),
+            ("6.11 Documents", "Anything in which information in any format or description is recorded, captured or stored whether in writing or by electronic means, original or copy and includes a statement."),
+            ("6.12 Incident", "An occurrence or event that comes to the attention of the police and requires action."),
+            ("6.13 Inspection", "The process of examining, reviewing or evaluating the investigation processes to determine whether the standards of the JCF are met."),
+            ("6.14 Investigation", "A systematic and thorough process of gathering, collecting and analysing information, facts and evidence to uncover the truth, solve a problem or address a specific issue in relation to a reported crime or incident."),
+            ("6.15 Major Crimes", "Categories of crimes that are serious or violent in nature which are considered indictable offences. These crimes typically carry more severe penalties."),
+            ("6.16 Minor Crimes", "Offences that are not classified as major crimes and attract a fine or short custodial sentences (summary or misdemeanor)."),
+            ("6.17 Person of Interest", "An individual who is believed to have relevant information (directly or indirectly) or knowledge that can assist an investigation."),
+            ("6.18 SRMS", "Station Records Management System - A database used to facilitate electronic recording of reports, complaints and administrative entries and provides for the supervision and management of all reported crimes and incidents."),
+            ("6.19 Suspect", "A person, who is identified, based on some amount of evidence and is reasonably believed to have committed a crime."),
+            ("6.20 Witness", "A person who has information pertaining to a crime or an incident and may provide a statement that is relevant to an investigation."),
+            ("6.21 Working Case File", "A copy of the original case file given to an investigator to conduct investigations."),
+        ] %}
+
+        {% for title, desc in definitions %}
+        <div class="card mb-2">
+            <div class="card-body py-2">
+                <h6 class="mb-1 text-primary">{{ title }}</h6>
+                <p class="mb-0 small">{{ desc }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Case Classification Sidebar -->
+        <div class="card mb-3 sticky-top" style="top: 70px;">
+            <div class="card-header bg-fnid-navy text-white">
+                <i class="bi bi-diagram-2 me-2"></i>Case Classifications (6.3)
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item">
+                        <h6 class="mb-1"><span class="badge bg-success">6.3.1 Case Open</span></h6>
+                        <small>A case that is actively under investigation.</small>
+                    </div>
+                    <div class="list-group-item">
+                        <h6 class="mb-1"><span class="badge bg-warning text-dark">6.3.2 Case Suspended</span></h6>
+                        <small>A case put on hold after all investigative leads have been exhausted.</small>
+                    </div>
+                    <div class="list-group-item">
+                        <h6 class="mb-1"><span class="badge bg-info text-dark">6.3.3 Case Cleared</span></h6>
+                        <small>When charge(s) laid, suspect dead, warrant issued, extradition denied, victim won't prosecute, Coroners Court, Child Diversion, suspect summoned, or report contrived.</small>
+                    </div>
+                    <div class="list-group-item">
+                        <h6 class="mb-1"><span class="badge bg-secondary">6.3.4 Case Closed</span></h6>
+                        <small>When charge(s) preferred (no other suspect), suspect dead (no other suspect), or as ACP CIB deems necessary.</small>
+                    </div>
+                    <div class="list-group-item">
+                        <h6 class="mb-1"><span class="badge bg-dark">6.3.5 Cold Case</span></h6>
+                        <small>Unsolved and inactive for <strong>3 years</strong> after declared suspended.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

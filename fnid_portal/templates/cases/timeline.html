@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% block title %}Timeline - {{ case.case_id }}{% endblock %}
+
+{% block head %}
+<style>
+    .timeline {
+        position: relative;
+        padding: 1rem 0;
+    }
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 30px;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: var(--fnid-border);
+    }
+    .timeline-item {
+        position: relative;
+        padding-left: 70px;
+        margin-bottom: 2rem;
+    }
+    .timeline-dot {
+        position: absolute;
+        left: 20px;
+        top: 4px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 0 0 2px var(--fnid-border);
+        z-index: 1;
+    }
+    .timeline-dot.completed {
+        background-color: #198754;
+        box-shadow: 0 0 0 2px #198754;
+    }
+    .timeline-dot.current {
+        background-color: #0d6efd;
+        box-shadow: 0 0 0 2px #0d6efd;
+        animation: pulse-blue 2s infinite;
+    }
+    .timeline-dot.future {
+        background-color: #dee2e6;
+        box-shadow: 0 0 0 2px #dee2e6;
+    }
+    @keyframes pulse-blue {
+        0% { box-shadow: 0 0 0 2px #0d6efd; }
+        50% { box-shadow: 0 0 0 6px rgba(13, 110, 253, 0.25); }
+        100% { box-shadow: 0 0 0 2px #0d6efd; }
+    }
+    .timeline-content {
+        background: white;
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        border-left: 3px solid var(--fnid-border);
+    }
+    .timeline-content.completed {
+        border-left-color: #198754;
+    }
+    .timeline-content.current {
+        border-left-color: #0d6efd;
+        background: #f0f7ff;
+    }
+    .timeline-content.future {
+        border-left-color: #dee2e6;
+        opacity: 0.6;
+    }
+    .timeline-stage {
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    .timeline-meta {
+        font-size: 0.8rem;
+        color: var(--fnid-gray);
+    }
+    .timeline-notes {
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+        color: #495057;
+    }
+    .timeline-duration {
+        font-size: 0.75rem;
+        color: var(--fnid-gray);
+        font-style: italic;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{# --- Page Header --- #}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-clock-history me-2" style="color: var(--fnid-navy);"></i>
+            Case Timeline
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('cases.case_list') }}">Cases</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('cases.case_detail', case_id=case.case_id) }}">{{ case.case_id }}</a></li>
+                <li class="breadcrumb-item active">Timeline</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('cases.case_detail', case_id=case.case_id) }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Case
+        </a>
+    </div>
+</div>
+
+{# Case reference bar #}
+<div class="form-section">
+    <div class="row align-items-center">
+        <div class="col-md-4">
+            <strong>Case:</strong> {{ case.case_id }}
+        </div>
+        <div class="col-md-4">
+            <strong>Classification:</strong> {{ case.classification or '-' }}
+        </div>
+        <div class="col-md-4 text-md-end">
+            <strong>Current Stage:</strong>
+            {% set current = case.current_stage or 'intake' %}
+            <span class="badge bg-primary">{{ current|replace('_', ' ')|title }}</span>
+        </div>
+    </div>
+</div>
+
+{# Timeline Legend #}
+<div class="mb-3 d-flex gap-3 align-items-center">
+    <small class="text-muted">Legend:</small>
+    <span class="d-flex align-items-center gap-1">
+        <span style="width:12px;height:12px;border-radius:50%;background:#198754;display:inline-block;"></span>
+        <small>Completed</small>
+    </span>
+    <span class="d-flex align-items-center gap-1">
+        <span style="width:12px;height:12px;border-radius:50%;background:#0d6efd;display:inline-block;"></span>
+        <small>Current</small>
+    </span>
+    <span class="d-flex align-items-center gap-1">
+        <span style="width:12px;height:12px;border-radius:50%;background:#dee2e6;display:inline-block;"></span>
+        <small>Future / Pending</small>
+    </span>
+</div>
+
+{# Lifecycle Timeline #}
+{% if lifecycle %}
+<div class="timeline">
+    {% for entry in lifecycle %}
+    {% set is_current = not entry.exited_at %}
+    {% set state_class = 'current' if is_current else 'completed' %}
+    <div class="timeline-item">
+        <div class="timeline-dot {{ state_class }}"></div>
+        <div class="timeline-content {{ state_class }}">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="timeline-stage">
+                        {% if is_current %}
+                        <i class="bi bi-arrow-right-circle-fill text-primary me-1"></i>
+                        {% else %}
+                        <i class="bi bi-check-circle-fill text-success me-1"></i>
+                        {% endif %}
+                        {{ entry.stage|replace('_', ' ')|title }}
+                    </div>
+                    <div class="timeline-meta">
+                        <i class="bi bi-calendar3 me-1"></i> Entered: {{ entry.entered_at }}
+                        {% if entry.entered_by %}
+                        <span class="ms-2"><i class="bi bi-person me-1"></i> {{ entry.entered_by }}</span>
+                        {% endif %}
+                    </div>
+                    {% if entry.exited_at %}
+                    <div class="timeline-meta">
+                        <i class="bi bi-box-arrow-right me-1"></i> Exited: {{ entry.exited_at }}
+                        {% if entry.exited_by %}
+                        <span class="ms-2"><i class="bi bi-person me-1"></i> {{ entry.exited_by }}</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div>
+                    {% if is_current %}
+                    <span class="badge bg-primary">Active</span>
+                    {% else %}
+                    <span class="badge bg-success">Completed</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% if entry.notes %}
+            <div class="timeline-notes">
+                <i class="bi bi-chat-left-text me-1"></i> {{ entry.notes }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+
+    {# Show future stages that haven't been reached #}
+    {% set completed_stages = lifecycle|map(attribute='stage')|list %}
+    {% set all_stages = ['intake','appreciation','vetting','assignment','investigation',
+                         'follow_up','review','court_preparation','before_court','closed'] %}
+    {% for s in all_stages %}
+    {% if s not in completed_stages %}
+    <div class="timeline-item">
+        <div class="timeline-dot future"></div>
+        <div class="timeline-content future">
+            <div class="timeline-stage">
+                <i class="bi bi-circle text-muted me-1"></i>
+                {{ s|replace('_', ' ')|title }}
+            </div>
+            <div class="timeline-meta">Not yet reached</div>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+{% else %}
+<div class="form-section">
+    <p class="text-muted text-center mb-0">
+        <i class="bi bi-info-circle me-1"></i>
+        No lifecycle entries have been recorded for this case.
+    </p>
+</div>
+{% endif %}
+{% endblock %}

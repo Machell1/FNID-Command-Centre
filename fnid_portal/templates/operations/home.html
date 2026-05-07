@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Operations Unit{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-bullseye me-2" style="color: {{ portal.color }};"></i>
+            Operations Unit - Planning, Execution & Outcomes
+        </h4>
+        {% if not is_unit_workspace %}
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item active">Operations</li>
+            </ol>
+        </nav>
+        {% endif %}
+    </div>
+    <div class="d-flex gap-2">
+        {% if is_unit_workspace %}
+        <a href="{{ url_for('upload.submit_report') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-robot me-1"></i> Upload Report
+        </a>
+        {% else %}
+        <a href="{{ url_for('units.new_record', unit='operations') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-circle me-1"></i> New Operation
+        </a>
+        {% endif %}
+        <a href="{{ url_for('units.unit_dashboard', unit='operations') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-graph-up me-1"></i> Dashboard
+        </a>
+        <a href="{{ url_for('data.export_unit', unit='operations') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-download me-1"></i> Export
+        </a>
+    </div>
+</div>
+
+{% include "_unit_workspace_header.html" %}
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card">
+            <div class="kpi-value">{{ data.records|length if data.records else 0 }}</div>
+            <div class="kpi-label">Total Operations</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-success">
+            <div class="kpi-value">
+                {{ data.records|selectattr('outcome', 'defined')|selectattr('outcome', 'search', 'Successful')|list|length if data.records else 0 }}
+            </div>
+            <div class="kpi-label">Successful</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-info">
+            <div class="kpi-value">
+                {{ data.records|sum(attribute='firearms_seized') if data.records else 0 }}
+            </div>
+            <div class="kpi-label">Firearms Seized</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-warning">
+            <div class="kpi-value">
+                {{ data.records|sum(attribute='arrests_made') if data.records else 0 }}
+            </div>
+            <div class="kpi-label">Arrests Made</div>
+        </div>
+    </div>
+</div>
+
+<!-- Operations Table -->
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover fnid-table">
+            <thead>
+                <tr>
+                    <th>Op ID</th>
+                    <th>Date</th>
+                    <th>Op Name</th>
+                    <th>Type</th>
+                    <th>Parish</th>
+                    <th>Team Lead</th>
+                    <th>Firearms</th>
+                    <th>Arrests</th>
+                    <th>Outcome</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in data.records %}
+                <tr>
+                    <td><strong>{{ r.op_id }}</strong></td>
+                    <td>{{ r.op_date }}</td>
+                    <td>{{ r.op_name or '-' }}</td>
+                    <td>{{ r.op_type or '-' }}</td>
+                    <td>{{ r.parish or '-' }}</td>
+                    <td>{{ r.team_lead or '-' }}</td>
+                    <td>
+                        {% if r.firearms_seized and r.firearms_seized > 0 %}
+                        <span class="badge bg-danger">{{ r.firearms_seized }}</span>
+                        {% else %}
+                        0
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if r.arrests_made and r.arrests_made > 0 %}
+                        <span class="badge bg-info">{{ r.arrests_made }}</span>
+                        {% else %}
+                        0
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if 'Successful' in (r.outcome or '') %}
+                        <span class="badge bg-success">{{ r.outcome }}</span>
+                        {% elif 'Negative' in (r.outcome or '') %}
+                        <span class="badge bg-secondary">{{ r.outcome }}</span>
+                        {% elif 'Aborted' in (r.outcome or '') %}
+                        <span class="badge bg-danger">{{ r.outcome }}</span>
+                        {% elif 'Ongoing' in (r.outcome or '') %}
+                        <span class="badge bg-warning text-dark">{{ r.outcome }}</span>
+                        {% elif 'Partial' in (r.outcome or '') %}
+                        <span class="badge bg-info">{{ r.outcome }}</span>
+                        {% else %}
+                        <span class="badge bg-light text-dark">{{ r.outcome or 'Pending' }}</span>
+                        {% endif %}
+                    </td>
+                    <td><span class="badge" data-status="{{ r.record_status }}">{{ r.record_status }}</span></td>
+                    <td>
+                        <a href="{{ url_for('units.edit_record', unit='operations', record_id=r.id) }}"
+                           class="btn btn-sm btn-outline-primary" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+﻿<div class="row g-3">
+    <div class="col-md-4">
+        <label class="form-label">Date Received</label>
+        <input type="date" class="form-control" name="received_date" value="{{ fields.get('received_date', '') }}">
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Exhibit Type</label>
+        <select class="form-select" name="exhibit_type">
+            <option value="">-- Select --</option>
+            {% for t in cfg.EXHIBIT_TYPES %}
+            <option value="{{ t }}" {{ 'selected' if t == fields.get('exhibit_type') }}>{{ t }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Seized By</label>
+        <input type="text" class="form-control" name="seized_by" value="{{ fields.get('seized_by', '') }}">
+    </div>
+</div>
+<div class="row g-3 mt-1">
+    <div class="col-md-6">
+        <label class="form-label">Description</label>
+        <textarea class="form-control" name="description" rows="2">{{ fields.get('description', '') }}</textarea>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Linked Case Reference No.</label>
+        <input type="text" class="form-control" name="linked_case_id" value="{{ fields.get('linked_case_id', '') }}" placeholder="CR-2026-XXX">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Storage Location</label>
+        <input type="text" class="form-control" name="storage_location" value="{{ fields.get('storage_location', '') }}">
+    </div>
+</div>

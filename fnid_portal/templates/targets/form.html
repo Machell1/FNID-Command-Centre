@@ -1,0 +1,128 @@
+﻿{% extends "base.html" %}
+{% block title %}{% if is_edit %}Edit Target{% else %}New Target{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+      <i class="bi bi-crosshair"></i>
+      {% if is_edit %}Edit Target {{ target_id }}{% else %}New Intelligence Target{% endif %}
+    </h2>
+    <a href="{{ url_for('targets.target_list') }}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </a>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <form method="post"
+            action="{% if is_edit %}{{ url_for('targets.edit_target', target_id=target_id) }}{% else %}{{ url_for('targets.new_target') }}{% endif %}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Target Name <span class="text-danger">*</span></label>
+            <input type="text" name="target_name" class="form-control" required
+                   placeholder="Full name of target"
+                   value="{{ target.target_name if target and target.target_name is defined else (target.get('target_name', '') if target and target.get else '') }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Aliases</label>
+            <input type="text" name="aliases" class="form-control"
+                   placeholder="Known aliases (comma-separated)"
+                   value="{{ target.aliases if target and target.aliases is defined else (target.get('aliases', '') if target and target.get else '') }}">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <textarea name="description" class="form-control" rows="3"
+                    placeholder="Physical description, identifying features">{{ target.description if target and target.description is defined else (target.get('description', '') if target and target.get else '') }}</textarea>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label class="form-label">Parish</label>
+            <select name="parish" class="form-select">
+              <option value="">Select Parish</option>
+              {% for p in parishes %}
+              <option value="{{ p }}"
+                {% if target and target.parish is defined and target.parish == p %}selected
+                {% elif target and target.get and target.get('parish') == p %}selected{% endif %}
+              >{{ p }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Area</label>
+            <input type="text" name="area" class="form-control"
+                   placeholder="Specific area or community"
+                   value="{{ target.area if target and target.area is defined else (target.get('area', '') if target and target.get else '') }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Threat Level</label>
+            <select name="threat_level" class="form-select">
+              {% for tl in threat_levels %}
+              <option value="{{ tl }}"
+                {% if target and target.threat_level is defined and target.threat_level == tl %}selected
+                {% elif target and target.get and target.get('threat_level') == tl %}selected
+                {% elif not target and tl == 'Medium' %}selected{% endif %}
+              >{{ tl }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        {% if is_edit %}
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select">
+              {% for s in statuses %}
+              <option value="{{ s }}"
+                {% if target and target.status is defined and target.status == s %}selected{% endif %}
+              >{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="mb-3">
+          <label class="form-label">Modus Operandi</label>
+          <textarea name="modus_operandi" class="form-control" rows="3"
+                    placeholder="Known methods of operation">{{ target.modus_operandi if target and target.modus_operandi is defined else (target.get('modus_operandi', '') if target and target.get else '') }}</textarea>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Linked Cases</label>
+            <input type="text" name="linked_cases" class="form-control"
+                   placeholder="Comma-separated case reference nos."
+                   value="{{ target.linked_cases if target and target.linked_cases is defined else (target.get('linked_cases', '') if target and target.get else '') }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Linked Intelligence</label>
+            <input type="text" name="linked_intel" class="form-control"
+                   placeholder="Comma-separated intel IDs"
+                   value="{{ target.linked_intel if target and target.linked_intel is defined else (target.get('linked_intel', '') if target and target.get else '') }}">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Notes</label>
+          <textarea name="notes" class="form-control" rows="3"
+                    placeholder="Additional intelligence notes">{{ target.notes if target and target.notes is defined else (target.get('notes', '') if target and target.get else '') }}</textarea>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle"></i> {% if is_edit %}Update{% else %}Create{% endif %} Target
+          </button>
+          <a href="{{ url_for('targets.target_list') }}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

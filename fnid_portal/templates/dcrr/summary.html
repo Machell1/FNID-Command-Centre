@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block title %}DCRR Summary{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-bar-chart me-2"></i>DCRR Summary Statistics</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('dcrr.dcrr_register') }}">DCRR Register</a></li>
+                <li class="breadcrumb-item active">Summary</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('dcrr.dcrr_register') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Register
+        </a>
+    </div>
+</div>
+
+<!-- KPI Card -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card">
+            <div class="kpi-value">{{ total }}</div>
+            <div class="kpi-label">Total DCRR Entries</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-success">
+            <div class="kpi-value">
+                {% for s in by_status if s.status == 'Open' %}{{ s.cnt }}{% else %}0{% endfor %}
+            </div>
+            <div class="kpi-label">Open</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-info">
+            <div class="kpi-value">
+                {% for s in by_status if s.status == 'Closed' %}{{ s.cnt }}{% else %}0{% endfor %}
+            </div>
+            <div class="kpi-label">Closed</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-danger">
+            <div class="kpi-value">
+                {% for s in by_status if s.status == 'Suspended' %}{{ s.cnt }}{% else %}0{% endfor %}
+            </div>
+            <div class="kpi-label">Suspended</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- By Station Chart -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Entries by Station</h6></div>
+            <div class="card-body">
+                <canvas id="stationChart" height="280"></canvas>
+                <table class="table table-sm fnid-table mt-3">
+                    <thead><tr><th>Station</th><th class="text-end">Count</th></tr></thead>
+                    <tbody>
+                        {% for r in by_station %}
+                        <tr><td>{{ r.station or 'Unknown' }}</td><td class="text-end">{{ r.cnt }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- By Classification Chart -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Entries by Classification</h6></div>
+            <div class="card-body">
+                <canvas id="classChart" height="280"></canvas>
+                <table class="table table-sm fnid-table mt-3">
+                    <thead><tr><th>Classification</th><th class="text-end">Count</th></tr></thead>
+                    <tbody>
+                        {% for r in by_classification %}
+                        <tr><td>{{ r.classification or 'Unclassified' }}</td><td class="text-end">{{ r.cnt }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- By Status -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Entries by Status</h6></div>
+            <div class="card-body">
+                <canvas id="statusChart" height="220"></canvas>
+                <table class="table table-sm fnid-table mt-3">
+                    <thead><tr><th>Status</th><th class="text-end">Count</th></tr></thead>
+                    <tbody>
+                        {% for r in by_status %}
+                        <tr>
+                            <td>
+                                {% if r.status == 'Open' %}
+                                <span class="badge bg-success">{{ r.status }}</span>
+                                {% elif r.status == 'Closed' %}
+                                <span class="badge bg-secondary">{{ r.status }}</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">{{ r.status or 'Unknown' }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">{{ r.cnt }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- By Month -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Entries by Month (Last 12)</h6></div>
+            <div class="card-body">
+                <canvas id="monthChart" height="220"></canvas>
+                <table class="table table-sm fnid-table mt-3">
+                    <thead><tr><th>Month</th><th class="text-end">Count</th></tr></thead>
+                    <tbody>
+                        {% for r in by_month %}
+                        <tr><td>{{ r.month }}</td><td class="text-end">{{ r.cnt }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const navy = '#1b2a4a';
+    const gold = '#c9a84c';
+    const chartColors = ['#1b2a4a', '#2c4a7c', '#3d6a9f', '#5e8ab4', '#7faac9', '#a0cadf',
+                         '#c9a84c', '#d4b86a', '#dfc888', '#e9d8a6'];
+
+    // Station chart
+    new Chart(document.getElementById('stationChart'), {
+        type: 'bar',
+        data: {
+            labels: [{% for r in by_station %}'{{ r.station or "Unknown" }}'{{ ', ' if not loop.last }}{% endfor %}],
+            datasets: [{
+                label: 'Entries',
+                data: [{% for r in by_station %}{{ r.cnt }}{{ ', ' if not loop.last }}{% endfor %}],
+                backgroundColor: navy
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    // Classification chart
+    new Chart(document.getElementById('classChart'), {
+        type: 'doughnut',
+        data: {
+            labels: [{% for r in by_classification %}'{{ r.classification or "Unclassified" }}'{{ ', ' if not loop.last }}{% endfor %}],
+            datasets: [{
+                data: [{% for r in by_classification %}{{ r.cnt }}{{ ', ' if not loop.last }}{% endfor %}],
+                backgroundColor: chartColors
+            }]
+        },
+        options: { responsive: true }
+    });
+
+    // Status chart
+    new Chart(document.getElementById('statusChart'), {
+        type: 'pie',
+        data: {
+            labels: [{% for r in by_status %}'{{ r.status or "Unknown" }}'{{ ', ' if not loop.last }}{% endfor %}],
+            datasets: [{
+                data: [{% for r in by_status %}{{ r.cnt }}{{ ', ' if not loop.last }}{% endfor %}],
+                backgroundColor: ['#198754', '#6c757d', '#ffc107', '#0dcaf0', '#dc3545']
+            }]
+        },
+        options: { responsive: true }
+    });
+
+    // Month chart
+    new Chart(document.getElementById('monthChart'), {
+        type: 'line',
+        data: {
+            labels: [{% for r in by_month %}'{{ r.month }}'{{ ', ' if not loop.last }}{% endfor %}].reverse(),
+            datasets: [{
+                label: 'Entries',
+                data: [{% for r in by_month %}{{ r.cnt }}{{ ', ' if not loop.last }}{% endfor %}].reverse(),
+                borderColor: navy,
+                backgroundColor: 'rgba(27,42,74,0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+});
+</script>
+{% endblock %}

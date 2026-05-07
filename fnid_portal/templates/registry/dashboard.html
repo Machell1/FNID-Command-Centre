@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Registry Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-graph-up me-2" style="color: {{ portal.color }};"></i>Case Registry & SOP Dashboard</h4>
+        <small class="text-muted">Per DPP Prosecution Protocol (2012) & Disclosure Protocol (2013)</small>
+    </div>
+    <a href="{{ url_for('units.unit_home', unit='registry') }}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Registry
+    </a>
+</div>
+
+<!-- KPIs -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card">
+            <div class="kpi-value">{{ charts.total or 0 }}</div>
+            <div class="kpi-label">Total Cases</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-success">
+            <div class="kpi-value">{{ charts.compliant or 0 }}</div>
+            <div class="kpi-label">SOP Compliant</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-info">
+            <div class="kpi-value">{{ charts.at_dpp or 0 }}</div>
+            <div class="kpi-label">At DPP</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-warning">
+            <div class="kpi-value">
+                {{ (charts.total or 0) - (charts.compliant or 0) }}
+            </div>
+            <div class="kpi-label">Needing Attention</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="chart-container" style="height: 350px;">
+            <h6 class="text-muted mb-2">Cases by Status</h6>
+            <canvas id="statusChart"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="chart-container" style="height: 350px;">
+            <h6 class="text-muted mb-2">SOP Compliance</h6>
+            <canvas id="complianceChart"></canvas>
+        </div>
+    </div>
+</div>
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="chart-container" style="height: 350px;">
+            <h6 class="text-muted mb-2">Case Classification</h6>
+            <canvas id="classChart"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="chart-container" style="height: 350px;">
+            <h6 class="text-muted mb-2">DPP Pipeline</h6>
+            <canvas id="dppChart"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var colors = ['#1F3864','#C00000','#BF8F00','#538135','#7030A0','#00B0F0','#8B4513','#FF6600','#006400'];
+
+    {% if charts.by_status %}
+    fnidChart('statusChart', 'bar',
+        {{ charts.by_status|map(attribute=0)|list|tojson }},
+        [{ data: {{ charts.by_status|map(attribute=1)|list|tojson }},
+           backgroundColor: colors }],
+        { indexAxis: 'y', plugins: { legend: { display: false } } }
+    );
+    {% endif %}
+
+    {% if charts.by_compliance %}
+    fnidChart('complianceChart', 'doughnut',
+        {{ charts.by_compliance|map(attribute=0)|list|tojson }},
+        [{ data: {{ charts.by_compliance|map(attribute=1)|list|tojson }},
+           backgroundColor: ['#28a745','#ffc107','#dc3545','#6c757d','#17a2b8','#fd7e14'] }]
+    );
+    {% endif %}
+
+    {% if charts.by_classification %}
+    fnidChart('classChart', 'pie',
+        {{ charts.by_classification|map(attribute=0)|list|tojson }},
+        [{ data: {{ charts.by_classification|map(attribute=1)|list|tojson }},
+           backgroundColor: colors }]
+    );
+    {% endif %}
+
+    {% if charts.by_dpp %}
+    fnidChart('dppChart', 'bar',
+        {{ charts.by_dpp|map(attribute=0)|list|tojson }},
+        [{ data: {{ charts.by_dpp|map(attribute=1)|list|tojson }},
+           backgroundColor: colors }],
+        { indexAxis: 'y', plugins: { legend: { display: false } } }
+    );
+    {% endif %}
+});
+</script>
+{% endblock %}

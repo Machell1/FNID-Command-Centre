@@ -1,0 +1,327 @@
+﻿{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+
+{% block head %}
+<style>
+    .report-card {
+        transition: transform 0.15s, box-shadow 0.15s;
+        border-left: 4px solid #1F3864;
+    }
+    .report-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .report-card .report-icon {
+        font-size: 2.5rem;
+        color: #1F3864;
+    }
+    @media print {
+        .no-print { display: none !important; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if report_type is defined and report_type == 'dcrr' %}
+{# ---- DCRR Summary Report ---- #}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0"><i class="bi bi-journal-text me-2"></i>DCRR Summary Report</h2>
+        <small class="text-muted">{{ start_date }} to {{ end_date }} | Total entries: {{ total_entries }}</small>
+    </div>
+    <div class="no-print">
+        <a href="{{ url_for('reports.reports_home') }}" class="btn btn-outline-secondary btn-sm me-2">
+            <i class="bi bi-arrow-left me-1"></i>Reports
+        </a>
+        <a href="{{ url_for('reports.export_report_pdf', report_type='dcrr', start_date=start_date, end_date=end_date) }}" class="btn btn-sm btn-primary">
+            <i class="bi bi-file-pdf me-1"></i>Export PDF
+        </a>
+        <button onclick="window.print()" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-printer me-1"></i>Print
+        </button>
+    </div>
+</div>
+
+<!-- Date Range Filter -->
+<div class="card mb-4 no-print">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label class="form-label form-label-sm mb-0">Start Date</label>
+                <input type="date" class="form-control form-control-sm" name="start_date" value="{{ start_date }}">
+            </div>
+            <div class="col-auto">
+                <label class="form-label form-label-sm mb-0">End Date</label>
+                <input type="date" class="form-control form-control-sm" name="end_date" value="{{ end_date }}">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-funnel me-1"></i>Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header bg-white"><h6 class="mb-0">By Station</h6></div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-striped mb-0">
+                    <thead><tr><th>Station</th><th class="text-end">Count</th></tr></thead>
+                    <tbody>
+                        {% for row in by_station %}
+                        <tr><td>{{ row.station }}</td><td class="text-end fw-bold">{{ row.cnt }}</td></tr>
+                        {% endfor %}
+                        {% if not by_station %}<tr><td colspan="2" class="text-center text-muted">No data</td></tr>{% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header bg-white"><h6 class="mb-0">By Classification</h6></div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-striped mb-0">
+                    <thead><tr><th>Classification</th><th class="text-end">Count</th></tr></thead>
+                    <tbody>
+                        {% for row in by_classification %}
+                        <tr><td>{{ row.classification }}</td><td class="text-end fw-bold">{{ row.cnt }}</td></tr>
+                        {% endfor %}
+                        {% if not by_classification %}<tr><td colspan="2" class="text-center text-muted">No data</td></tr>{% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header bg-white"><h6 class="mb-0">By Status</h6></div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-striped mb-0">
+                    <thead><tr><th>Status</th><th class="text-end">Count</th></tr></thead>
+                    <tbody>
+                        {% for row in by_status %}
+                        <tr><td>{{ row.status }}</td><td class="text-end fw-bold">{{ row.cnt }}</td></tr>
+                        {% endfor %}
+                        {% if not by_status %}<tr><td colspan="2" class="text-center text-muted">No data</td></tr>{% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if outstanding %}
+<div class="card mb-4">
+    <div class="card-header bg-warning bg-opacity-25">
+        <h6 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Outstanding Entries (No Case Link) - {{ outstanding|length }}</h6>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-sm table-hover fnid-table mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>DCRR #</th>
+                    <th>Date</th>
+                    <th>Station</th>
+                    <th>Classification</th>
+                    <th>Offence</th>
+                    <th>Complainant</th>
+                    <th>Suspect</th>
+                    <th>OIC</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in outstanding %}
+                <tr>
+                    <td><code>{{ row.dcrr_number }}</code></td>
+                    <td>{{ row.report_date }}</td>
+                    <td>{{ row.station }}</td>
+                    <td>{{ row.classification }}</td>
+                    <td>{{ row.offence }}</td>
+                    <td>{{ row.complainant_name or '-' }}</td>
+                    <td>{{ row.suspect_name or '-' }}</td>
+                    <td>{{ row.oic_name or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% elif report_type is defined and report_type == 'evidence' %}
+{# ---- Evidence Status Report ---- #}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0"><i class="bi bi-box-seam me-2"></i>Evidence Status Report</h2>
+        <small class="text-muted">Lab submissions, overdue certificates, and chain-of-custody gaps</small>
+    </div>
+    <div class="no-print">
+        <a href="{{ url_for('reports.reports_home') }}" class="btn btn-outline-secondary btn-sm me-2">
+            <i class="bi bi-arrow-left me-1"></i>Reports
+        </a>
+        <a href="{{ url_for('reports.export_report_pdf', report_type='evidence') }}" class="btn btn-sm btn-primary">
+            <i class="bi bi-file-pdf me-1"></i>Export PDF
+        </a>
+        <button onclick="window.print()" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-printer me-1"></i>Print
+        </button>
+    </div>
+</div>
+
+<!-- Pending Lab -->
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="bi bi-hourglass-split me-2"></i>Exhibits Pending Lab ({{ pending_lab|length }})</h6>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-sm table-hover fnid-table mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Lab Ref</th>
+                    <th>Exhibit Tag</th>
+                    <th>Case Reference No.</th>
+                    <th>Submission Date</th>
+                    <th>Exam Type</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in pending_lab %}
+                <tr>
+                    <td><code>{{ row.lab_ref }}</code></td>
+                    <td>{{ row.exhibit_tag }}</td>
+                    <td>{{ row.linked_case_id or '-' }}</td>
+                    <td>{{ row.submission_date }}</td>
+                    <td>{{ row.exam_type or '-' }}</td>
+                    <td><span class="badge bg-warning text-dark">{{ row.certificate_status }}</span></td>
+                </tr>
+                {% endfor %}
+                {% if not pending_lab %}
+                <tr><td colspan="6" class="text-center text-muted py-3">No pending lab submissions.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Overdue Certificates -->
+<div class="card mb-4">
+    <div class="card-header bg-danger bg-opacity-10">
+        <h6 class="mb-0"><i class="bi bi-exclamation-octagon me-2 text-danger"></i>Overdue Certificates - 8+ Weeks ({{ overdue_certs|length }})</h6>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-sm table-hover fnid-table mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Lab Ref</th>
+                    <th>Exhibit Tag</th>
+                    <th>Case Reference No.</th>
+                    <th>Submission Date</th>
+                    <th>Exam Type</th>
+                    <th>Expected Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in overdue_certs %}
+                <tr>
+                    <td><code>{{ row.lab_ref }}</code></td>
+                    <td>{{ row.exhibit_tag }}</td>
+                    <td>{{ row.linked_case_id or '-' }}</td>
+                    <td>{{ row.submission_date }}</td>
+                    <td>{{ row.exam_type or '-' }}</td>
+                    <td>{{ row.expected_date or 'Not set' }}</td>
+                </tr>
+                {% endfor %}
+                {% if not overdue_certs %}
+                <tr><td colspan="6" class="text-center text-muted py-3">No overdue certificates.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Chain Gaps -->
+<div class="card mb-4">
+    <div class="card-header bg-warning bg-opacity-25">
+        <h6 class="mb-0"><i class="bi bi-link-45deg me-2"></i>Chain-of-Custody Gaps ({{ chain_gaps|length }})</h6>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-sm table-hover fnid-table mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Exhibit Tag</th>
+                    <th>Case Reference No.</th>
+                    <th>Type</th>
+                    <th>Custodian</th>
+                    <th>Location</th>
+                    <th>Seal Intact</th>
+                    <th>Condition</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in chain_gaps %}
+                <tr>
+                    <td><code>{{ row.exhibit_tag }}</code></td>
+                    <td>{{ row.linked_case_id or '-' }}</td>
+                    <td>{{ row.exhibit_type }}</td>
+                    <td>{{ row.current_custodian or '-' }}</td>
+                    <td>{{ row.storage_location or '-' }}</td>
+                    <td>
+                        {% if row.seal_intact == 'No' %}
+                        <span class="badge bg-danger">No</span>
+                        {% else %}
+                        <span class="badge bg-success">Yes</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ row.condition or '-' }}</td>
+                </tr>
+                {% endfor %}
+                {% if not chain_gaps %}
+                <tr><td colspan="7" class="text-center text-muted py-3">No chain-of-custody gaps detected.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% else %}
+{# ---- Reports Index ---- #}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0"><i class="bi bi-file-earmark-bar-graph me-2"></i>Reports</h2>
+        <small class="text-muted">Generate and export statistical reports</small>
+    </div>
+    <div class="no-print">
+        <a href="{{ url_for('analytics.analytics_home') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-graph-up-arrow me-1"></i>Analytics Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    {% for report in reports %}
+    <div class="col-md-6 col-lg-3">
+        <div class="card report-card h-100">
+            <div class="card-body d-flex flex-column">
+                <div class="text-center mb-3">
+                    <i class="bi {{ report.icon }} report-icon"></i>
+                </div>
+                <h5 class="card-title text-center">{{ report.title }}</h5>
+                <p class="card-text text-muted small flex-grow-1">{{ report.description }}</p>
+                <div class="d-grid gap-2 mt-auto">
+                    <a href="{{ report.url }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-file-earmark-text me-1"></i>Generate Report
+                    </a>
+                    <a href="{{ url_for('reports.export_report_pdf', report_type=report.id) }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-file-pdf me-1"></i>Export PDF
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

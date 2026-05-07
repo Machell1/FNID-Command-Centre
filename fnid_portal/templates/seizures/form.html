@@ -1,0 +1,307 @@
+﻿{% extends "base.html" %}
+{% from "macros.html" import select_field, text_field, textarea_field, number_field, submit_controls %}
+{% block title %}{% if is_new %}New Seizure{% else %}Edit Seizure{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-shield-lock me-2" style="color: {{ portal.color }};"></i>
+            {% if subtype == 'narcotics' %}
+                {% if is_new %}New Narcotics Seizure Record{% else %}Edit Narcotics Seizure {{ record.seizure_id if record else '' }}{% endif %}
+            {% else %}
+                {% if is_new %}New Firearm Seizure Record{% else %}Edit Firearm Seizure {{ record.seizure_id if record else '' }}{% endif %}
+            {% endif %}
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('units.unit_home', unit='seizures') }}">Seizures</a></li>
+                <li class="breadcrumb-item active">{% if is_new %}New{% else %}Edit{% endif %}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+{% if subtype == 'narcotics' %}
+<!-- Narcotics Legal Reference Guide -->
+<div class="card border-info mb-3">
+    <div class="card-header bg-info text-white">
+        <i class="bi bi-book me-2"></i>Narcotics Investigation â€” Legal Reference (Dangerous Drugs Act as amended 2015)
+    </div>
+    <div class="card-body small">
+        <div class="row">
+            <div class="col-md-6">
+                <strong>Part IIIA â€” Ganja (Cannabis):</strong>
+                <ul class="mb-1">
+                    <li><strong>s.7A</strong> â€” Import or Export of Ganja (5yrâ€“life)</li>
+                    <li><strong>s.7B</strong> â€” Cultivation, Selling, Dealing, Transporting Ganja</li>
+                    <li><strong>s.7C</strong> â€” Possession of Ganja (â‰¤2oz = J$500 ticket; >2oz = criminal)</li>
+                    <li><strong>s.7D</strong> â€” Smoking Ganja in Public Place</li>
+                </ul>
+                <strong>Part IV â€” Cocaine, Heroin, Morphine:</strong>
+                <ul class="mb-1">
+                    <li><strong>s.8</strong> â€” Import or Export (10yrâ€“life)</li>
+                    <li><strong>s.8A</strong> â€” Selling, Dealing, Transporting (up to 35yr)</li>
+                    <li><strong>s.8B</strong> â€” Possession (any quantity for cocaine; >1/10oz heroin = deemed dealing)</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <strong>Investigation Workflow:</strong>
+                <ol class="mb-0" style="padding-left: 1.2em;">
+                    {% for step in cfg.NARCOTICS_INVESTIGATION_WORKFLOW[:9] %}
+                    <li>{{ step }}</li>
+                    {% endfor %}
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- NARCOTICS SEIZURE FORM -->
+<form method="POST" class="needs-validation" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <!-- Seizure Details -->
+    <div class="form-section">
+        <div class="form-section-title"><i class="bi bi-capsule me-2"></i>Narcotics Seizure Details (per Dangerous Drugs Act)</div>
+        <div class="row">
+            <div class="col-md-3">
+                {{ text_field("seizure_date", "Seizure Date", record.seizure_date if record else '', type="date", required=true) }}
+            </div>
+            <div class="col-md-3">
+                {{ select_field("parish", "Parish", cfg.ALL_PARISHES,
+                                record.parish if record else "", required=true) }}
+            </div>
+            <div class="col-md-3">
+                {{ select_field("location", "Seizure Location", cfg.SEIZURE_LOCATIONS,
+                                record.location if record else "") }}
+            </div>
+            <div class="col-md-3">
+                {{ text_field("linked_op_id", "Linked Operation ID", record.linked_op_id if record else "",
+                              placeholder="OP-2025-XXX") }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                {{ text_field("linked_case_id", "Linked Case Reference No.", record.linked_case_id if record else "",
+                              placeholder="CR-2025-XXX") }}
+            </div>
+            <div class="col-md-4">
+                {{ text_field("seized_by", "Seized By (Officer)", record.seized_by if record else session.get('officer_name',''), required=true) }}
+            </div>
+            <div class="col-md-4">
+                {{ text_field("witness_officer", "Witness Officer", record.witness_officer if record else "") }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Drug Details -->
+    <div class="form-section">
+        <div class="form-section-title"><i class="bi bi-box-seam me-2"></i>Drug Classification & Quantity</div>
+        <div class="row">
+            <div class="col-md-3">
+                {{ select_field("drug_type", "Drug Type / Classification", cfg.DRUG_TYPES,
+                                record.drug_type if record else "", required=true,
+                                help="Per DDA schedule classification") }}
+            </div>
+            <div class="col-md-3">
+                {{ number_field("quantity", "Quantity", record.quantity if record else "", min=0, step=0.01, required=true) }}
+            </div>
+            <div class="col-md-3">
+                {{ select_field("unit", "Unit of Measurement", cfg.DRUG_UNITS,
+                                record.unit if record else "", required=true) }}
+            </div>
+            <div class="col-md-3">
+                {{ number_field("est_street_value", "Estimated Street Value (JMD)", record.est_street_value if record else "", min=0, step=0.01) }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                {{ text_field("packaging_method", "Packaging Method", record.packaging_method if record else "",
+                              placeholder="e.g. Brick, bags, capsules") }}
+            </div>
+            <div class="col-md-4">
+                {{ text_field("concealment_method", "Concealment Method", record.concealment_method if record else "",
+                              placeholder="e.g. Vehicle compartment, body cavity") }}
+            </div>
+            <div class="col-md-4">
+                {{ text_field("field_test_result", "Field Test Result", record.field_test_result if record else "",
+                              help="Result of presumptive field test (e.g. positive for cocaine)") }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Lab & Evidence -->
+    <div class="form-section">
+        <div class="form-section-title"><i class="bi bi-clipboard-data me-2"></i>Lab & Evidence Tracking</div>
+        <div class="row">
+            <div class="col-md-4">
+                {{ select_field("lab_cert_status", "Lab Certificate Status", cfg.FORENSIC_CERT_STATUS,
+                                record.lab_cert_status if record else "Not Yet Submitted to Lab") }}
+            </div>
+            <div class="col-md-4">
+                {{ text_field("exhibit_tag", "Exhibit Tag / Reference", record.exhibit_tag if record else "",
+                              placeholder="e.g. EXH-2025-XXX") }}
+            </div>
+            <div class="col-md-4">
+                {{ text_field("storage_location", "Storage Location", record.storage_location if record else "") }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="form-section">
+        <div class="form-section-title"><i class="bi bi-chat-left-text me-2"></i>Additional Notes</div>
+        {{ textarea_field("notes", "Notes / Remarks", record.notes if record else "", rows=3) }}
+    </div>
+
+    {{ submit_controls(record.record_status if record else "Draft") }}
+</form>
+
+{% else %}
+<!-- Firearms Legal Reference Guide -->
+<div class="card border-danger mb-3">
+    <div class="card-header bg-danger text-white">
+        <i class="bi bi-book me-2"></i>Firearm & Ammunition Investigation â€” Legal Reference (Firearms Act 2022)
+    </div>
+    <div class="card-body small">
+        <div class="row">
+            <div class="col-md-6">
+                <strong>Key Charges â€” Firearms (Prohibition, Restriction & Regulation) Act, 2022:</strong>
+                <ul class="mb-1">
+                    <li><strong>s.5</strong> â€” Possession of Prohibited Weapon (15yr min; 25yr max)</li>
+                    <li><strong>s.6</strong> â€” Stockpiling (3+ firearms or 50+ rounds; 15yr min)</li>
+                    <li><strong>s.7</strong> â€” Trafficking in Prohibited Weapon (20yr min; life max)</li>
+                    <li><strong>s.10</strong> â€” Dealing (20+ rounds = deemed dealing; 20yr min)</li>
+                    <li><strong>s.13</strong> â€” Use/Possession of Firearm in Certain Circumstances</li>
+                    <li><strong>s.15</strong> â€” Removal/Obliteration of Serial Number/Markings</li>
+                    <li><strong>s.35</strong> â€” Unauthorised Possession of Firearm (no licence)</li>
+                    <li><strong>s.36</strong> â€” Unauthorised Possession of Ammunition (no licence)</li>
+                </ul>
+                <em>All firearms offences â€” mandatory Gun Court referral (Gun Court Act s.4)</em>
+            </div>
+            <div class="col-md-6">
+                <strong>Investigation Workflow:</strong>
+                <ol class="mb-0" style="padding-left: 1.2em;">
+                    {% for step in cfg.FA_INVESTIGATION_WORKFLOW[:10] %}
+                    <li>{{ step }}</li>
+                    {% endfor %}
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FIREARMS SEIZURE FORM -->
+<form method="POST" class="needs-validation" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <!-- Seizure Details -->
+    <div class="form-section">
+        <div class="form-section-title"><i class="bi bi-crosshair me-2"></i>Firearm Seizure Details (per Firearms Act 2022)</div>
+        <div class="row">
+            <div class="col-md-3">
+                {{ text_field("seizure_date", "Seizure Date", record.seizure_date if record else '', type="date", required=true) }}
+            </div>
+            <div class="col-md-3">
+                {{ select_field("parish", "Parish", cfg.ALL_PARISHES,
+                                record.parish if record else "", required=true) }}
+            </div>
+            <div class="col-md-3">
+                {{ select_field("location", "Seizure Location", cfg.SEIZURE_LOCATIONS,
+                                record.location if record else "") }}
+            </div>
+            <div class="col-md-3">
+                {{ text_field("linked_op_id", "Linked Operation ID", record.linked_op_id if record else "",
+                              placeholder="OP-2025-XXX") }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                {{ text_field("linked_case_id", "Linked Case Reference No.", record.linked_case_id if record else "",
+                              placeholder="CR-2025-XXX") }}
+            </div>
+            <div class="col-md-4">
+                {{ text_field("seized_by", "Seized By (Officer)", record.seized_by if record else session.get('officer_name',''), required=true) }}
+            </div>
+            <div class="col-md-4">
+                {{ text_field("witness_officer", "Witness Officer", record.witness_officer if record else "") }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Firearm Classification -->
+    <div class="form-section">
+        <div class="form-section-title"><i class="bi bi-crosshair2 me-2"></i>Firearm Classification & Identification</div>
+        <div class="row">
+            <div class="col-md-3">
+                {{ select_field("firearm_type", "Firearm Type", cfg.FIREARM_TYPES,
+                                record.firearm_type if record else "", required=true,
+                                help="Per Firearms (Prohibition, Restriction & Regulation) Act, 2022") }}
+            </div>
+            <div class="col-md-3">
+                {{ text_field("make", "Make / Manufacturer", record.make if record else "",
+                              placeholder="e.g. Glock, Smith & Wesson") }}
+            </div>
+            <div class="col-md-3">
+                {{ text_field("model", "Model", record.model if record else "",
+                              placeholder="e.g. G19, Model 10") }}
+            </div>
+            <div class="col-md-3">
+                {{ text_field("serial_number", "Serial Number", record.serial_number if record else "",
+                              help="Enter 'Obliterated' if serial has been removed") }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                {{ select_field("calibre", "Calibre", cfg.FIREARM_CALIBRES,
+                                record.calibre if record else "") }}
+            </div>
+            <div class="col-md-4">
+                {{ text_field("country_of_origin", "Country of Origin", record.country_of_origin if record else "",
+                              placeholder="e.g. United States, Brazil") }}
+            </div>
+            <div class="col-md-4">
+                {{ number_field("ammo_count", "Ammunition Count (rounds)", record.ammo_count if record else 0, min=0) }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                {{ number_field("magazine_count", "Magazine Count", record.magazine_count if record else 0, min=0) }}
+            </div>
+            <div class="col-md-4">
+                {{ text_field("exhibit_tag", "Exhibit Tag / Reference", record.exhibit_tag if record else "",
+                              placeholder="e.g. EXH-2025-XXX") }}
+            </div>
+            <div class="col-md-4">
+                {{ text_field("storage_location", "Storage Location", record.storage_location if record else "") }}
+            </div>
+        </div>
+    </div>
+
+    <!-- IBIS & eTrace -->
+    <div class="form-section">
+        <div class="form-section-title"><i class="bi bi-database me-2"></i>IBIS & eTrace Submissions</div>
+        <div class="row">
+            <div class="col-md-6">
+                {{ select_field("ibis_status", "IBIS Status (Integrated Ballistics)", cfg.IBIS_STATUS,
+                                record.ibis_status if record else "Not Submitted",
+                                help="Integrated Ballistic Identification System - IFSLM") }}
+            </div>
+            <div class="col-md-6">
+                {{ select_field("etrace_status", "eTrace Status (ATF)", cfg.ETRACE_STATUS,
+                                record.etrace_status if record else "Not Submitted",
+                                help="ATF eTrace firearm tracing system") }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="form-section">
+        <div class="form-section-title"><i class="bi bi-chat-left-text me-2"></i>Additional Notes</div>
+        {{ textarea_field("notes", "Notes / Remarks", record.notes if record else "", rows=3) }}
+    </div>
+
+    {{ submit_controls(record.record_status if record else "Draft") }}
+</form>
+{% endif %}
+{% endblock %}

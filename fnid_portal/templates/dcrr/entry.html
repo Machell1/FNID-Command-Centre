@@ -1,0 +1,173 @@
+﻿{% extends "base.html" %}
+{% block title %}DCRR Entry â€” {{ entry.dcrr_number }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-journal-text me-2"></i>DCRR Entry: {{ entry.dcrr_number }}</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('dcrr.dcrr_register') }}">DCRR Register</a></li>
+                <li class="breadcrumb-item active">{{ entry.dcrr_number }}</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('dcrr.edit_dcrr', dcrr_id=entry.id) }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-pencil me-1"></i> Edit
+        </a>
+        <a href="{{ url_for('dcrr.dcrr_register') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Register
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Entry Details -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-fnid-navy text-white">
+                <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Entry Details</h6>
+            </div>
+            <div class="card-body">
+                <div class="form-section">
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">DCRR Number</div>
+                        <div class="col-md-8">{{ entry.dcrr_number }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Report Date</div>
+                        <div class="col-md-8">{{ entry.report_date or '-' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Station</div>
+                        <div class="col-md-8">{{ entry.station or '-' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Diary Number</div>
+                        <div class="col-md-8">{{ entry.diary_number or '-' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Classification</div>
+                        <div class="col-md-8">{{ entry.classification or '-' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Offence</div>
+                        <div class="col-md-8">{{ entry.offence or '-' }}</div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="form-section">
+                    <h6 class="text-muted mb-3">Parties</h6>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Complainant</div>
+                        <div class="col-md-8">{{ entry.complainant_name or '-' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Suspect</div>
+                        <div class="col-md-8">{{ entry.suspect_name or '-' }}</div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="form-section">
+                    <h6 class="text-muted mb-3">Officer in Charge</h6>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">OIC Name</div>
+                        <div class="col-md-8">{{ entry.oic_name or '-' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">OIC Badge</div>
+                        <div class="col-md-8">{{ entry.oic_badge or '-' }}</div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="form-section">
+                    <h6 class="text-muted mb-3">Record Info</h6>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Status</div>
+                        <div class="col-md-8">
+                            {% if entry.status == 'Open' %}
+                            <span class="badge bg-success">Open</span>
+                            {% elif entry.status == 'Closed' %}
+                            <span class="badge bg-secondary">Closed</span>
+                            {% elif entry.status == 'Suspended' %}
+                            <span class="badge bg-warning text-dark">Suspended</span>
+                            {% else %}
+                            <span class="badge bg-light text-dark">{{ entry.status or 'Open' }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Created By</div>
+                        <div class="col-md-8">{{ entry.created_by or '-' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Created At</div>
+                        <div class="col-md-8">{{ entry.created_at or '-' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 fw-bold">Last Updated</div>
+                        <div class="col-md-8">{{ entry.updated_at or '-' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Linked Case -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-fnid-navy text-white">
+                <h6 class="mb-0"><i class="bi bi-link-45deg me-2"></i>Linked Case</h6>
+            </div>
+            <div class="card-body">
+                {% if case %}
+                <div class="mb-2">
+                    <strong>Case Reference No.:</strong>
+                    <a href="{{ url_for('cases.case_detail', case_id=case.case_id) }}">{{ case.case_id }}</a>
+                </div>
+                <div class="mb-2">
+                    <strong>Classification:</strong> {{ case.classification or '-' }}
+                </div>
+                <div class="mb-2">
+                    <strong>Status:</strong>
+                    <span class="badge bg-info">{{ case.case_status or '-' }}</span>
+                </div>
+                <div class="mb-2">
+                    <strong>Stage:</strong> {{ case.current_stage or '-' }}
+                </div>
+                <div class="mb-2">
+                    <strong>OIC:</strong> {{ case.oic_name or '-' }}
+                </div>
+                <div class="mb-2">
+                    <strong>Parish:</strong> {{ case.parish or '-' }}
+                </div>
+                <div class="mb-2">
+                    <strong>Registered:</strong> {{ case.registration_date or '-' }}
+                </div>
+                <a href="{{ url_for('cases.case_detail', case_id=case.case_id) }}"
+                   class="btn btn-outline-primary btn-sm mt-2 w-100">
+                    <i class="bi bi-folder2-open me-1"></i> View Full Case
+                </a>
+                {% else %}
+                <p class="text-muted mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    {% if entry.case_id %}
+                    Case {{ entry.case_id }} not found in the system.
+                    {% else %}
+                    No case linked to this DCRR entry.
+                    {% endif %}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

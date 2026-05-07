@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Enter KPI{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header"><h5><i class="bi bi-graph-up-arrow me-2"></i>Enter KPI</h5></div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('kpis.enter_kpi') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label for="officer_badge" class="form-label">Officer <span class="text-danger">*</span></label>
+                        <select class="form-select" id="officer_badge" name="officer_badge" required>
+                            <option value="">-- Select Officer --</option>
+                            {% for o in officers %}
+                            <option value="{{ o.badge_number }}">{{ o.full_name }} ({{ o.badge_number }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="period" class="form-label">Period <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="period" name="period" required placeholder="e.g. 2026-Q1, March 2026">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="metric_name" class="form-label">Metric Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="metric_name" name="metric_name" required placeholder="e.g. Cases Closed, Arrests Made">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="metric_value" class="form-label">Actual Value</label>
+                            <input type="text" class="form-control" id="metric_value" name="metric_value">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="target_value" class="form-label">Target Value</label>
+                            <input type="text" class="form-control" id="target_value" name="target_value">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Save KPI</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

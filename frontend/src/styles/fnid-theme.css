@@ -1,0 +1,91 @@
+/* FNID Area 3 React Theme — mirrors fnid_portal/static/css/fnid.css */
+
+:root {
+  --fnid-navy: #1F3864;
+  --fnid-dark-blue: #002060;
+  --fnid-light-blue: #D6E4F0;
+  --fnid-gold: #BF8F00;
+  --fnid-ops-red: #C00000;
+  --fnid-evidence-green: #538135;
+  --fnid-court-purple: #7030A0;
+  --fnid-narco-teal: #00B0F0;
+  --fnid-registry-brown: #8B4513;
+  --fnid-gray: #6c757d;
+  --fnid-light-gray: #f8f9fa;
+  --fnid-border: #dee2e6;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: #f0f2f5;
+  font-size: 0.9rem;
+}
+
+/* Login page background */
+.login-page {
+  background: linear-gradient(135deg, #1F3864 0%, #002060 100%);
+  min-height: 100vh;
+}
+
+/* Card hover effect */
+.hover-shadow:hover {
+  box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+  transform: translateY(-2px);
+  transition: all 0.2s ease;
+}
+
+/* Navbar dropdown styling */
+.dropdown-menu-dark .dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Mobile touch targets */
+@media (max-width: 768px) {
+  .btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .nav-link {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .table td, .table th {
+    padding: 0.5rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+  h4 {
+    font-size: 1.1rem;
+  }
+
+  .card-body {
+    padding: 0.75rem;
+  }
+}
+
+/* Skip to main content (accessibility) */
+.skip-to-main {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.skip-to-main:focus {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  width: auto;
+  height: auto;
+  padding: 10px 20px;
+  background: #1F3864;
+  color: white;
+  z-index: 9999;
+  border-radius: 4px;
+}

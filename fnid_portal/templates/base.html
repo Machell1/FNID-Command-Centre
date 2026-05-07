@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="FNID Area 3 Case Management System - Jamaica Constabulary Force">
+    <title>{% block title %}FNID Area 3{% endblock %} | Case Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fnid.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body class="fnid-app-shell">
+    <!-- Skip to main content (accessibility) -->
+    <a href="#main-content" class="skip-to-main">Skip to main content</a>
+
+    <!-- Page loading indicator -->
+    <div id="page-loader" class="page-loader d-none" role="status" aria-label="Loading">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Top Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-fnid-navy sticky-top fnid-topbar" role="navigation" aria-label="Main navigation">
+        <div class="container-fluid">
+            <a class="navbar-brand fnid-brand d-flex align-items-center" href="{{ url_for('units.unit_home', unit=user_single_unit) if user_single_unit else url_for('main.home') }}">
+                <span class="fnid-brand-mark" aria-hidden="true">
+                    <img src="{{ url_for('static', filename='img/jcf-logo.png') }}" alt="">
+                </span>
+                <div class="fnid-brand-copy">
+                    <span class="fw-bold">FNID Area 3</span>
+                    {% if user_single_unit %}
+                    <small class="d-none d-md-inline ms-2">
+                        <span class="badge bg-fnid-gold text-dark"><i class="bi {{ portals[user_single_unit].icon }} me-1"></i>{{ portals[user_single_unit].name }}</span>
+                    </small>
+                    {% else %}
+                    <small class="d-none d-md-inline text-white-50 ms-2">Firearms & Narcotics Operations</small>
+                    {% endif %}
+                </div>
+            </a>
+            {% if current_user.is_authenticated %}
+            <a href="{{ url_for('assistants.workstation') }}"
+               class="btn btn-warning btn-sm fnid-assistant-nav fnid-assistant-standalone"
+               title="Open AI Assistant Workstation"
+               aria-label="Open AI Assistant Workstation">
+                <i class="bi bi-cpu"></i>
+                <span class="d-none d-sm-inline ms-1">AI Assistant</span>
+            </a>
+            {% endif %}
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav me-auto">
+                    <!-- Cases -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            <i class="bi bi-folder2-open"></i> Cases
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li><a class="dropdown-item" href="{{ url_for('cases.case_list') }}"><i class="bi bi-list-ul me-2"></i>All Cases</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('cases.intake') }}"><i class="bi bi-plus-circle me-2"></i>New Case Intake</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('dcrr.dcrr_register') }}"><i class="bi bi-journal-text me-2"></i>DCRR Register</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('search.advanced_search') }}"><i class="bi bi-funnel me-2"></i>Advanced Search</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('dpp.dpp_home') }}"><i class="bi bi-briefcase me-2"></i>DPP Pipeline</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('sop.sop_list') }}"><i class="bi bi-clipboard-check me-2"></i>SOP Checklists</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('witnesses.witness_list') }}"><i class="bi bi-person-lines-fill me-2"></i>Witnesses</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('disclosure.disclosure_list') }}"><i class="bi bi-file-earmark-lock me-2"></i>Disclosure</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('reviews.review_list') }}"><i class="bi bi-calendar-check me-2"></i>Case Reviews</a></li>
+                            {% if current_user.is_authenticated and current_user.role in ('admin', 'dco', 'ddi', 'station_mgr') %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('batch.batch_home') }}"><i class="bi bi-collection me-2"></i>Batch Operations</a></li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                    <!-- Unit Portals -->
+                    {% if user_single_unit %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            <i class="bi {{ portals[user_single_unit].icon }}"></i> My Unit
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li><a class="dropdown-item" href="{{ url_for('units.unit_home', unit=user_single_unit) }}"><i class="bi bi-house me-2"></i>Unit Home</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('units.unit_dashboard', unit=user_single_unit) }}"><i class="bi bi-speedometer2 me-2"></i>Unit Dashboard</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('upload.submit_report') }}"><i class="bi bi-robot me-2"></i>Upload Report</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            <i class="bi bi-grid-3x3-gap"></i> Portals
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            {% for key, portal in portals.items() %}
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('units.unit_home', unit=key) }}">
+                                    <i class="bi {{ portal.icon }} me-2" style="color: {{ portal.color }}"></i>
+                                    {{ portal.name }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('evidence.evidence_dashboard') }}"><i class="bi bi-fingerprint me-2"></i>Evidence Manager</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('transport.fleet') }}"><i class="bi bi-truck me-2"></i>Transport</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('correspondence.correspondence_list') }}"><i class="bi bi-envelope me-2"></i>Correspondence</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('inv_cards.card_list') }}"><i class="bi bi-card-checklist me-2"></i>Investigator Cards</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('targets.target_list') }}"><i class="bi bi-crosshair me-2"></i>Intel Targets</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                    <!-- Policy & Forms -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            <i class="bi bi-book"></i> Policy
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li><a class="dropdown-item" href="{{ url_for('policy.policy_home') }}"><i class="bi bi-book me-2"></i>Case Management Policy</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('policy.definitions') }}"><i class="bi bi-journal-text me-2"></i>Definitions</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('policy.responsibilities') }}"><i class="bi bi-people me-2"></i>Roles & Responsibilities</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('policy.sops') }}"><i class="bi bi-clipboard-check me-2"></i>Standard Operating Procedures</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('policy.forms_library') }}"><i class="bi bi-file-earmark-text me-2"></i>Case Reference Forms</a></li>
+                        </ul>
+                    </li>
+                    <!-- MCR -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('mcr.mcr_dashboard') }}">
+                            <i class="bi bi-newspaper"></i> MCR
+                        </a>
+                    </li>
+                    <!-- Analytics & Reports -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            <i class="bi bi-bar-chart-line"></i> Analytics
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li><a class="dropdown-item" href="{{ url_for('main.command_dashboard') }}"><i class="bi bi-speedometer2 me-2"></i>Command Dashboard</a></li>
+                            {% if current_user.is_authenticated and current_user.role in ('admin', 'dco', 'ddi', 'station_mgr') %}
+                            <li><a class="dropdown-item" href="{{ url_for('analytics.analytics_home') }}"><i class="bi bi-graph-up-arrow me-2"></i>Performance Analytics</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('analytics.io_performance') }}"><i class="bi bi-people me-2"></i>IO Performance</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('analytics.seizure_analytics') }}"><i class="bi bi-shield-lock me-2"></i>Seizure Analytics</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('reports.reports_home') }}"><i class="bi bi-file-earmark-bar-graph me-2"></i>Reports</a></li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                    <!-- Member Features -->
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-workspace"></i> Member
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li><a class="dropdown-item" href="{{ url_for('documents.doc_list') }}"><i class="bi bi-file-earmark-text me-2"></i>Documents</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('kpis.my_kpis') }}"><i class="bi bi-graph-up me-2"></i>My KPIs</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('workflow.overview') }}"><i class="bi bi-diagram-3 me-2"></i>Workflow</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('assistants.workstation') }}"><i class="bi bi-cpu me-2"></i>AI Assistant</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                    <!-- Admin (role-restricted visibility) -->
+                    {% if current_user.is_authenticated and current_user.role in ('admin', 'dco') %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            <i class="bi bi-gear"></i> Admin
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_dashboard') }}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.users') }}"><i class="bi bi-people me-2"></i>Users</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.settings') }}"><i class="bi bi-sliders me-2"></i>Settings</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.backup') }}"><i class="bi bi-download me-2"></i>Backup</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.audit_log') }}"><i class="bi bi-clock-history me-2"></i>Audit Log</a></li>
+                            {% if current_user.admin_tier is not none and current_user.admin_tier <= 1 %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.maintenance') }}"><i class="bi bi-wrench me-2"></i>Maintenance</a></li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                    {% endif %}
+                </ul>
+                <!-- Search bar -->
+                <form class="d-flex me-3 search-form" action="{{ url_for('search.quick_search') }}" method="get" role="search">
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" name="q" id="global-search"
+                               placeholder="Search cases, persons, exhibits... (Ctrl+K)"
+                               aria-label="Search cases, persons, and exhibits"
+                               autocomplete="off" style="min-width: 200px;">
+                        <button class="btn btn-outline-light" type="submit" aria-label="Submit search"><i class="bi bi-search"></i></button>
+                    </div>
+                </form>
+                <div class="d-flex align-items-center">
+                    {% if current_user.is_authenticated %}
+                    <!-- Help Button -->
+                    <button class="btn btn-link text-white-50 me-1 p-1" data-bs-toggle="modal" data-bs-target="#helpModal"
+                            title="Help & Shortcuts (?)" aria-label="Help and keyboard shortcuts">
+                        <i class="bi bi-question-circle fs-5"></i>
+                    </button>
+                    <!-- Notification Bell -->
+                    <a href="{{ url_for('notifications.notification_center') }}" class="btn btn-link text-white position-relative me-2 p-1"
+                       title="Notifications" id="notif-bell" aria-label="Notifications">
+                        <i class="bi bi-bell fs-5"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" id="notif-count" aria-live="polite">0</span>
+                    </a>
+                    <span class="badge fnid-user-badge me-2" title="Role: {{ current_user.role|upper }}">
+                        <i class="bi bi-person-badge"></i>
+                        {{ current_user.full_name }} <small>({{ current_user.role }})</small>
+                    </span>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-light btn-sm" title="Sign Out" aria-label="Sign out">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-box-arrow-in-right"></i> Sign In
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="container-fluid mt-2">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Breadcrumb navigation -->
+    {% block breadcrumb %}{% endblock %}
+
+    <!-- Page Content -->
+    <main class="container-fluid py-3" id="main-content" tabindex="-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Back to top button -->
+    <button id="back-to-top" class="btn btn-primary back-to-top-btn d-none"
+            aria-label="Back to top" title="Back to top (Ctrl+Home)">
+        <i class="bi bi-arrow-up"></i>
+    </button>
+
+    <!-- Help Modal -->
+    <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-fnid-navy text-white">
+                    <h5 class="modal-title" id="helpModalLabel"><i class="bi bi-question-circle me-2"></i>Quick Help & Keyboard Shortcuts</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-primary"><i class="bi bi-keyboard me-1"></i> Keyboard Shortcuts</h6>
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr><td><kbd>Ctrl</kbd> + <kbd>K</kbd></td><td>Focus search bar</td></tr>
+                                    <tr><td><kbd>Ctrl</kbd> + <kbd>Home</kbd></td><td>Scroll to top</td></tr>
+                                    <tr><td><kbd>?</kbd></td><td>Open this help dialog</td></tr>
+                                    <tr><td><kbd>Esc</kbd></td><td>Close dialogs / clear search</td></tr>
+                                    <tr><td><kbd>Alt</kbd> + <kbd>H</kbd></td><td>Go to home page</td></tr>
+                                    <tr><td><kbd>Alt</kbd> + <kbd>N</kbd></td><td>New case intake</td></tr>
+                                    <tr><td><kbd>Alt</kbd> + <kbd>D</kbd></td><td>Command dashboard</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-primary"><i class="bi bi-lightbulb me-1"></i> Quick Tips</h6>
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="bi bi-check-circle text-success me-1"></i> Use the <strong>search bar</strong> to quickly find cases, persons, or exhibits</li>
+                                <li class="mb-2"><i class="bi bi-check-circle text-success me-1"></i> Click <strong>unit portal cards</strong> on the home page to access specific unit data</li>
+                                <li class="mb-2"><i class="bi bi-check-circle text-success me-1"></i> The <strong>notification bell</strong> shows pending alerts and deadlines</li>
+                                <li class="mb-2"><i class="bi bi-check-circle text-success me-1"></i> Use <strong>Quick Actions</strong> on the home page for common tasks</li>
+                                <li class="mb-2"><i class="bi bi-check-circle text-success me-1"></i> All form changes are <strong>tracked in the audit log</strong></li>
+                                <li class="mb-2"><i class="bi bi-check-circle text-success me-1"></i> Unsaved form changes will show a <strong>warning</strong> before you leave</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-12">
+                            <h6 class="fw-bold text-primary"><i class="bi bi-diagram-3 me-1"></i> System Overview</h6>
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <div class="border rounded p-2 text-center">
+                                        <i class="bi bi-folder2-open text-primary fs-4"></i>
+                                        <div class="small fw-bold">Cases</div>
+                                        <div class="text-muted" style="font-size:0.75rem;">Create, track, and manage investigations</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="border rounded p-2 text-center">
+                                        <i class="bi bi-grid-3x3-gap text-primary fs-4"></i>
+                                        <div class="small fw-bold">Unit Portals</div>
+                                        <div class="text-muted" style="font-size:0.75rem;">Intel, Ops, Seizures, Arrests, Forensics, Registry</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="border rounded p-2 text-center">
+                                        <i class="bi bi-bar-chart-line text-primary fs-4"></i>
+                                        <div class="small fw-bold">Analytics</div>
+                                        <div class="text-muted" style="font-size:0.75rem;">Dashboards, reports, and performance metrics</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <small class="text-muted me-auto">Press <kbd>?</kbd> anytime to open this help</small>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="fnid-footer text-white-50 py-3 mt-4" role="contentinfo">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-5">
+                    <small>
+                        <i class="bi bi-shield-shaded"></i>
+                        Jamaica Constabulary Force | Firearms & Narcotics Investigation Division | Area 3
+                    </small>
+                </div>
+                <div class="col-md-4 text-md-center">
+                    <small>
+                        Manchester | St. Elizabeth | Clarendon
+                    </small>
+                </div>
+                <div class="col-md-3 text-md-end">
+                    <button class="btn btn-link btn-sm text-white-50 p-0 me-2" data-bs-toggle="modal" data-bs-target="#helpModal" aria-label="Help">
+                        <i class="bi bi-question-circle"></i> Help
+                    </button>
+                    <small class="text-white-50">RESTRICTED - Official Use Only</small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+    (function() {
+        var nativeAlert = window.alert.bind(window);
+        window.alert = function(message) {
+            var text = String(message || '');
+            if (text.indexOf('DataTables warning:') === 0) {
+                if (window.console && console.warn) console.warn(text);
+                return;
+            }
+            return nativeAlert(message);
+        };
+        if (window.jQuery && $.fn.dataTable) {
+            $.fn.dataTable.ext.errMode = function(settings, techNote, message) {
+                if (window.console && console.warn) {
+                    console.warn('DataTables warning:', message);
+                }
+            };
+        }
+    })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="{{ url_for('static', filename='js/fnid.js', v='20260504-datatables-nonblocking') }}"></script>
+    {% if current_user.is_authenticated %}
+    <script>
+    // Notification bell polling
+    (function() {
+        function updateBell() {
+            fetch('/notifications/api/count')
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    var badge = document.getElementById('notif-count');
+                    if (badge && data.total > 0) {
+                        badge.textContent = data.total > 99 ? '99+' : data.total;
+                        badge.classList.remove('d-none');
+                        if (data.critical > 0) badge.classList.add('bg-danger');
+                    } else if (badge) {
+                        badge.classList.add('d-none');
+                    }
+                }).catch(function() {});
+        }
+        updateBell();
+        setInterval(updateBell, 60000);
+    })();
+    </script>
+    {% endif %}
+    {% block scripts %}{% endblock %}
+</body>
+</html>

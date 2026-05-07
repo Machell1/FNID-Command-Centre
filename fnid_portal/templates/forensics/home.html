@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}Forensics & Evidence Unit{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-fingerprint me-2" style="color: {{ portal.color }};"></i>
+            Forensics & Evidence Unit - Chain of Custody & Lab Tracking
+        </h4>
+        {% if not is_unit_workspace %}
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item active">Forensics</li>
+            </ol>
+        </nav>
+        {% endif %}
+    </div>
+    <div class="d-flex gap-2">
+        {% if is_unit_workspace %}
+        <a href="{{ url_for('upload.submit_report') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-robot me-1"></i> Upload Report
+        </a>
+        {% else %}
+        <a href="{{ url_for('units.new_record', unit='forensics', subtype='custody') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-circle me-1"></i> New Exhibit Entry
+        </a>
+        <a href="{{ url_for('units.new_record', unit='forensics', subtype='lab') }}" class="btn btn-success btn-sm">
+            <i class="bi bi-plus-circle me-1"></i> New Lab Submission
+        </a>
+        {% endif %}
+        <a href="{{ url_for('units.unit_dashboard', unit='forensics') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-graph-up me-1"></i> Dashboard
+        </a>
+        <a href="{{ url_for('data.export_unit', unit='forensics') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-download me-1"></i> Export
+        </a>
+    </div>
+</div>
+
+{% include "_unit_workspace_header.html" %}
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card">
+            <div class="kpi-value">{{ data.custody|length if data.custody else 0 }}</div>
+            <div class="kpi-label">Total Exhibits</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-info">
+            <div class="kpi-value">{{ data.lab|length if data.lab else 0 }}</div>
+            <div class="kpi-label">Lab Submissions</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-success">
+            <div class="kpi-value">
+                {{ data.lab|selectattr('certificate_status', 'defined')|selectattr('certificate_status', 'search', 'Issued')|list|length if data.lab else 0 }}
+            </div>
+            <div class="kpi-label">Certificates Issued</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-danger">
+            <div class="kpi-value">
+                {{ data.lab|selectattr('certificate_status', 'defined')|selectattr('certificate_status', 'search', 'Overdue')|list|length if data.lab else 0 }}
+            </div>
+            <div class="kpi-label">Certificates Overdue</div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs for Chain of Custody and Lab Tracking -->
+<ul class="nav nav-tabs" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="tab" href="#custody-tab">
+            <i class="bi bi-box-seam me-1"></i> Chain of Custody
+            <span class="badge bg-secondary ms-1">{{ data.custody|length if data.custody else 0 }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#lab-tab">
+            <i class="bi bi-flask me-1"></i> Lab Tracking (IFSLM)
+            <span class="badge bg-secondary ms-1">{{ data.lab|length if data.lab else 0 }}</span>
+        </a>
+    </li>
+</ul>
+
+<div class="tab-content mt-3">
+    <!-- Chain of Custody Tab -->
+    <div class="tab-pane fade show active" id="custody-tab">
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-hover fnid-table">
+                    <thead>
+                        <tr>
+                            <th>Exhibit Tag</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Linked Case</th>
+                            <th>Seized By</th>
+                            <th>Current Custodian</th>
+                            <th>Seal</th>
+                            <th>Disposal</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in data.custody %}
+                        <tr>
+                            <td><strong>{{ r.exhibit_tag }}</strong></td>
+                            <td>{{ r.exhibit_type or '-' }}</td>
+                            <td>{{ r.description or '-' }}</td>
+                            <td>{{ r.linked_case_id or '-' }}</td>
+                            <td>{{ r.seized_by or '-' }}</td>
+                            <td>{{ r.current_custodian or '-' }}</td>
+                            <td>
+                                {% if r.seal_intact == 'Yes' %}
+                                <span class="badge bg-success">Intact</span>
+                                {% else %}
+                                <span class="badge bg-danger">Broken</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if 'Held' in (r.disposal_status or '') %}
+                                <span class="badge bg-primary">{{ r.disposal_status }}</span>
+                                {% elif 'Destroyed' in (r.disposal_status or '') %}
+                                <span class="badge bg-secondary">{{ r.disposal_status }}</span>
+                                {% elif 'Forfeited' in (r.disposal_status or '') %}
+                                <span class="badge bg-info">{{ r.disposal_status }}</span>
+                                {% else %}
+                                <span class="badge bg-light text-dark">{{ r.disposal_status or 'Pending' }}</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge" data-status="{{ r.record_status }}">{{ r.record_status }}</span></td>
+                            <td>
+                                <a href="{{ url_for('units.edit_record', unit='forensics', record_id=r.id, subtype='custody') }}"
+                                   class="btn btn-sm btn-outline-primary" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lab Tracking Tab -->
+    <div class="tab-pane fade" id="lab-tab">
+        <div class="d-flex justify-content-between mb-3">
+            <h6 class="text-muted">Lab Submissions & Certificate Tracking (IFSLM)</h6>
+            <a href="{{ url_for('units.new_record', unit='forensics', subtype='lab') }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle me-1"></i> New Lab Submission
+            </a>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-hover fnid-table">
+                    <thead>
+                        <tr>
+                            <th>Lab Ref</th>
+                            <th>Exhibit Tag</th>
+                            <th>Linked Case</th>
+                            <th>Submission Date</th>
+                            <th>Exam Type</th>
+                            <th>Certificate Status</th>
+                            <th>Result</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in data.lab %}
+                        <tr>
+                            <td><strong>{{ r.lab_ref }}</strong></td>
+                            <td>{{ r.exhibit_tag or '-' }}</td>
+                            <td>{{ r.linked_case_id or '-' }}</td>
+                            <td>{{ r.submission_date }}</td>
+                            <td>{{ r.exam_type or '-' }}</td>
+                            <td>
+                                {% if 'Issued' in (r.certificate_status or '') %}
+                                <span class="badge bg-success">{{ r.certificate_status }}</span>
+                                {% elif 'In Progress' in (r.certificate_status or '') %}
+                                <span class="badge bg-warning text-dark">{{ r.certificate_status }}</span>
+                                {% elif 'Overdue' in (r.certificate_status or '') %}
+                                <span class="badge bg-danger">{{ r.certificate_status }}</span>
+                                {% elif 'Submitted' in (r.certificate_status or '') %}
+                                <span class="badge bg-info">{{ r.certificate_status }}</span>
+                                {% else %}
+                                <span class="badge bg-light text-dark">{{ r.certificate_status or 'Pending' }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ r.result or '-' }}</td>
+                            <td><span class="badge" data-status="{{ r.record_status }}">{{ r.record_status }}</span></td>
+                            <td>
+                                <a href="{{ url_for('units.edit_record', unit='forensics', record_id=r.id, subtype='lab') }}"
+                                   class="btn btn-sm btn-outline-primary" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

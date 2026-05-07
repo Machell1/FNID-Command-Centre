@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Exhibit Search{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-box-seam me-2" style="color: #1F3864;"></i>Exhibit Search</h4>
+        <small class="text-muted">Search across all exhibits and seized items</small>
+    </div>
+</div>
+
+<!-- Search Bar -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('search.exhibit_search') }}">
+            <div class="input-group">
+                <span class="input-group-text" style="background-color: #1F3864; color: #fff;">
+                    <i class="bi bi-box-seam"></i>
+                </span>
+                <input type="text" class="form-control form-control-lg" name="q"
+                       value="{{ query or '' }}" placeholder="Search by tag, type, description, serial number..."
+                       autofocus>
+                <button type="submit" class="btn btn-primary" style="background-color: #1F3864; border-color: #1F3864;">
+                    Search
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if query %}
+<!-- Results Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #1F3864; color: #fff;">
+        <h6 class="mb-0"><i class="bi bi-list-ul me-2"></i>Results</h6>
+        <span class="badge bg-light text-dark">{{ results|length if results else 0 }} found</span>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover fnid-table mb-0">
+            <thead>
+                <tr>
+                    <th>Tag</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Case</th>
+                    <th>Custodian</th>
+                    <th>Location</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in results %}
+                <tr>
+                    <td><strong>{{ e.tag or '-' }}</strong></td>
+                    <td>
+                        {% if e.type == 'Firearm' %}
+                        <span class="badge bg-danger">{{ e.type }}</span>
+                        {% elif e.type == 'Ammunition' %}
+                        <span class="badge bg-warning text-dark">{{ e.type }}</span>
+                        {% elif e.type == 'Narcotic' %}
+                        <span class="badge bg-success">{{ e.type }}</span>
+                        {% elif e.type == 'Document' %}
+                        <span class="badge bg-info">{{ e.type }}</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ e.type or '-' }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ e.description|truncate(60) if e.description else '-' }}</td>
+                    <td>
+                        {% if e.case_id %}
+                        <a href="{{ url_for('cases.view_case', case_id=e.case_db_id) }}">{{ e.case_id }}</a>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>{{ e.custodian or '-' }}</td>
+                    <td>{{ e.location or '-' }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">No exhibits found matching "{{ query }}".</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

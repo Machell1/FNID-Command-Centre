@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Assistant Run {{ run.run_id }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-cpu me-2"></i>Assistant Run</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('assistants.dashboard') }}">Assistants</a></li>
+                <li class="breadcrumb-item active">{{ run.run_id }}</li>
+            </ol>
+        </nav>
+    </div>
+    <a href="{{ url_for('assistants.workstation') }}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-person-workspace me-1"></i> Workstation
+    </a>
+</div>
+
+{% if run.status == 'blocked' %}
+<div class="alert alert-warning">
+    <strong>Blocked:</strong> {{ run.blocked_reason }}
+</div>
+{% endif %}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="kpi-value">{{ run.status|title }}</div>
+            <div class="kpi-label">Status</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="kpi-value">{{ run.mode|title }}</div>
+            <div class="kpi-label">Mode</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="kpi-value">{{ run.total_tokens or 0 }}</div>
+            <div class="kpi-label">Tokens</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="kpi-value">{{ actions|length }}</div>
+            <div class="kpi-label">Actions</div>
+        </div>
+    </div>
+</div>
+
+<div class="form-section mb-4">
+    <div class="form-section-title">
+        <i class="bi bi-person-check me-2"></i>Human Intervention
+    </div>
+    <form method="POST" action="{{ url_for('assistants.intervene', run_id=run.run_id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="form-label" for="guidance">Add guidance or stop instruction</label>
+        <textarea class="form-control mb-2" id="guidance" name="guidance" rows="3"
+                  placeholder="Example: Pause. Do not create registry tasks until I review the CR1."></textarea>
+        <button class="btn btn-warning btn-sm" type="submit">
+            <i class="bi bi-pause-circle me-1"></i> Add Guidance and Pause
+        </button>
+    </form>
+    {% if run.human_guidance %}
+    <pre class="mt-3 p-2 bg-light border rounded small">{{ run.human_guidance }}</pre>
+    {% endif %}
+</div>
+
+<div class="form-section">
+    <div class="form-section-title">
+        <i class="bi bi-list-check me-2"></i>Proposed And Applied Actions
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Action</th>
+                    <th>Risk</th>
+                    <th>Status</th>
+                    <th>Target</th>
+                    <th>Controls</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in actions %}
+                <tr>
+                    <td>
+                        <strong>{{ a.title }}</strong><br>
+                        <small class="text-muted">{{ a.description }}</small><br>
+                        <code>{{ a.action_type }}</code>
+                    </td>
+                    <td><span class="badge bg-{{ 'danger' if a.risk_level == 'high' else 'warning' if a.risk_level == 'medium' else 'success' }}">{{ a.risk_level }}</span></td>
+                    <td><span class="badge bg-secondary">{{ a.status }}</span></td>
+                    <td>
+                        {{ a.target_role or '-' }}<br>
+                        <small class="text-muted">{{ a.target_badge or '-' }}</small>
+                    </td>
+                    <td>
+                        {% if a.status in ('proposed', 'approved') and current_user.role in ('admin', 'dco', 'ddi', 'station_mgr', 'supervisor', 'registrar') %}
+                        <form method="POST" action="{{ url_for('assistants.apply', action_id=a.id) }}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="run_id" value="{{ run.run_id }}">
+                            <button class="btn btn-success btn-sm" type="submit">
+                                <i class="bi bi-check2 me-1"></i> Approve/Apply
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ url_for('assistants.reject', action_id=a.id) }}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-outline-danger btn-sm" type="submit">
+                                <i class="bi bi-x-lg me-1"></i> Reject
+                            </button>
+                        </form>
+                        {% endif %}
+                        {% if a.status == 'applied' and current_user.role in ('admin', 'dco', 'ddi', 'station_mgr', 'supervisor', 'registrar') %}
+                        <form method="POST" action="{{ url_for('assistants.rollback', action_id=a.id) }}" class="mt-1">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input class="form-control form-control-sm mb-1" name="rollback_notes" placeholder="Rollback note">
+                            <button class="btn btn-outline-warning btn-sm" type="submit">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i> Roll Back
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-muted">No actions were proposed for this run.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="mt-3">
+        <strong>Output:</strong>
+        <p class="mb-0">{{ run.output_summary or 'No output summary.' }}</p>
+    </div>
+</div>
+{% endblock %}

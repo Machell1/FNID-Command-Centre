@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Audit Log{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-journal-text me-2" style="color: #1F3864;"></i>Audit Log</h4>
+        <small class="text-muted">Complete system activity history</small>
+    </div>
+    <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Admin
+    </a>
+</div>
+
+<!-- Filter Bar -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('admin.audit_log') }}">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label for="table_name" class="form-label">Table</label>
+                    <select class="form-select" id="table_name" name="table">
+                        <option value="">-- All Tables --</option>
+                        {% for t in tables %}
+                        {% set table_name = t.table_name if t.table_name is defined else t %}
+                        <option value="{{ table_name }}" {% if table_filter == table_name %}selected{% endif %}>{{ table_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="action" class="form-label">Action</label>
+                    <select class="form-select" id="action" name="action">
+                        <option value="">-- All Actions --</option>
+                        {% for a in actions %}
+                        {% set action_name = a.action if a.action is defined else a %}
+                        <option value="{{ action_name }}" {% if action_filter == action_name %}selected{% endif %}>{{ action_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="officer" class="form-label">Officer</label>
+                    <input type="text" class="form-control" id="officer" name="officer"
+                           value="{{ request.args.get('officer', '') }}" placeholder="Search by officer name">
+                </div>
+                <div class="col-md-3">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary" style="background-color: #1F3864; border-color: #1F3864;">
+                            <i class="bi bi-funnel me-1"></i> Filter
+                        </button>
+                        <a href="{{ url_for('admin.audit_log') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle me-1"></i> Clear
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Audit Log Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #1F3864; color: #fff;">
+        <h6 class="mb-0"><i class="bi bi-list-ul me-2"></i>Log Entries</h6>
+        <span class="badge bg-light text-dark">{{ logs|length }} entries</span>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover fnid-table mb-0">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Table</th>
+                    <th>Record ID</th>
+                    <th>Action</th>
+                    <th>Officer</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in logs %}
+                <tr>
+                    <td><small>{{ entry.timestamp }}</small></td>
+                    <td><span class="badge bg-secondary">{{ entry.table_name }}</span></td>
+                    <td>{{ entry.record_id or '-' }}</td>
+                    <td>
+                        {% if entry.action == 'INSERT' %}
+                        <span class="badge bg-success">{{ entry.action }}</span>
+                        {% elif entry.action == 'UPDATE' %}
+                        <span class="badge bg-warning text-dark">{{ entry.action }}</span>
+                        {% elif entry.action == 'DELETE' %}
+                        <span class="badge bg-danger">{{ entry.action }}</span>
+                        {% else %}
+                        <span class="badge bg-info">{{ entry.action }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ entry.officer_name or '-' }}</td>
+                    <td><small class="text-muted">{{ entry.details|truncate(120) if entry.details else '-' }}</small></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">No audit log entries found matching your criteria.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

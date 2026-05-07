@@ -1,0 +1,76 @@
+﻿{% extends "base.html" %}
+{% block title %}Bulk Assign Cases{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-person-plus me-2"></i>Bulk Assign Cases</h4>
+        <nav aria-label="breadcrumb"><ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="{{ url_for('batch.batch_home') }}">Batch</a></li>
+            <li class="breadcrumb-item active">Assign</li>
+        </ol></nav>
+    </div>
+</div>
+
+<form method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Assign To Officer</label>
+            <select name="io_badge" class="form-select" required>
+                <option value="">-- Select Officer --</option>
+                {% for o in officers %}
+                <option value="{{ o.badge_number }}">{{ o.full_name }} ({{ o.rank }}) â€” {{ o.badge_number }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary" data-confirm="Assign selected cases to this officer?">
+                <i class="bi bi-check2-all me-1"></i>Assign Selected Cases
+            </button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-fnid-navy text-white d-flex justify-content-between">
+            <span><i class="bi bi-folder2 me-2"></i>Unassigned / Available Cases ({{ cases|length }})</span>
+            <button type="button" class="btn btn-sm btn-outline-light" onclick="toggleAll(this)">Select All</button>
+        </div>
+        <div class="table-responsive">
+            <table class="table fnid-table mb-0">
+                <thead>
+                    <tr>
+                        <th width="40"><input type="checkbox" id="select-all"></th>
+                        <th>Case Reference No.</th>
+                        <th>Classification</th>
+                        <th>Parish</th>
+                        <th>Suspect</th>
+                        <th>Stage</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in cases %}
+                    <tr>
+                        <td><input type="checkbox" name="case_ids" value="{{ c.case_id }}"></td>
+                        <td><a href="{{ url_for('cases.case_detail', case_id=c.case_id) }}">{{ c.case_id }}</a></td>
+                        <td>{{ c.classification }}</td>
+                        <td>{{ c.parish }}</td>
+                        <td>{{ c.suspect_name or '-' }}</td>
+                        <td><span class="badge badge-stage-{{ c.current_stage or 'intake' }}">{{ c.current_stage or 'intake' }}</span></td>
+                        <td>{{ c.created_at[:10] if c.created_at else '' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('select-all').addEventListener('change', function() {
+    document.querySelectorAll('input[name="case_ids"]').forEach(function(cb) { cb.checked = this.checked; }.bind(this));
+});
+function toggleAll(btn) { document.getElementById('select-all').click(); }
+</script>
+{% endblock %}

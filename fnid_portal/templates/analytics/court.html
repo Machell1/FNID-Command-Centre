@@ -1,0 +1,213 @@
+﻿{% extends "base.html" %}
+{% block title %}Court Pipeline{% endblock %}
+
+{% block head %}
+<style>
+    .chart-container {
+        position: relative;
+        height: 320px;
+    }
+    .court-date-row:hover {
+        background-color: #f0f4ff;
+    }
+    @media print {
+        .no-print { display: none !important; }
+        .chart-container { height: 250px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0"><i class="bi bi-bank me-2"></i>Court &amp; DPP Pipeline</h2>
+        <small class="text-muted">DPP submission stages, conviction rates, and upcoming court dates</small>
+    </div>
+    <div class="no-print">
+        <a href="{{ url_for('analytics.analytics_home') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Analytics Home
+        </a>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-start border-4 border-primary h-100">
+            <div class="card-body text-center">
+                <div class="fs-2 fw-bold text-primary">{{ avg_arrest_to_charge }}</div>
+                <small class="text-muted text-uppercase">Avg Days: Arrest to Charge</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-start border-4 border-warning h-100">
+            <div class="card-body text-center">
+                <div class="fs-2 fw-bold text-warning">{{ avg_charge_to_dpp }}</div>
+                <small class="text-muted text-uppercase">Avg Days: Charge to DPP</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-start border-4 border-success h-100">
+            <div class="card-body text-center">
+                <div class="fs-2 fw-bold text-success">{{ upcoming_court|length }}</div>
+                <small class="text-muted text-uppercase">Upcoming Court Dates (30d)</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-start border-4 border-info h-100">
+            <div class="card-body text-center">
+                <div class="fs-2 fw-bold text-info">{{ dpp_stages|length }}</div>
+                <small class="text-muted text-uppercase">Active DPP Stages</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row: DPP Pipeline + Verdicts -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>DPP Pipeline by Stage</h6>
+            </div>
+            <div class="card-body">
+                {% if dpp_stages %}
+                <div class="chart-container">
+                    <canvas id="dppPipelineChart"></canvas>
+                </div>
+                {% else %}
+                <p class="text-muted text-center mt-4">No DPP pipeline data available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-pie-chart me-2"></i>Conviction / Acquittal Breakdown</h6>
+            </div>
+            <div class="card-body">
+                {% if verdicts %}
+                <div class="chart-container">
+                    <canvas id="verdictChart"></canvas>
+                </div>
+                {% else %}
+                <p class="text-muted text-center mt-4">No verdict data available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DPP Stage Table -->
+{% if dpp_stages %}
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="bi bi-list-check me-2"></i>DPP Stage Breakdown</h6>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-sm table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>DPP Status</th>
+                    <th class="text-end">Cases</th>
+                    <th style="width: 50%;">Distribution</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set total_dpp = dpp_stages|sum(attribute='cnt') %}
+                {% for row in dpp_stages %}
+                <tr>
+                    <td>{{ row.dpp_status }}</td>
+                    <td class="text-end fw-bold">{{ row.cnt }}</td>
+                    <td>
+                        {% set pct = (row.cnt / total_dpp * 100) if total_dpp else 0 %}
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-primary" style="width: {{ pct }}%">{{ pct|round(1) }}%</div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Upcoming Court Dates Table -->
+<div class="card mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="bi bi-calendar-event me-2"></i>Upcoming Court Dates (Next 30 Days)</h6>
+        <span class="badge bg-primary">{{ upcoming_court|length }} cases</span>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover fnid-table mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Court Date</th>
+                    <th>Case Reference No.</th>
+                    <th>Suspect</th>
+                    <th>Classification</th>
+                    <th>Court Type</th>
+                    <th>OIC</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in upcoming_court %}
+                <tr class="court-date-row">
+                    <td>
+                        <span class="fw-bold">{{ row.next_court_date }}</span>
+                    </td>
+                    <td><a href="{{ url_for('cases.case_detail', case_id=row.case_id) }}">{{ row.case_id }}</a></td>
+                    <td>{{ row.suspect_name or 'Unknown' }}</td>
+                    <td>{{ row.classification }}</td>
+                    <td>{{ row.court_type or 'N/A' }}</td>
+                    <td>{{ row.oic_name }}</td>
+                </tr>
+                {% endfor %}
+                {% if not upcoming_court %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">No upcoming court dates in the next 30 days.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // DPP Pipeline Chart
+    {% if dpp_stages %}
+    var dppLabels = {{ dpp_stages|map(attribute='dpp_status')|list|tojson }};
+    var dppData = {{ dpp_stages|map(attribute='cnt')|list|tojson }};
+    var pipeColors = ['#1F3864','#C5A23C','#28a745','#dc3545','#17a2b8','#fd7e14','#6f42c1','#20c997'];
+    fnidChart('dppPipelineChart', 'bar', dppLabels, [{
+        label: 'Cases',
+        data: dppData,
+        backgroundColor: pipeColors.slice(0, dppLabels.length)
+    }], {
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true } }
+    });
+    {% endif %}
+
+    // Verdict Breakdown Chart
+    {% if verdicts %}
+    var vLabels = {{ verdicts|map(attribute='verdict')|list|tojson }};
+    var vData = {{ verdicts|map(attribute='cnt')|list|tojson }};
+    var vColors = ['#198754','#dc3545','#ffc107','#6c757d','#0d6efd','#fd7e14'];
+    fnidChart('verdictChart', 'doughnut', vLabels, [{
+        data: vData,
+        backgroundColor: vColors.slice(0, vLabels.length)
+    }]);
+    {% endif %}
+});
+</script>
+{% endblock %}

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ form_def.name }} ({{ form_rec.form_type }}) - Case {{ case.case_id }} | Print</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fnid.css') }}">
+</head>
+<body>
+    <div class="container-fluid py-3 no-print">
+        <div class="page-header mb-0">
+            <div class="d-flex align-items-center gap-2">
+                <span class="fnid-brand-mark" aria-hidden="true">
+                    <img src="{{ url_for('static', filename='img/jcf-logo.png') }}" alt="">
+                </span>
+                <div>
+                    <h4 class="mb-0">{{ form_def.name }} ({{ form_rec.form_type }})</h4>
+                    <small class="text-muted">Official print copy for case {{ case.case_id }}</small>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+            <a href="{{ url_for('cr_forms.form_list', case_id=case.case_id) }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Back to Forms
+            </a>
+            <button onclick="window.print()" class="btn btn-primary btn-sm">
+                <i class="bi bi-printer me-1"></i> Print Official Copy
+            </button>
+            </div>
+        </div>
+    </div>
+
+    {% include "cr_forms/_official_form.html" %}
+</body>
+</html>

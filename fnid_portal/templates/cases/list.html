@@ -1,0 +1,139 @@
+﻿{% extends "base.html" %}
+{% from "macros.html" import status_badge %}
+{% block title %}Case Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-folder2-open me-2" style="color: var(--fnid-navy);"></i>
+            Case Management
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item active">Cases</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('cases.intake') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-circle me-1"></i> New Case Intake
+        </a>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="form-section mb-3">
+    <form method="GET" class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label for="status" class="form-label">Status</label>
+            <select class="form-select form-select-sm" id="status" name="status">
+                <option value="">All Statuses</option>
+                {% for s in cfg.CASE_STATUS %}
+                <option value="{{ s }}" {% if status_filter == s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="parish" class="form-label">Parish</label>
+            <select class="form-select form-select-sm" id="parish" name="parish">
+                <option value="">All Parishes</option>
+                {% for p in cfg.ALL_PARISHES %}
+                <option value="{{ p }}" {% if parish_filter == p %}selected{% endif %}>{{ p }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="stage" class="form-label">Lifecycle Stage</label>
+            <select class="form-select form-select-sm" id="stage" name="stage">
+                <option value="">All Stages</option>
+                {% for st in ['intake','appreciation','vetting','assignment','investigation',
+                              'follow_up','review','court_preparation','before_court',
+                              'suspended','reopened','cold_case','closed'] %}
+                <option value="{{ st }}" {% if stage_filter == st %}selected{% endif %}>
+                    {{ st|replace('_', ' ')|title }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-sm btn-primary">
+                <i class="bi bi-funnel me-1"></i> Filter
+            </button>
+            <a href="{{ url_for('cases.case_list') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-x-circle me-1"></i> Clear
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Cases Table -->
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover fnid-table" id="casesTable"
+               data-datatable-order-column="7"
+               data-datatable-order-direction="desc"
+               data-datatable-search-label="Search cases:"
+               data-datatable-empty="No cases found matching the current filters.">
+            <thead>
+                <tr>
+                    <th>Case Reference No.</th>
+                    <th>Classification</th>
+                    <th>Parish</th>
+                    <th>Suspect</th>
+                    <th>OIC</th>
+                    <th>Stage</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in cases %}
+                <tr style="cursor: pointer;" onclick="window.location='{{ url_for('cases.case_detail', case_id=c.case_id) }}'">
+                    <td><strong>{{ c.case_id }}</strong></td>
+                    <td>{{ c.classification or '-' }}</td>
+                    <td>{{ c.parish or '-' }}</td>
+                    <td>{{ c.suspect_name or '-' }}</td>
+                    <td>{{ c.oic_name or '-' }}</td>
+                    <td>
+                        {% set stage = c.current_stage or 'intake' %}
+                        {% if stage in ('closed',) %}
+                        <span class="badge bg-secondary">{{ stage|replace('_', ' ')|title }}</span>
+                        {% elif stage in ('suspended', 'cold_case') %}
+                        <span class="badge bg-warning text-dark">{{ stage|replace('_', ' ')|title }}</span>
+                        {% elif stage in ('investigation', 'follow_up') %}
+                        <span class="badge bg-primary">{{ stage|replace('_', ' ')|title }}</span>
+                        {% elif stage in ('court_preparation', 'before_court') %}
+                        <span class="badge bg-info text-dark">{{ stage|replace('_', ' ')|title }}</span>
+                        {% elif stage == 'review' %}
+                        <span class="badge bg-dark">{{ stage|replace('_', ' ')|title }}</span>
+                        {% elif stage == 'reopened' %}
+                        <span class="badge bg-success">{{ stage|replace('_', ' ')|title }}</span>
+                        {% else %}
+                        <span class="badge bg-light text-dark border">{{ stage|replace('_', ' ')|title }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% set status = c.case_status or '' %}
+                        {% if 'Open' in status %}
+                        <span class="badge bg-success">{{ status }}</span>
+                        {% elif 'Closed' in status %}
+                        <span class="badge bg-secondary">{{ status }}</span>
+                        {% elif 'Cold Case' in status %}
+                        <span class="badge bg-warning text-dark">{{ status }}</span>
+                        {% elif 'Before Court' in status or 'Referred' in status %}
+                        <span class="badge bg-info text-dark">{{ status }}</span>
+                        {% else %}
+                        <span class="badge bg-light text-dark border">{{ status or 'Pending' }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ c.created_at[:10] if c.created_at else '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

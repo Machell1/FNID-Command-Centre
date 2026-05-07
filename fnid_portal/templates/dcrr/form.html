@@ -1,0 +1,156 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ 'New DCRR Entry' if is_new else 'Edit DCRR Entry' }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-journal-text me-2"></i>
+            {{ 'New DCRR Entry' if is_new else 'Edit DCRR Entry: ' ~ entry.dcrr_number }}
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('dcrr.dcrr_register') }}">DCRR Register</a></li>
+                <li class="breadcrumb-item active">{{ 'New Entry' if is_new else entry.dcrr_number }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post"
+              action="{{ url_for('dcrr.new_dcrr') if is_new else url_for('dcrr.edit_dcrr', dcrr_id=entry.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!-- Report Details -->
+            <div class="form-section">
+                <h6 class="text-muted mb-3"><i class="bi bi-clipboard me-2"></i>Report Details</h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Report Date <span class="text-danger">*</span></label>
+                        <input type="date" name="report_date" class="form-control"
+                               value="{{ entry.report_date if entry else '' }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Station <span class="text-danger">*</span></label>
+                        <select name="station" class="form-select" required>
+                            <option value="">Select Station</option>
+                            {% for code in ['FNID', 'MAND', 'CHRS', 'MAYP', 'SPAL', 'STCZ', 'BLKR', 'LACV', 'JNCT', 'LION', 'CHAP', 'FRNK'] %}
+                            <option value="{{ code }}" {{ 'selected' if entry and entry.station == code }}>{{ code }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Diary Number</label>
+                        <input type="text" name="diary_number" class="form-control"
+                               value="{{ entry.diary_number if entry else '' }}"
+                               placeholder="Station diary reference">
+                    </div>
+                </div>
+            </div>
+
+            <hr>
+
+            <!-- Crime Details -->
+            <div class="form-section">
+                <h6 class="text-muted mb-3"><i class="bi bi-exclamation-triangle me-2"></i>Crime Details</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Classification <span class="text-danger">*</span></label>
+                        <select name="classification" class="form-select" required>
+                            <option value="">Select Classification</option>
+                            {% for cls in ['Murder', 'Shooting', 'Robbery', 'Larceny', 'Fraud', 'Rape',
+                                           'Assault', 'Break-In', 'Drug Offence', 'Firearms Offence',
+                                           'Gang Related', 'Other'] %}
+                            <option value="{{ cls }}" {{ 'selected' if entry and entry.classification == cls }}>{{ cls }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Offence</label>
+                        <input type="text" name="offence" class="form-control"
+                               value="{{ entry.offence if entry else '' }}"
+                               placeholder="Description of offence">
+                    </div>
+                </div>
+            </div>
+
+            <hr>
+
+            <!-- Parties -->
+            <div class="form-section">
+                <h6 class="text-muted mb-3"><i class="bi bi-people me-2"></i>Parties</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Complainant Name</label>
+                        <input type="text" name="complainant_name" class="form-control"
+                               value="{{ entry.complainant_name if entry else '' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Suspect Name</label>
+                        <input type="text" name="suspect_name" class="form-control"
+                               value="{{ entry.suspect_name if entry else '' }}">
+                    </div>
+                </div>
+            </div>
+
+            <hr>
+
+            <!-- OIC -->
+            <div class="form-section">
+                <h6 class="text-muted mb-3"><i class="bi bi-person-badge me-2"></i>Officer in Charge</h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">OIC Badge</label>
+                        <input type="text" name="oic_badge" class="form-control"
+                               value="{{ entry.oic_badge if entry else current_user.badge_number }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">OIC Name</label>
+                        <input type="text" name="oic_name" class="form-control"
+                               value="{{ entry.oic_name if entry else current_user.full_name }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Linked Case Reference No.</label>
+                        <input type="text" name="case_id" class="form-control"
+                               value="{{ entry.case_id if entry else '' }}"
+                               placeholder="e.g. MAND/SD/A3/FNID/2026/0001">
+                    </div>
+                </div>
+            </div>
+
+            {% if not is_new %}
+            <hr>
+            <!-- Status -->
+            <div class="form-section">
+                <h6 class="text-muted mb-3"><i class="bi bi-flag me-2"></i>Status</h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
+                            {% for s in ['Open', 'Closed', 'Suspended'] %}
+                            <option value="{{ s }}" {{ 'selected' if entry and entry.status == s }}>{{ s }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <hr>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle me-1"></i>
+                    {{ 'Create Entry' if is_new else 'Save Changes' }}
+                </button>
+                <a href="{{ url_for('dcrr.dcrr_register') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle me-1"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

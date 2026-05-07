@@ -1,0 +1,479 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case Summary - {{ case.case_id }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        @media print {
+            body { font-size: 11pt; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: white;
+            font-size: 0.9rem;
+            color: #333;
+        }
+        .print-header {
+            text-align: center;
+            border-bottom: 3px double #1F3864;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .print-header h2 {
+            color: #1F3864;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+        .print-header .division-name {
+            color: #495057;
+            font-size: 1rem;
+        }
+        .print-header .subtitle {
+            color: #6c757d;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .section-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #1F3864;
+            border-bottom: 2px solid #D6E4F0;
+            padding-bottom: 0.4rem;
+            margin-bottom: 0.75rem;
+            margin-top: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .detail-table td {
+            padding: 0.35rem 0.5rem;
+            vertical-align: top;
+        }
+        .detail-table .label-col {
+            width: 35%;
+            font-weight: 500;
+            color: #6c757d;
+        }
+        .detail-table .value-col {
+            font-weight: 400;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+        .data-table thead th {
+            background-color: #1F3864;
+            color: white;
+            font-size: 0.78rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0.5rem;
+            border: 1px solid #1F3864;
+        }
+        .data-table tbody td {
+            padding: 0.4rem 0.5rem;
+            border: 1px solid #dee2e6;
+            font-size: 0.85rem;
+        }
+        .data-table tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .print-footer {
+            text-align: center;
+            border-top: 2px solid #1F3864;
+            padding-top: 0.75rem;
+            margin-top: 2rem;
+            color: #C00000;
+            font-weight: 600;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+        .case-badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .synopsis-text {
+            white-space: pre-wrap;
+            background: #f8f9fa;
+            border-left: 3px solid #1F3864;
+            padding: 0.75rem 1rem;
+            font-size: 0.88rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-3">
+
+        {# === JCF Header === #}
+        <div class="print-header">
+            <div class="mb-2">
+                <i class="bi bi-shield-shaded" style="font-size: 2.5rem; color: #1F3864;"></i>
+            </div>
+            <h2>Jamaica Constabulary Force</h2>
+            <div class="division-name">
+                Firearms &amp; Narcotics Investigation Division | {{ case.division or 'Area 3' }}
+            </div>
+            <div class="subtitle mt-1">Case Summary Report</div>
+        </div>
+
+        {# === Print Button (hidden on print) === #}
+        <div class="text-end mb-3 no-print">
+            <button onclick="window.print()" class="btn btn-primary btn-sm">
+                <i class="bi bi-printer me-1"></i> Print
+            </button>
+            <button onclick="window.close()" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-x-lg me-1"></i> Close
+            </button>
+        </div>
+
+        {# === Case Reference Details === #}
+        <div class="section-title">
+            <i class="bi bi-folder2-open me-2"></i>Case Reference Details
+        </div>
+        <div class="row">
+            <div class="col-6">
+                <table class="table table-sm table-borderless detail-table mb-0">
+                    <tbody>
+                        <tr>
+                            <td class="label-col">Case Reference No.</td>
+                            <td class="value-col"><strong>{{ case.case_id }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">Primary Register</td>
+                            <td class="value-col">
+                                {% if case.primary_register_type == 'major_crime_register' %}
+                                Major Crime Register
+                                {% else %}
+                                DCRR
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">Register Number</td>
+                            <td class="value-col">{{ case.primary_register_number or case.dcrr_number or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">Station Code</td>
+                            <td class="value-col">{{ case.station_code or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">Diary Number</td>
+                            <td class="value-col">{{ case.diary_number or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">Registration Date</td>
+                            <td class="value-col">{{ case.registration_date or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">Division</td>
+                            <td class="value-col">{{ case.division or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">Parish</td>
+                            <td class="value-col">{{ case.parish or '-' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-6">
+                <table class="table table-sm table-borderless detail-table mb-0">
+                    <tbody>
+                        <tr>
+                            <td class="label-col">Status</td>
+                            <td class="value-col"><strong>{{ case.case_status or '-' }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">Current Stage</td>
+                            <td class="value-col">{{ (case.current_stage or 'intake')|replace('_', ' ')|title }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">Crime Type</td>
+                            <td class="value-col">{{ (case.crime_type or '-')|title }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">Workflow</td>
+                            <td class="value-col">{{ (case.workflow_type or '-')|title }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">OIC</td>
+                            <td class="value-col">{{ case.oic_name or '-' }} {% if case.oic_rank %}({{ case.oic_rank }}){% endif %}</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">Assigned IO</td>
+                            <td class="value-col">{{ case.assigned_io_badge or 'Unassigned' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">Assigned Date</td>
+                            <td class="value-col">{{ case.assigned_date or '-' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {# === Offence Details === #}
+        <div class="section-title">
+            <i class="bi bi-exclamation-triangle me-2"></i>Offence Details
+        </div>
+        <table class="table table-sm table-borderless detail-table">
+            <tbody>
+                <tr>
+                    <td class="label-col" style="width:25%;">Classification</td>
+                    <td class="value-col">{{ case.classification or '-' }}</td>
+                </tr>
+                <tr>
+                    <td class="label-col">Primary Offence</td>
+                    <td class="value-col">{{ case.offence_description or '-' }}</td>
+                </tr>
+                <tr>
+                    <td class="label-col">Law & Section</td>
+                    <td class="value-col">{{ case.law_and_section or '-' }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        {# === Parties === #}
+        <div class="section-title">
+            <i class="bi bi-people me-2"></i>Parties Involved
+        </div>
+        <div class="row">
+            <div class="col-6">
+                <table class="table table-sm table-borderless detail-table mb-0">
+                    <tbody>
+                        <tr>
+                            <td class="label-col">Victim / Complainant</td>
+                            <td class="value-col">{{ case.victim_name or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">Victim Address</td>
+                            <td class="value-col">{{ case.victim_address or '-' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-6">
+                <table class="table table-sm table-borderless detail-table mb-0">
+                    <tbody>
+                        <tr>
+                            <td class="label-col">Suspect</td>
+                            <td class="value-col">{{ case.suspect_name or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">Suspect DOB</td>
+                            <td class="value-col">{{ case.suspect_dob or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">Suspect Address</td>
+                            <td class="value-col">{{ case.suspect_address or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">Suspect Occupation</td>
+                            <td class="value-col">{{ case.suspect_occupation or '-' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {# === Synopsis === #}
+        {% if case.notes %}
+        <div class="section-title">
+            <i class="bi bi-chat-left-text me-2"></i>Synopsis / Brief Facts
+        </div>
+        <div class="synopsis-text">{{ case.notes }}</div>
+        {% endif %}
+
+        {# === Lifecycle History === #}
+        <div class="section-title">
+            <i class="bi bi-clock-history me-2"></i>Lifecycle History
+        </div>
+        {% if lifecycle %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width:5%;">#</th>
+                    <th style="width:18%;">Stage</th>
+                    <th style="width:20%;">Entered At</th>
+                    <th style="width:15%;">Entered By</th>
+                    <th style="width:20%;">Exited At</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in lifecycle %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td><strong>{{ entry.stage|replace('_', ' ')|title }}</strong></td>
+                    <td>{{ entry.entered_at or '-' }}</td>
+                    <td>{{ entry.entered_by or '-' }}</td>
+                    <td>{{ entry.exited_at or 'Current' }}</td>
+                    <td>{{ entry.notes or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted"><em>No lifecycle entries recorded.</em></p>
+        {% endif %}
+
+        {# === Exhibits / Evidence === #}
+        <div class="section-title">
+            <i class="bi bi-box-seam me-2"></i>Exhibits / Evidence
+        </div>
+        {% if exhibits %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Exhibit ID</th>
+                    <th>Description</th>
+                    <th>Type</th>
+                    <th>Seized By</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in exhibits %}
+                <tr>
+                    <td>{{ e.exhibit_id or e.id }}</td>
+                    <td>{{ e.description or '-' }}</td>
+                    <td>{{ e.exhibit_type or '-' }}</td>
+                    <td>{{ e.seized_by or '-' }}</td>
+                    <td>{{ e.current_location or '-' }}</td>
+                    <td>{{ e.status or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted"><em>No exhibits recorded.</em></p>
+        {% endif %}
+
+        {# === Arrests === #}
+        <div class="section-title">
+            <i class="bi bi-person-fill-lock me-2"></i>Arrests
+        </div>
+        {% if arrests %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Arrest ID</th>
+                    <th>Date</th>
+                    <th>Suspect</th>
+                    <th>Offence</th>
+                    <th>48hr Compliance</th>
+                    <th>Bail Status</th>
+                    <th>Court</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in arrests %}
+                <tr>
+                    <td>{{ a.arrest_id }}</td>
+                    <td>{{ a.arrest_date or '-' }}</td>
+                    <td>{{ a.suspect_name or '-' }}</td>
+                    <td>{{ a.offence_1 or '-' }}</td>
+                    <td>{{ a.charge_within_48hr or '-' }}</td>
+                    <td>{{ a.bail_status or '-' }}</td>
+                    <td>{{ a.court_type or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted"><em>No arrests linked to this case.</em></p>
+        {% endif %}
+
+        {# === Statements === #}
+        <div class="section-title">
+            <i class="bi bi-chat-left-quote me-2"></i>Witness Statements
+        </div>
+        {% if statements %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Statement ID</th>
+                    <th>Witness Name</th>
+                    <th>Type</th>
+                    <th>Date Taken</th>
+                    <th>Taken By</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in statements %}
+                <tr>
+                    <td>{{ s.statement_id or s.id }}</td>
+                    <td>{{ s.witness_name or '-' }}</td>
+                    <td>{{ s.statement_type or '-' }}</td>
+                    <td>{{ s.date_taken or '-' }}</td>
+                    <td>{{ s.taken_by or '-' }}</td>
+                    <td>{{ s.status or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted"><em>No statements recorded.</em></p>
+        {% endif %}
+
+        {# === Key Dates Summary === #}
+        <div class="section-title">
+            <i class="bi bi-calendar-event me-2"></i>Key Dates
+        </div>
+        <table class="table table-sm table-borderless detail-table">
+            <tbody>
+                <tr>
+                    <td class="label-col" style="width:25%;">Created</td>
+                    <td class="value-col">{{ case.created_at[:10] if case.created_at else '-' }}</td>
+                    <td class="label-col" style="width:25%;">Last Review</td>
+                    <td class="value-col">{{ case.last_review_date or '-' }}</td>
+                </tr>
+                <tr>
+                    <td class="label-col">Assigned Date</td>
+                    <td class="value-col">{{ case.assigned_date or '-' }}</td>
+                    <td class="label-col">Next Review</td>
+                    <td class="value-col">{{ case.next_review_date or '-' }}</td>
+                </tr>
+                {% if case.suspended_date %}
+                <tr>
+                    <td class="label-col">Suspended</td>
+                    <td class="value-col">{{ case.suspended_date }}</td>
+                    <td class="label-col">Reason</td>
+                    <td class="value-col">{{ case.suspended_reason or '-' }}</td>
+                </tr>
+                {% endif %}
+                {% if case.closed_date %}
+                <tr>
+                    <td class="label-col">Closed</td>
+                    <td class="value-col">{{ case.closed_date }}</td>
+                    <td class="label-col">Reason</td>
+                    <td class="value-col">{{ case.closed_reason or '-' }}</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        {# === Footer === #}
+        <div class="print-footer">
+            RESTRICTED &mdash; Official Use Only
+        </div>
+        <div class="text-center mt-1">
+            <small class="text-muted">
+                Generated {{ "now"|string }} | Jamaica Constabulary Force | FNID {{ case.division or 'Area 3' }}
+            </small>
+        </div>
+
+    </div>
+</body>
+</html>

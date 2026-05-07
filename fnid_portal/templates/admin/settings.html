@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}System Settings{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-sliders me-2" style="color: #1F3864;"></i>System Settings</h4>
+        <small class="text-muted">Configure system parameters and defaults</small>
+    </div>
+    <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Admin
+    </a>
+</div>
+
+<form method="POST" action="{{ url_for('admin.settings') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% for category_name, settings in categories.items() %}
+    <div class="card mb-4">
+        <div class="card-header" style="background-color: #1F3864; color: #fff;">
+            <h6 class="mb-0">
+                {% if category_name == 'general' %}
+                <i class="bi bi-gear me-2"></i>General Settings
+                {% elif category_name == 'case_numbers' %}
+                <i class="bi bi-hash me-2"></i>Case Number Settings
+                {% elif category_name == 'deadlines' %}
+                <i class="bi bi-clock me-2"></i>Deadline Settings
+                {% elif category_name == 'mcr' %}
+                <i class="bi bi-file-earmark-text me-2"></i>MCR Settings
+                {% else %}
+                <i class="bi bi-wrench me-2"></i>{{ category_name|replace('_', ' ')|title }}
+                {% endif %}
+            </h6>
+        </div>
+        <div class="card-body">
+            {% for setting in settings %}
+            <div class="row mb-3 align-items-center">
+                <div class="col-md-3">
+                    <label for="setting_{{ setting.key }}" class="form-label fw-bold mb-0">
+                        {{ setting.key|replace('_', ' ')|title }}
+                    </label>
+                </div>
+                <div class="col-md-5">
+                    <input type="text" class="form-control" id="setting_{{ setting.key }}"
+                           name="setting_{{ setting.key }}" value="{{ setting.value or '' }}">
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted">{{ setting.description or '' }}</small>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="d-flex gap-2 mb-4">
+        <button type="submit" class="btn btn-primary" style="background-color: #1F3864; border-color: #1F3864;">
+            <i class="bi bi-floppy me-1"></i> Save All Settings
+        </button>
+        <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}

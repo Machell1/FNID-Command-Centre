@@ -1,0 +1,199 @@
+﻿{% extends "base.html" %}
+{% block title %}AI Work Assistants{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-cpu me-2"></i>AI Work Assistants</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item active">Assistants</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('assistants.workstation') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-person-workspace me-1"></i> Workstation
+        </a>
+        <a href="{{ url_for('admin.settings') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-sliders me-1"></i> System Settings
+        </a>
+    </div>
+</div>
+
+<div class="alert alert-info">
+    <strong>Harness:</strong>
+    Assistants are off by default. DeepSeek and Tavily calls require the master switch and server-side keys.
+    Outbound AI context is metadata-only; case names, officer identifiers, notes, secrets, and internal register numbers stay inside FNID.
+    Mutating actions are saved as proposals unless an admin explicitly enables autonomous low-risk work.
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="kpi-card {{ 'kpi-success' if global_enabled else 'kpi-danger' }}">
+            <div class="kpi-value">{{ 'On' if global_enabled else 'Off' }}</div>
+            <div class="kpi-label">Master Switch</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card {{ 'kpi-success' if api_key_present else 'kpi-danger' }}">
+            <div class="kpi-value">{{ 'Present' if api_key_present else 'Missing' }}</div>
+            <div class="kpi-label">DeepSeek API Key</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card {{ 'kpi-success' if tavily_key_present else 'kpi-danger' }}">
+            <div class="kpi-value">{{ 'Present' if tavily_key_present else 'Missing' }}</div>
+            <div class="kpi-label">Tavily API Key</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="kpi-value">{{ runs|length }}</div>
+            <div class="kpi-label">Recent Runs</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="kpi-value">{{ actions|selectattr('status', 'equalto', 'proposed')|list|length }}</div>
+            <div class="kpi-label">Pending Proposals</div>
+        </div>
+    </div>
+</div>
+
+{% if current_user.role in ('admin', 'dco') %}
+<form method="POST" action="{{ url_for('assistants.settings') }}" class="form-section mb-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="form-section-title mb-0">
+            <i class="bi bi-shield-check me-2"></i>Harness Controls
+        </div>
+        <button class="btn btn-success btn-sm" type="submit">
+            <i class="bi bi-save me-1"></i> Save Assistant Controls
+        </button>
+    </div>
+    <div class="form-check form-switch mb-3">
+        <input class="form-check-input" type="checkbox" role="switch" id="global_enabled"
+               name="global_enabled" {% if global_enabled %}checked{% endif %}>
+        <label class="form-check-label" for="global_enabled">
+            Enable AI assistants globally
+        </label>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>Assistant</th>
+                    <th>Scope</th>
+                    <th>Enabled</th>
+                    <th>Mode</th>
+                    <th>Approval</th>
+                    <th>Local Sensitive Context</th>
+                    <th>Limits</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in profiles %}
+                {% set prefix = p.agent_key ~ '__' %}
+                <tr>
+                    <td>
+                        <strong>{{ p.display_name }}</strong><br>
+                        <small class="text-muted">{{ blueprints[p.agent_key].purpose }}</small>
+                    </td>
+                    <td><code>{{ p.role_scope }}</code></td>
+                    <td>
+                        <input class="form-check-input" type="checkbox" name="{{ prefix }}enabled" {% if p.enabled %}checked{% endif %}>
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm" name="{{ prefix }}automation_mode">
+                            <option value="assistive" {% if p.automation_mode == 'assistive' %}selected{% endif %}>Assistive</option>
+                            <option value="autonomous" {% if p.automation_mode == 'autonomous' %}selected{% endif %}>Autonomous</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input class="form-check-input" type="checkbox" name="{{ prefix }}requires_human_approval"
+                               {% if p.requires_human_approval %}checked{% endif %}>
+                    </td>
+                    <td>
+                        <input class="form-check-input" type="checkbox" name="{{ prefix }}allow_sensitive_context"
+                               {% if p.allow_sensitive_context %}checked{% endif %}>
+                        <div class="small text-muted">Never sent externally</div>
+                    </td>
+                    <td style="min-width: 220px;">
+                        <div class="input-group input-group-sm mb-1">
+                            <span class="input-group-text">Runs/day</span>
+                            <input class="form-control" type="number" min="1" max="100"
+                                   name="{{ prefix }}max_runs_per_day" value="{{ p.max_runs_per_day }}">
+                        </div>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">Actions</span>
+                            <input class="form-control" type="number" min="1" max="20"
+                                   name="{{ prefix }}max_actions_per_run" value="{{ p.max_actions_per_run }}">
+                            <span class="input-group-text">Tokens</span>
+                            <input class="form-control" type="number" min="200" max="4000"
+                                   name="{{ prefix }}max_tokens" value="{{ p.max_tokens }}">
+                        </div>
+                        <input type="hidden" name="{{ prefix }}max_prompt_chars" value="{{ p.max_prompt_chars }}">
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</form>
+{% endif %}
+
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="form-section">
+            <div class="form-section-title">
+                <i class="bi bi-play-circle me-2"></i>Manual Assistant Run
+            </div>
+            <form method="POST" action="{{ url_for('assistants.run', agent_key=default_agent) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="mb-2">
+                    <label class="form-label" for="case_id">Case Reference No.</label>
+                    <input class="form-control" id="case_id" name="case_id"
+                           placeholder="FNID/SD/A3/FNID/2026/0001">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label" for="guidance">Human Guidance</label>
+                    <textarea class="form-control" id="guidance" name="guidance" rows="4"
+                              placeholder="Tell the assistant what to check or prepare."></textarea>
+                </div>
+                <button class="btn btn-primary" type="submit">
+                    <i class="bi bi-cpu me-1"></i> Run My Assistant
+                </button>
+            </form>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="form-section">
+            <div class="form-section-title">
+                <i class="bi bi-clock-history me-2"></i>Recent Runs
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr><th>Run</th><th>Agent</th><th>Case</th><th>Status</th><th>Started By</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for r in runs %}
+                        <tr>
+                            <td><a href="{{ url_for('assistants.run_detail', run_id=r.run_id) }}">{{ r.run_id }}</a></td>
+                            <td>{{ r.agent_key }}</td>
+                            <td>{{ r.case_id or '-' }}</td>
+                            <td><span class="badge bg-secondary">{{ r.status }}</span></td>
+                            <td>{{ r.started_by }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-muted">No assistant runs yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

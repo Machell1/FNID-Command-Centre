@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}{% if is_new %}New User{% else %}Edit User{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-person-gear me-2" style="color: #1F3864;"></i>
+            {% if is_new %}New User{% else %}Edit User — {{ officer.full_name }}{% endif %}
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Admin</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('admin.users') }}">Users</a></li>
+                <li class="breadcrumb-item active">{% if is_new %}New{% else %}Edit{% endif %}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<form method="POST" class="needs-validation" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="card mb-4">
+        <div class="card-header" style="background-color: #1F3864; color: #fff;">
+            <h6 class="mb-0"><i class="bi bi-person-badge me-2"></i>Officer Details</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="badge_number" class="form-label">Badge / Regimental Number <span class="required">*</span></label>
+                        <input type="text" class="form-control" id="badge_number" name="badge_number"
+                               value="{{ officer.badge_number if officer else '' }}" required
+                               placeholder="e.g. JCF-4455">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="full_name" class="form-label">Full Name <span class="required">*</span></label>
+                        <input type="text" class="form-control" id="full_name" name="full_name"
+                               value="{{ officer.full_name if officer else '' }}" required
+                               placeholder="e.g. John Williams">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email"
+                               value="{{ officer.email if officer else '' }}"
+                               placeholder="e.g. j.williams@jcf.gov.jm">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="rank" class="form-label">Rank <span class="required">*</span></label>
+                        <select class="form-select" id="rank" name="rank" required>
+                            <option value="">-- Select Rank --</option>
+                            {% for r in ranks %}
+                            <option value="{{ r }}" {% if officer and officer.rank == r %}selected{% endif %}>{{ r }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="section" class="form-label">Section / Division</label>
+                        <select class="form-select" id="section" name="section">
+                            <option value="">-- Select Section --</option>
+                            {% for s in sections %}
+                            <option value="{{ s }}" {% if officer and officer.section == s %}selected{% endif %}>{{ s }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="role" class="form-label">System Role <span class="required">*</span></label>
+                        <select class="form-select" id="role" name="role" required>
+                            <option value="">-- Select Role --</option>
+                            {% for role_key, role_label in roles.items() %}
+                            <option value="{{ role_key }}" {% if officer and officer.role == role_key %}selected{% endif %}>{{ role_label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header" style="background-color: #1F3864; color: #fff;">
+            <h6 class="mb-0"><i class="bi bi-key me-2"></i>Authentication</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% if is_new %}
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password <span class="required">*</span></label>
+                        <input type="password" class="form-control" id="password" name="password"
+                               required minlength="10" placeholder="Minimum 10 characters">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">Confirm Password <span class="required">*</span></label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password"
+                               required minlength="10" placeholder="Re-enter password">
+                    </div>
+                </div>
+                {% else %}
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <div>
+                            <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#resetPasswordModal">
+                                <i class="bi bi-arrow-repeat me-1"></i> Reset Password
+                            </button>
+                            <small class="text-muted ms-2">Leave unchanged unless resetting</small>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Account Status</label>
+                        <div class="form-check form-switch mt-1">
+                            <input class="form-check-input" type="checkbox" role="switch" id="is_active" name="is_active"
+                                   {% if is_new or (officer and officer.is_active) %}checked{% endif %}>
+                            <label class="form-check-label" for="is_active">Account is active</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mb-4">
+        <button type="submit" class="btn btn-primary" style="background-color: #1F3864; border-color: #1F3864;">
+            <i class="bi bi-floppy me-1"></i> {% if is_new %}Create User{% else %}Save Changes{% endif %}
+        </button>
+        <a href="{{ url_for('admin.users') }}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+
+{% if not is_new %}
+<!-- Reset Password Modal -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-labelledby="resetPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('admin.reset_password', badge=officer.badge_number) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header" style="background-color: #1F3864; color: #fff;">
+                    <h5 class="modal-title" id="resetPasswordModalLabel">
+                        <i class="bi bi-key me-2"></i>Reset Password
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Reset password for <strong>{{ officer.full_name }}</strong> ({{ officer.badge_number }})?</p>
+                    <div class="mb-3">
+                        <label for="new_password" class="form-label">New Password <span class="required">*</span></label>
+                        <input type="password" class="form-control" id="new_password" name="new_password"
+                               required minlength="10" placeholder="Minimum 10 characters">
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirm_new_password" class="form-label">Confirm New Password <span class="required">*</span></label>
+                        <input type="password" class="form-control" id="confirm_new_password" name="confirm_new_password"
+                               required minlength="10" placeholder="Re-enter password">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-arrow-repeat me-1"></i> Reset Password
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

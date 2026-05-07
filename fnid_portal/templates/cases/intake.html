@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% from "macros.html" import select_field, text_field, textarea_field, number_field, submit_controls %}
+{% block title %}New Case Intake{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-folder-plus me-2" style="color: var(--fnid-navy);"></i>
+            New Case Intake
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('cases.case_list') }}">Cases</a></li>
+                <li class="breadcrumb-item active">New Intake</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- FA & Narcotics Investigation Legal Reference -->
+<div class="card border-secondary mb-3">
+    <div class="card-header bg-secondary text-white" role="button" data-bs-toggle="collapse" data-bs-target="#legalRefGuide" aria-expanded="false">
+        <i class="bi bi-book me-2"></i>Legal Reference Guide — Firearms Act 2022 & Dangerous Drugs Act
+        <i class="bi bi-chevron-down float-end"></i>
+    </div>
+    <div class="collapse" id="legalRefGuide">
+        <div class="card-body small">
+            <div class="row">
+                <div class="col-md-4">
+                    <strong class="text-danger">Firearms (Prohibition, Restriction & Regulation) Act, 2022:</strong>
+                    <ul class="mb-1">
+                        <li><strong>s.5</strong> — Possession of Prohibited Weapon (15yr min; 25yr max)</li>
+                        <li><strong>s.6</strong> — Stockpiling (3+ firearms or 50+ rounds; 15yr min)</li>
+                        <li><strong>s.7</strong> — Trafficking (20yr min; life max)</li>
+                        <li><strong>s.10</strong> — Dealing (20+ rounds deemed dealing; 20yr min)</li>
+                        <li><strong>s.35</strong> — Unauthorised Possession of Firearm</li>
+                        <li><strong>s.36</strong> — Unauthorised Possession of Ammunition</li>
+                        <li><strong>s.42</strong> — Use of Firearm in Commission of Offence</li>
+                        <li><strong>s.43</strong> — Shooting with Intent to do GBH</li>
+                    </ul>
+                    <em>All FA offences — mandatory Gun Court referral</em>
+                </div>
+                <div class="col-md-4">
+                    <strong class="text-info">Dangerous Drugs Act (as amended 2015):</strong>
+                    <ul class="mb-1">
+                        <li><strong>Part IIIA — Ganja:</strong></li>
+                        <li>s.7A — Import/Export Ganja (5yr–life)</li>
+                        <li>s.7B — Dealing, Cultivation, Transporting</li>
+                        <li>s.7C — Possession (≤2oz ticket J$500; >2oz criminal)</li>
+                        <li><strong>Part IV — Cocaine, Heroin:</strong></li>
+                        <li>s.8 — Import/Export (10yr–life)</li>
+                        <li>s.8A — Selling, Dealing, Transporting (up to 35yr)</li>
+                        <li>s.8B — Possession (any cocaine; >1/10oz heroin = deemed dealing)</li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <strong>Deemed Dealing Thresholds:</strong>
+                    <ul class="mb-1">
+                        <li>Ganja: >2oz = criminal; 5+ plants = trafficking</li>
+                        <li>Cocaine: any quantity = criminal offence</li>
+                        <li>Heroin: >1/10oz = deemed dealing</li>
+                        <li>Ammunition: 20+ rounds = deemed dealing (FA s.10)</li>
+                        <li>Firearms: 3+ = stockpiling (FA s.6)</li>
+                    </ul>
+                    <strong>Court Jurisdiction:</strong>
+                    <ul class="mb-0">
+                        <li>All firearm offences — Gun Court</li>
+                        <li>Drug summary — Parish Court</li>
+                        <li>Drug indictable — Circuit Court</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form method="POST" action="{{ url_for('cases.intake') }}" class="needs-validation" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <!-- Report Details -->
+    <div class="form-section">
+        <div class="form-section-title">
+            <i class="bi bi-file-earmark-text me-2"></i>Report Details
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <label for="station_code" class="form-label">
+                    Station Code <span class="required">*</span>
+                </label>
+                <select class="form-select" id="station_code" name="station_code" required>
+                    <option value="">-- Select Station --</option>
+                    {% for key, code in case_numbers.STATION_CODES.items() %}
+                    <option value="{{ code }}">{{ code }} - {{ key|replace('_', ' ')|title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                {{ text_field("diary_number", "Diary Number", placeholder="Station diary entry number") }}
+            </div>
+            <div class="col-md-3">
+                {{ text_field("registration_date", "Report Date", type="date", required=true) }}
+            </div>
+            <div class="col-md-3">
+                {{ select_field("division", "Division", ["FNID Area 3", "Manchester Division", "St. Elizabeth Division", "Clarendon Division"], "FNID Area 3") }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <label for="primary_register_type" class="form-label">
+                    Primary Register <span class="required">*</span>
+                </label>
+                <select class="form-select" id="primary_register_type" name="primary_register_type" required>
+                    <option value="dcrr" selected>DCRR</option>
+                    <option value="major_crime_register">Major Crime Register</option>
+                </select>
+                <small class="form-text text-muted">
+                    The case workflow remains unchanged whichever register is used.
+                </small>
+            </div>
+            <div class="col-md-3">
+                {{ select_field("parish", "Parish", cfg.ALL_PARISHES, required=true) }}
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Crime Type <span class="required">*</span></label>
+                <div class="mt-1">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="crime_type"
+                               id="crime_major" value="major" checked>
+                        <label class="form-check-label" for="crime_major">Major</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="crime_type"
+                               id="crime_minor" value="minor">
+                        <label class="form-check-label" for="crime_minor">Minor</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Workflow Type <span class="required">*</span></label>
+                <div class="mt-1">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="workflow_type"
+                               id="wf_non_uniformed" value="non-uniformed" checked>
+                        <label class="form-check-label" for="wf_non_uniformed">Non-uniformed</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="workflow_type"
+                               id="wf_uniformed" value="uniformed">
+                        <label class="form-check-label" for="wf_uniformed">Uniformed</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Offence Classification -->
+    <div class="form-section">
+        <div class="form-section-title">
+            <i class="bi bi-exclamation-triangle me-2"></i>Offence Classification
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                {{ select_field("classification", "Case Classification", cfg.CASE_CLASSIFICATIONS, required=true,
+                                help="Primary classification for this case") }}
+            </div>
+            <div class="col-md-6">
+                {{ select_field("offence_description", "Primary Offence", cfg.ALL_OFFENCES, required=true,
+                                help="Select from Firearms Act 2022, DDA, POCA, or other statutes") }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                {{ text_field("law_and_section", "Law & Section", placeholder="e.g. s.5 Firearms Act 2022",
+                              help="Specific statutory provision") }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Complainant / Victim -->
+    <div class="form-section">
+        <div class="form-section-title">
+            <i class="bi bi-person-exclamation me-2"></i>Complainant / Victim
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                {{ text_field("victim_name", "Complainant / Victim Name") }}
+            </div>
+            <div class="col-md-8">
+                {{ text_field("victim_address", "Address") }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Suspect Details -->
+    <div class="form-section">
+        <div class="form-section-title">
+            <i class="bi bi-person-fill-lock me-2"></i>Suspect Details
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                {{ text_field("suspect_name", "Suspect Full Name") }}
+            </div>
+            <div class="col-md-3">
+                {{ text_field("suspect_dob", "Date of Birth", type="date") }}
+            </div>
+            <div class="col-md-3">
+                {{ text_field("suspect_address", "Address") }}
+            </div>
+            <div class="col-md-3">
+                {{ text_field("suspect_occupation", "Occupation") }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Details -->
+    <div class="form-section">
+        <div class="form-section-title">
+            <i class="bi bi-chat-left-text me-2"></i>Additional Details
+        </div>
+        {{ textarea_field("notes", "Synopsis / Brief Facts", rows=4,
+                          help="Summarise the circumstances of the report") }}
+    </div>
+
+    {{ submit_controls("Draft") }}
+</form>
+{% endblock %}

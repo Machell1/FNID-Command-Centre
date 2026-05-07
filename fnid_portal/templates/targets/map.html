@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Target Parish Map{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-geo-alt"></i> Target Parish Summary</h2>
+    <a href="{{ url_for('targets.target_list') }}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back to Targets
+    </a>
+  </div>
+
+  <!-- KPI Cards -->
+  {% if parish_data %}
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card text-center">
+        <div class="card-body">
+          <h6 class="text-muted">Total Parishes with Targets</h6>
+          <h2>{{ parish_data | length }}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center border-danger">
+        <div class="card-body">
+          <h6 class="text-muted">Total Critical</h6>
+          <h2 class="text-danger">{{ parish_data | sum(attribute='critical') }}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center border-danger">
+        <div class="card-body">
+          <h6 class="text-muted">Total High</h6>
+          <h2 class="text-danger">{{ parish_data | sum(attribute='high') }}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center border-success">
+        <div class="card-body">
+          <h6 class="text-muted">Total Active</h6>
+          <h2 class="text-success">{{ parish_data | sum(attribute='active') }}</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Parish Summary Table -->
+  <div class="card">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-table me-2"></i>Targets by Parish</h5></div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover table-striped">
+          <thead>
+            <tr>
+              <th>Parish</th>
+              <th>Total Targets</th>
+              <th><span class="badge bg-dark">Critical</span></th>
+              <th><span class="badge bg-danger">High</span></th>
+              <th><span class="badge bg-warning text-dark">Medium</span></th>
+              <th><span class="badge bg-success">Low</span></th>
+              <th>Active</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in parish_data %}
+            <tr>
+              <td><strong>{{ row.parish }}</strong></td>
+              <td>{{ row.total }}</td>
+              <td>
+                {% if row.critical > 0 %}
+                <span class="badge bg-dark">{{ row.critical }}</span>
+                {% else %}0{% endif %}
+              </td>
+              <td>
+                {% if row.high > 0 %}
+                <span class="badge bg-danger">{{ row.high }}</span>
+                {% else %}0{% endif %}
+              </td>
+              <td>
+                {% if row.medium > 0 %}
+                <span class="badge bg-warning text-dark">{{ row.medium }}</span>
+                {% else %}0{% endif %}
+              </td>
+              <td>
+                {% if row.low > 0 %}
+                <span class="badge bg-success">{{ row.low }}</span>
+                {% else %}0{% endif %}
+              </td>
+              <td>{{ row.active }}</td>
+              <td>
+                <a href="{{ url_for('targets.target_list', parish=row.parish) }}"
+                   class="btn btn-sm btn-outline-primary" title="View targets in {{ row.parish }}">
+                  <i class="bi bi-eye"></i> View
+                </a>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="8" class="text-center text-muted py-4">No parish data available.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

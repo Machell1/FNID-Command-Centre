@@ -1,0 +1,402 @@
+﻿{% extends "base.html" %}
+{% block title %}Case Registry & SOP Compliance{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-journal-check me-2" style="color: {{ portal.color }};"></i>
+            Case Registry & SOP Compliance
+        </h4>
+        {% if not is_unit_workspace %}
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item active">Registry</li>
+            </ol>
+        </nav>
+        {% endif %}
+    </div>
+    <div class="d-flex gap-2">
+        {% if is_unit_workspace %}
+        <a href="{{ url_for('upload.submit_report') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-robot me-1"></i> Upload Report
+        </a>
+        {% else %}
+        <a href="{{ url_for('cases.intake') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-circle me-1"></i> Register New Case
+        </a>
+        {% endif %}
+        <a href="{{ url_for('units.unit_dashboard', unit='registry') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-graph-up me-1"></i> Dashboard
+        </a>
+        <a href="{{ url_for('policy.forms_library') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-file-earmark-word me-1"></i> Official CR Forms
+        </a>
+        <a href="{{ url_for('policy.download_registry_workbook') }}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-file-earmark-excel me-1"></i> Register Workbook
+        </a>
+        <a href="{{ url_for('data.export_unit', unit='registry') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-download me-1"></i> Export
+        </a>
+    </div>
+</div>
+
+{% include "_unit_workspace_header.html" %}
+
+<div class="form-section mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <div class="form-section-title mb-1">
+                <i class="bi bi-file-earmark-ruled me-2"></i>Official CR Forms Registry
+            </div>
+            <small class="text-muted">
+                Investigator and Team Lead forms are available as editable case records, printable copies, and original DOCX templates.
+            </small>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{{ url_for('policy.forms_library') }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-folder2-open me-1"></i> Open Forms Library
+            </a>
+            <a href="{{ url_for('policy.download_registry_workbook') }}"
+               class="btn btn-outline-success btn-sm">
+                <i class="bi bi-file-earmark-excel me-1"></i> Download Register Workbook
+            </a>
+        </div>
+    </div>
+    <div class="row g-3 mt-1">
+        <div class="col-12">
+            <div class="border rounded p-3">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <h6 class="mb-2"><i class="bi bi-diagram-3 me-1"></i> Registry Intake Choice</h6>
+                        <small class="text-muted">
+                            Registry can open a case through the DCRR or the Major Crime Register.
+                            The case lifecycle, CR forms, vetting, assignment, and review workflow continue the same way.
+                        </small>
+                    </div>
+                    <a href="{{ url_for('cases.intake') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-ui-checks-grid me-1"></i> Choose Register on Intake
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="border rounded p-3 h-100">
+                <h6 class="mb-2"><i class="bi bi-person-badge me-1"></i> Investigator</h6>
+                <small class="text-muted">CR1, CR2, CR3, CR4, CR5, CR6, CR8, CR9, CR11, CR12, and CR14.</small>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="border rounded p-3 h-100">
+                <h6 class="mb-2"><i class="bi bi-person-check me-1"></i> Team Lead</h6>
+                <small class="text-muted">CR2, CR12, CR13, and CR15 for review, checklist, and court preparation work.</small>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="border rounded p-3">
+                <h6 class="mb-2"><i class="bi bi-file-earmark-excel me-1"></i> Registry Workflow Workbook</h6>
+                <small class="text-muted">
+                    Includes printable Excel replicas for the Case File Submission Register, Case File Movement Register,
+                    DCRR, Investigator Index Card CR6, Inward/Outward Correspondence Register, and Major Crime Register.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card">
+            <div class="kpi-value">{{ data.cases|length if data.cases else 0 }}</div>
+            <div class="kpi-label">Total Cases</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-success">
+            <div class="kpi-value">
+                {{ data.registry_kpis.sop_compliant if data.registry_kpis else 0 }}
+            </div>
+            <div class="kpi-label">SOP Compliant</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-info">
+            <div class="kpi-value">
+                {{ data.registry_kpis.major_register_cases if data.registry_kpis else 0 }}
+            </div>
+            <div class="kpi-label">Major Register</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card kpi-danger">
+            <div class="kpi-value">
+                {{ data.registry_kpis.non_compliant if data.registry_kpis else 0 }}
+            </div>
+            <div class="kpi-label">Non-Compliant</div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs for different registry views -->
+<ul class="nav nav-tabs" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="tab" href="#cases-tab">
+            <i class="bi bi-folder2-open me-1"></i> Case Files
+            <span class="badge bg-secondary ms-1">{{ data.cases|length if data.cases else 0 }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#dpp-tab">
+            <i class="bi bi-file-earmark-text me-1"></i> DPP Pipeline
+            <span class="badge bg-secondary ms-1">{{ data.dpp|length if data.dpp else 0 }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#sop-tab">
+            <i class="bi bi-check2-square me-1"></i> SOP Checklists
+            <span class="badge bg-secondary ms-1">{{ data.sop|length if data.sop else 0 }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#major-register-tab">
+            <i class="bi bi-journal-bookmark me-1"></i> Major Crime Register
+            <span class="badge bg-secondary ms-1">{{ data.major_crime_register|length if data.major_crime_register else 0 }}</span>
+        </a>
+    </li>
+</ul>
+
+<div class="tab-content mt-3">
+    <!-- Cases Tab -->
+    <div class="tab-pane fade show active" id="cases-tab">
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-hover fnid-table">
+                    <thead>
+                        <tr>
+                            <th>Case Reference No.</th>
+                            <th>Date</th>
+                            <th>Classification</th>
+                            <th>OIC</th>
+                            <th>Suspect</th>
+                            <th>Parish</th>
+                            <th>Status</th>
+                            <th>Register</th>
+                            <th>SOP</th>
+                            <th>DPP</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in data.cases %}
+                        <tr>
+                            <td><strong>{{ c.case_id }}</strong></td>
+                            <td>{{ c.registration_date }}</td>
+                            <td>{{ c.classification }}</td>
+                            <td>{{ c.oic_name }}</td>
+                            <td>{{ c.suspect_name or '-' }}</td>
+                            <td>{{ c.parish }}</td>
+                            <td>
+                                {% if 'Open' in (c.case_status or '') %}
+                                <span class="badge bg-primary">{{ c.case_status }}</span>
+                                {% elif 'Closed' in (c.case_status or '') %}
+                                <span class="badge bg-secondary">{{ c.case_status }}</span>
+                                {% elif 'Referred' in (c.case_status or '') %}
+                                <span class="badge bg-info">{{ c.case_status }}</span>
+                                {% else %}
+                                <span class="badge bg-light text-dark">{{ c.case_status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if c.primary_register_type == 'major_crime_register' %}
+                                <span class="badge bg-warning text-dark">Major Crime</span>
+                                {% else %}
+                                <span class="badge bg-secondary">DCRR</span>
+                                {% endif %}
+                                <div class="small text-muted">{{ c.primary_register_number or c.dcrr_number or '-' }}</div>
+                            </td>
+                            <td>
+                                {% if 'Fully' in (c.sop_compliance or '') %}
+                                <span class="badge badge-compliant">Compliant</span>
+                                {% elif 'Non-Compliant' in (c.sop_compliance or '') %}
+                                <span class="badge badge-non-compliant">Non-Compliant</span>
+                                {% else %}
+                                <span class="badge badge-under-review">{{ c.sop_compliance or 'Pending' }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ c.dpp_status or '-' }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('cases.case_detail', case_id=c.case_id) }}"
+                                       class="btn btn-outline-secondary" title="Open Case">
+                                        <i class="bi bi-folder2-open"></i>
+                                    </a>
+                                    <a href="{{ url_for('cr_forms.form_list', case_id=c.case_id) }}"
+                                       class="btn btn-outline-primary" title="CR Forms">
+                                        <i class="bi bi-file-earmark-text"></i>
+                                    </a>
+                                    <a href="{{ url_for('units.edit_record', unit='registry', record_id=c.id, subtype='cases') }}"
+                                       class="btn btn-outline-primary" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="major-register-tab">
+        <div class="d-flex justify-content-between mb-3">
+            <h6 class="text-muted">Major Crime Register entries linked into the same case workflow</h6>
+            <a href="{{ url_for('cases.intake') }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle me-1"></i> Register Major Crime
+            </a>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-hover fnid-table">
+                    <thead>
+                        <tr>
+                            <th>Register No.</th>
+                            <th>Case Reference No.</th>
+                            <th>Date</th>
+                            <th>Station</th>
+                            <th>Classification</th>
+                            <th>OIC</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in data.major_crime_register %}
+                        <tr>
+                            <td><strong>{{ m.register_number }}</strong></td>
+                            <td>
+                                {% if m.case_id %}
+                                <a href="{{ url_for('cases.case_detail', case_id=m.case_id) }}">{{ m.case_id }}</a>
+                                {% else %}-{% endif %}
+                            </td>
+                            <td>{{ m.report_date }}</td>
+                            <td>{{ m.station }}</td>
+                            <td>{{ m.classification }}</td>
+                            <td>{{ m.oic_name or '-' }}</td>
+                            <td><span class="badge bg-primary">{{ m.status or 'Open' }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- DPP Pipeline Tab -->
+    <div class="tab-pane fade" id="dpp-tab">
+        <div class="d-flex justify-content-between mb-3">
+            <h6 class="text-muted">DPP File Submission Pipeline (per Prosecution Protocol 2012)</h6>
+            <a href="{{ url_for('units.new_record', unit='registry', subtype='dpp') }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle me-1"></i> New DPP Entry
+            </a>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-hover fnid-table">
+                    <thead>
+                        <tr>
+                            <th>Case Reference No.</th>
+                            <th>Classification</th>
+                            <th>OIC</th>
+                            <th>Suspect</th>
+                            <th>DPP Status</th>
+                            <th>Evidential Test</th>
+                            <th>Public Interest</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for d in data.dpp %}
+                        <tr>
+                            <td><strong>{{ d.linked_case_id }}</strong></td>
+                            <td>{{ d.classification }}</td>
+                            <td>{{ d.oic_name }}</td>
+                            <td>{{ d.suspect_name or '-' }}</td>
+                            <td>{{ d.dpp_status }}</td>
+                            <td>
+                                {% if d.evidential_sufficiency == 'Yes' %}
+                                <span class="badge bg-success">Met</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if d.public_interest_met == 'Yes' %}
+                                <span class="badge bg-success">Met</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('units.edit_record', unit='registry', record_id=d.id, subtype='dpp') }}"
+                                   class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- SOP Checklists Tab -->
+    <div class="tab-pane fade" id="sop-tab">
+        <div class="d-flex justify-content-between mb-3">
+            <h6 class="text-muted">SOP Compliance Checklists (per JCF Book of Rules & DPP Protocols)</h6>
+            <a href="{{ url_for('units.new_record', unit='registry', subtype='sop') }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle me-1"></i> New SOP Checklist
+            </a>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-hover fnid-table">
+                    <thead>
+                        <tr>
+                            <th>Case Reference No.</th>
+                            <th>OIC</th>
+                            <th>Date</th>
+                            <th>Overall Compliance</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in data.sop %}
+                        <tr>
+                            <td><strong>{{ s.linked_case_id }}</strong></td>
+                            <td>{{ s.oic_name }}</td>
+                            <td>{{ s.checklist_date }}</td>
+                            <td>
+                                {% if 'Fully' in (s.overall_compliance or '') %}
+                                <span class="badge badge-compliant">{{ s.overall_compliance }}</span>
+                                {% elif 'Non-Compliant' in (s.overall_compliance or '') %}
+                                <span class="badge badge-non-compliant">{{ s.overall_compliance }}</span>
+                                {% else %}
+                                <span class="badge badge-under-review">{{ s.overall_compliance }}</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge" data-status="{{ s.record_status }}">{{ s.record_status }}</span></td>
+                            <td>
+                                <a href="{{ url_for('units.edit_record', unit='registry', record_id=s.id, subtype='sop') }}"
+                                   class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

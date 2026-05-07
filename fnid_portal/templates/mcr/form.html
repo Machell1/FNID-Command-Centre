@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% from "macros.html" import select_field, text_field, textarea_field %}
+{% block title %}Add MCR Line Entry{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-pencil-square me-2" style="color: var(--fnid-navy);"></i>
+            Add Supporting MCR Line Entry
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('mcr.mcr_dashboard') }}">MCR</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('mcr.cr7_form', date=form.mcr_date) }}">Official CR7</a></li>
+                <li class="breadcrumb-item active">Line Entry</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    This is a supporting register line entry. The official Morning Crime Report is the
+    <a href="{{ url_for('mcr.cr7_form', date=form.mcr_date) }}" class="alert-link">CR7 form</a>.
+</div>
+
+<form method="POST" action="{{ url_for('mcr.new_entry') }}" class="needs-validation" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-section">
+        <div class="form-section-title">
+            <i class="bi bi-newspaper me-2"></i>Line Entry Details
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                {{ text_field("mcr_date", "MCR Date", form.mcr_date, required=true, type="date") }}
+            </div>
+            <div class="col-md-3">
+                {{ select_field("source_table", "Source / Register", source_options, form.source_table, required=true) }}
+            </div>
+            <div class="col-md-3">
+                {{ text_field("source_id", "Source Reference No.", form.source_id, required=true,
+                              placeholder="DCRR, MCR, diary or case reference") }}
+            </div>
+            <div class="col-md-3">
+                {{ select_field("parish", "Parish", cfg.ALL_PARISHES, form.parish, required=true) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="form-section-title">
+            <i class="bi bi-tags me-2"></i>Classification
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                {{ select_field("classification", "Classification", cfg.CASE_CLASSIFICATIONS, form.classification, required=true) }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label d-block">FNID-Relevant Matter</label>
+                <div class="form-check form-switch mt-2">
+                    <input class="form-check-input" type="checkbox" role="switch"
+                           id="fnid_relevant" name="fnid_relevant" value="1"
+                           {% if form.fnid_relevant == "1" %}checked{% endif %}>
+                    <label class="form-check-label" for="fnid_relevant">
+                        Include in FNID briefing, leads, and priority report sections
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="form-section-title">
+            <i class="bi bi-card-text me-2"></i>Line Entry Summary
+        </div>
+        {{ textarea_field("summary", "Supporting MCR Line Entry", form.summary, required=true, rows=6,
+                          help="Enter the matter as it should feed the official CR7.") }}
+        {{ textarea_field("lead_suggestions", "Follow-Up Lines / Leads", form.lead_suggestions, rows=4,
+                          help="Optional. Enter one follow-up line per line for the Leads Report.") }}
+    </div>
+
+    <div class="form-section">
+        <div class="form-section-title">
+            <i class="bi bi-check2-circle me-2"></i>Submission
+        </div>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-floppy me-1"></i> Save Line Entry
+            </button>
+            <a href="{{ url_for('mcr.cr7_form', date=form.mcr_date) }}" class="btn btn-outline-primary">Open Official CR7</a>
+            <a href="{{ url_for('mcr.mcr_dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </div>
+</form>
+{% endblock %}

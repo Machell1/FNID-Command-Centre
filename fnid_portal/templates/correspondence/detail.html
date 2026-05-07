@@ -1,0 +1,135 @@
+﻿{% extends "base.html" %}
+{% block title %}Correspondence #{{ item.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+      <i class="bi bi-envelope-paper"></i> Correspondence #{{ item.id }}
+      {% if item.direction == 'Incoming' %}
+      <span class="badge bg-info">
+        <i class="bi bi-box-arrow-in-down"></i> Incoming
+      </span>
+      {% else %}
+      <span class="badge bg-primary">
+        <i class="bi bi-box-arrow-up"></i> Outgoing
+      </span>
+      {% endif %}
+    </h2>
+    <div>
+      <a href="{{ url_for('correspondence.edit_correspondence', id=item.id) }}" class="btn btn-warning">
+        <i class="bi bi-pencil"></i> Edit
+      </a>
+      <a href="{{ url_for('correspondence.correspondence_list') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </a>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Main Details -->
+    <div class="col-md-8">
+      <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Details</h5></div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <div class="col-md-4"><strong>Subject</strong></div>
+            <div class="col-md-8">{{ item.subject }}</div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-4"><strong>Date</strong></div>
+            <div class="col-md-8">{{ item.date }}</div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-4"><strong>Reference Number</strong></div>
+            <div class="col-md-8">{{ item.reference_number or 'â€”' }}</div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-4"><strong>Document Type</strong></div>
+            <div class="col-md-8">{{ item.document_type or 'â€”' }}</div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-4"><strong>From</strong></div>
+            <div class="col-md-8">{{ item.from_entity or 'â€”' }}</div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-4"><strong>To</strong></div>
+            <div class="col-md-8">{{ item.to_entity or 'â€”' }}</div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-4"><strong>Case Reference No.</strong></div>
+            <div class="col-md-8">{{ item.case_id or 'â€”' }}</div>
+          </div>
+          {% if item.notes %}
+          <div class="row mb-3">
+            <div class="col-md-4"><strong>Notes</strong></div>
+            <div class="col-md-8">{{ item.notes }}</div>
+          </div>
+          {% endif %}
+          <hr>
+          <div class="row mb-2">
+            <div class="col-md-4"><strong>Logged By</strong></div>
+            <div class="col-md-8">{{ item.logged_by }}</div>
+          </div>
+          <div class="row">
+            <div class="col-md-4"><strong>Logged At</strong></div>
+            <div class="col-md-8">{{ item.logged_at }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Tracking -->
+    <div class="col-md-4">
+      <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0"><i class="bi bi-flag me-2"></i>Action Tracking</h5></div>
+        <div class="card-body">
+          <div class="mb-3">
+            <strong>Action Required</strong>
+            <p>{{ item.action_required or 'None specified' }}</p>
+          </div>
+          <div class="mb-3">
+            <strong>Deadline</strong>
+            <p>
+              {% if item.action_deadline %}
+              {{ item.action_deadline }}
+              {% else %}
+              â€”
+              {% endif %}
+            </p>
+          </div>
+          <div class="mb-3">
+            <strong>Current Status</strong>
+            <p>
+              {% if item.action_status == 'Completed' %}
+              <span class="badge bg-success">Completed</span>
+              {% elif item.action_status == 'In Progress' %}
+              <span class="badge bg-warning text-dark">In Progress</span>
+              {% elif item.action_status == 'Pending' %}
+              <span class="badge bg-secondary">Pending</span>
+              {% else %}
+              <span class="badge bg-light text-dark">N/A</span>
+              {% endif %}
+            </p>
+          </div>
+          <hr>
+          <form method="post" action="{{ url_for('correspondence.update_action', id=item.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label class="form-label"><strong>Update Action Status</strong></label>
+            <div class="input-group">
+              <select name="action_status" class="form-select">
+                {% for s in action_statuses %}
+                <option value="{{ s }}" {% if item.action_status == s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg"></i> Update
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

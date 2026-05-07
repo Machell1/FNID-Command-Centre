@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{% if is_new %}New{% else %}Edit{% endif %} {{ form_def.name }} ({{ form_type }}){% endblock %}
+
+{% block content %}
+<div class="page-header no-print">
+    <div>
+        <h4>
+            <i class="bi bi-file-earmark-ruled me-2" style="color: var(--fnid-navy);"></i>
+            {% if is_new %}New{% else %}Edit{% endif %} {{ form_def.name }} ({{ form_type }})
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('units.unit_home', unit='registry') }}">Registry</a></li>
+                <li class="breadcrumb-item">
+                    <a href="{{ url_for('cr_forms.form_list', case_id=case.case_id) }}">CR Forms</a>
+                </li>
+                <li class="breadcrumb-item active">{{ form_type }}</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <button type="button" onclick="window.print()" class="btn btn-outline-dark btn-sm">
+            <i class="bi bi-printer me-1"></i> Print Preview
+        </button>
+        <a href="{{ url_for('cr_forms.form_list', case_id=case.case_id) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Forms
+        </a>
+    </div>
+</div>
+
+<div class="alert alert-info no-print">
+    <i class="bi bi-info-circle me-2"></i>
+    This screen captures form data inside the registry workflow. For the true official replica, edit or print the uploaded Microsoft Word template.
+    <a href="{{ url_for('cr_forms.form_word_template', case_id=case.case_id, form_type=form_type) }}" class="alert-link">
+        Open exact {{ form_type }} Word template
+    </a>.
+</div>
+
+<form method="POST" id="cr-form" class="needs-validation" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {% include "cr_forms/_official_form.html" %}
+
+    <div class="form-section no-print mt-3">
+        <div class="form-section-title">
+            <i class="bi bi-check2-circle me-2"></i>Save Official CR Form
+        </div>
+        <input type="hidden" id="form_status" name="form_status" value="{{ form_rec.status if form_rec is defined and form_rec else 'Draft' }}">
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <button type="submit" class="btn btn-primary" onclick="document.getElementById('form_status').value='Draft'">
+                <i class="bi bi-floppy me-1"></i> Save Draft
+            </button>
+            <button type="submit" class="btn btn-success" onclick="document.getElementById('form_status').value='Submitted'">
+                <i class="bi bi-check-lg me-1"></i> Submit
+            </button>
+            <button type="button" onclick="window.print()" class="btn btn-outline-dark">
+                <i class="bi bi-printer me-1"></i> Print
+            </button>
+            <a href="{{ url_for('cr_forms.form_list', case_id=case.case_id) }}" class="btn btn-outline-secondary">
+                Cancel
+            </a>
+            <span class="ms-auto small text-muted">
+                Source: {{ layout.source_filename }}
+            </span>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var form = document.getElementById('cr-form');
+    if (!form) return;
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+});
+</script>
+{% endblock %}

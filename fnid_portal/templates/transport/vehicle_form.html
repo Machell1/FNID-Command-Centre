@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}{% if is_new %}New Vehicle{% else %}Edit {{ vehicle.vehicle_id }}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-truck me-2" style="color: var(--fnid-navy);"></i>
+            {% if is_new %}
+            Add New Vehicle
+            {% else %}
+            Edit {{ vehicle.vehicle_id }}
+            {% endif %}
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('transport.fleet') }}">Transport</a></li>
+                {% if not is_new %}
+                <li class="breadcrumb-item"><a href="{{ url_for('transport.vehicle_detail', vehicle_id=vehicle.vehicle_id) }}">{{ vehicle.vehicle_id }}</a></li>
+                <li class="breadcrumb-item active">Edit</li>
+                {% else %}
+                <li class="breadcrumb-item active">New Vehicle</li>
+                {% endif %}
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<form method="POST"
+      action="{% if is_new %}{{ url_for('transport.new_vehicle') }}{% else %}{{ url_for('transport.edit_vehicle', vehicle_id=vehicle.vehicle_id) }}{% endif %}"
+      class="needs-validation" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <!-- Vehicle Identity -->
+    <div class="form-section">
+        <div class="form-section-title">
+            <i class="bi bi-card-checklist me-2"></i>Vehicle Identity
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <label for="registration" class="form-label">Registration Plate <span class="required">*</span></label>
+                <input type="text" class="form-control" id="registration" name="registration"
+                       value="{{ vehicle.registration if vehicle else '' }}" required
+                       placeholder="e.g. 1234 AB">
+            </div>
+            <div class="col-md-3">
+                <label for="make" class="form-label">Make <span class="required">*</span></label>
+                <input type="text" class="form-control" id="make" name="make"
+                       value="{{ vehicle.make if vehicle else '' }}" required
+                       placeholder="e.g. Toyota">
+            </div>
+            <div class="col-md-3">
+                <label for="model" class="form-label">Model <span class="required">*</span></label>
+                <input type="text" class="form-control" id="model" name="model"
+                       value="{{ vehicle.model if vehicle else '' }}" required
+                       placeholder="e.g. Hilux">
+            </div>
+            <div class="col-md-3">
+                <label for="year" class="form-label">Year</label>
+                <input type="number" class="form-control" id="year" name="year"
+                       value="{{ vehicle.year if vehicle else '' }}"
+                       placeholder="e.g. 2022" min="1990" max="2030">
+            </div>
+        </div>
+    </div>
+
+    <!-- Vehicle Classification -->
+    <div class="form-section">
+        <div class="form-section-title">
+            <i class="bi bi-tags me-2"></i>Vehicle Classification
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <label for="vehicle_type" class="form-label">Vehicle Type <span class="required">*</span></label>
+                <select class="form-select" id="vehicle_type" name="vehicle_type" required>
+                    <option value="">-- Select Type --</option>
+                    {% for vt in vehicle_types %}
+                    <option value="{{ vt }}"
+                            {% if vehicle and vehicle.vehicle_type == vt %}selected{% endif %}>
+                        {{ vt }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status" name="status">
+                    {% for vs in vehicle_statuses %}
+                    <option value="{{ vs }}"
+                            {% if vehicle and vehicle.status == vs %}selected{% endif %}>
+                        {{ vs }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="current_mileage" class="form-label">Current Mileage (km)</label>
+                <input type="number" class="form-control" id="current_mileage" name="current_mileage"
+                       value="{{ vehicle.current_mileage if vehicle else '0' }}" min="0">
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignment -->
+    <div class="form-section">
+        <div class="form-section-title">
+            <i class="bi bi-building me-2"></i>Assignment
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <label for="assigned_unit" class="form-label">Assigned Unit</label>
+                <input type="text" class="form-control" id="assigned_unit" name="assigned_unit"
+                       value="{{ vehicle.assigned_unit if vehicle else '' }}"
+                       placeholder="e.g. FNID Area 3, Manchester Division">
+            </div>
+            <div class="col-md-6">
+                <label for="assigned_officer" class="form-label">Assigned Officer</label>
+                <input type="text" class="form-control" id="assigned_officer" name="assigned_officer"
+                       value="{{ vehicle.assigned_officer if vehicle else '' }}"
+                       placeholder="Officer name or badge number">
+            </div>
+        </div>
+    </div>
+
+    <!-- Service & Maintenance -->
+    <div class="form-section">
+        <div class="form-section-title">
+            <i class="bi bi-wrench me-2"></i>Service & Maintenance
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <label for="last_service_date" class="form-label">Last Service Date</label>
+                <input type="date" class="form-control" id="last_service_date" name="last_service_date"
+                       value="{{ vehicle.last_service_date if vehicle else '' }}">
+            </div>
+            <div class="col-md-4">
+                <label for="next_service_due" class="form-label">Next Service Due</label>
+                <input type="date" class="form-control" id="next_service_due" name="next_service_due"
+                       value="{{ vehicle.next_service_due if vehicle else '' }}">
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label for="defects" class="form-label">Known Defects</label>
+                <textarea class="form-control" id="defects" name="defects" rows="3"
+                          placeholder="List any known defects or issues with this vehicle">{{ vehicle.defects if vehicle else '' }}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="form-section">
+        <div class="form-section-title">
+            <i class="bi bi-chat-left-text me-2"></i>Notes
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <textarea class="form-control" id="notes" name="notes" rows="3"
+                          placeholder="Additional notes about this vehicle">{{ vehicle.notes if vehicle else '' }}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="d-flex gap-2 mt-3 mb-4">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle me-1"></i>
+            {% if is_new %}Add Vehicle{% else %}Save Changes{% endif %}
+        </button>
+        <a href="{{ url_for('transport.fleet') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-x-circle me-1"></i> Cancel
+        </a>
+    </div>
+</form>
+{% endblock %}

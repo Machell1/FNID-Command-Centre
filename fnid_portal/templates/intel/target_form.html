@@ -1,0 +1,129 @@
+﻿{% extends "base.html" %}
+{% block title %}{% if is_new %}New Target{% else %}Edit Target{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h4>
+            <i class="bi bi-crosshair me-2" style="color: #1F3864;"></i>
+            {% if is_new %}New Intelligence Target{% else %}Edit Target &mdash; {{ target.name }}{% endif %}
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('intel.targets') }}">Targets</a></li>
+                <li class="breadcrumb-item active">{% if is_new %}New{% else %}Edit{% endif %}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<form method="POST" class="needs-validation" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <!-- Basic Information -->
+    <div class="card mb-4">
+        <div class="card-header" style="background-color: #1F3864; color: #fff;">
+            <h6 class="mb-0"><i class="bi bi-person-badge me-2"></i>Target Information</h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="name" class="form-label">Full Name <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="name" name="name"
+                           value="{{ target.name if target else '' }}" required
+                           placeholder="e.g. John Doe">
+                </div>
+                <div class="col-md-6">
+                    <label for="aliases" class="form-label">Aliases</label>
+                    <input type="text" class="form-control" id="aliases" name="aliases"
+                           value="{{ target.aliases if target else '' }}"
+                           placeholder="e.g. Johnny D, JD (comma-separated)">
+                    <div class="form-text">Separate multiple aliases with commas.</div>
+                </div>
+            </div>
+            <div class="row g-3 mt-1">
+                <div class="col-md-12">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="3"
+                              placeholder="Physical description, identifying marks, etc.">{{ target.description if target else '' }}</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Location & Threat -->
+    <div class="card mb-4">
+        <div class="card-header" style="background-color: #1F3864; color: #fff;">
+            <h6 class="mb-0"><i class="bi bi-geo-alt me-2"></i>Location & Threat Assessment</h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="parish" class="form-label">Parish <span class="required">*</span></label>
+                    <select class="form-select" id="parish" name="parish" required>
+                        <option value="">-- Select Parish --</option>
+                        {% for p in cfg.get('parishes', []) %}
+                        <option value="{{ p }}" {% if target and target.parish == p %}selected{% endif %}>{{ p }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="area" class="form-label">Area / Community</label>
+                    <input type="text" class="form-control" id="area" name="area"
+                           value="{{ target.area if target else '' }}"
+                           placeholder="e.g. Spanish Town, Portmore">
+                </div>
+                <div class="col-md-4">
+                    <label for="threat_level" class="form-label">Threat Level <span class="required">*</span></label>
+                    <select class="form-select" id="threat_level" name="threat_level" required>
+                        <option value="">-- Select --</option>
+                        <option value="Critical" {% if target and target.threat_level == 'Critical' %}selected{% endif %}>Critical</option>
+                        <option value="High" {% if target and target.threat_level == 'High' %}selected{% endif %}>High</option>
+                        <option value="Medium" {% if target and target.threat_level == 'Medium' %}selected{% endif %}>Medium</option>
+                        <option value="Low" {% if target and target.threat_level == 'Low' %}selected{% endif %}>Low</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modus Operandi & Intelligence -->
+    <div class="card mb-4">
+        <div class="card-header" style="background-color: #1F3864; color: #fff;">
+            <h6 class="mb-0"><i class="bi bi-file-text me-2"></i>Modus Operandi & Links</h6>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="mo" class="form-label">Modus Operandi (MO)</label>
+                <textarea class="form-control" id="mo" name="mo" rows="4"
+                          placeholder="Describe known modus operandi, criminal patterns, associates, etc.">{{ target.mo if target else '' }}</textarea>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="linked_cases" class="form-label">Linked Cases</label>
+                    <textarea class="form-control" id="linked_cases" name="linked_cases" rows="2"
+                              placeholder="Case Reference Nos., comma-separated (e.g. FNID-2024-001, FNID-2024-015)">{{ target.linked_cases if target else '' }}</textarea>
+                    <div class="form-text">Enter case reference nos. separated by commas.</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="linked_intel" class="form-label">Linked Intel Reports</label>
+                    <textarea class="form-control" id="linked_intel" name="linked_intel" rows="2"
+                              placeholder="Intel IDs, comma-separated (e.g. INT-2024-001, INT-2024-023)">{{ target.linked_intel if target else '' }}</textarea>
+                    <div class="form-text">Enter intel report IDs separated by commas.</div>
+                </div>
+            </div>
+            <div class="mt-3">
+                <label for="notes" class="form-label">Additional Notes</label>
+                <textarea class="form-control" id="notes" name="notes" rows="3"
+                          placeholder="Any additional intelligence notes">{{ target.notes if target else '' }}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mb-4">
+        <button type="submit" class="btn btn-primary" style="background-color: #1F3864; border-color: #1F3864;">
+            <i class="bi bi-floppy me-1"></i> {% if is_new %}Create Target{% else %}Save Changes{% endif %}
+        </button>
+        <a href="{{ url_for('intel.targets') }}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}

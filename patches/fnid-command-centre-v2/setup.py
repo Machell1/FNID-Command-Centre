@@ -1,0 +1,37 @@
+from setuptools import setup, find_packages
+
+setup(
+    name='fnid-command-centre',
+    version='2.0.0',
+    description='JCF FNID Command Centre — Production Law Enforcement Platform',
+    author='FNID Area 3 IT Support',
+    author_email='it.support@fnid.jcf.gov.jm',
+    packages=find_packages(where='src'),
+    package_dir={'': 'src'},
+    python_requires='>=3.12',
+    install_requires=[
+        'Flask>=3.0.0',
+        'Flask-SQLAlchemy>=3.1.0',
+        'Flask-Migrate>=4.0.0',
+        'Flask-JWT-Extended>=4.6.0',
+        'Flask-Limiter>=3.7.0',
+        'Flask-Talisman>=1.1.0',
+        'psycopg2-binary>=2.9.0',
+        'SQLAlchemy>=2.0.0',
+        'bcrypt>=4.1.0',
+        'marshmallow>=3.21.0',
+        'python-dotenv>=1.0.0',
+        'redis>=5.0.0',
+        'gunicorn>=22.0.0',
+    ],
+    classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'Environment :: Web Environment',
+        'Framework :: Flask',
+        'Intended Audience :: Government',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 3.12',
+        'Topic :: Security',
+    ],
+)

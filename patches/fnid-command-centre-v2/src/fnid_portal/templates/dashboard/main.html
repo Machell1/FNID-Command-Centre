@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}FNID Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-2 sidebar p-0">
+            <div class="p-3 border-bottom border-secondary">
+                <small class="text-muted text-uppercase fw-bold">Units</small>
+            </div>
+            <nav class="nav flex-column">
+                <a class="nav-link active" href="/dashboard">
+                    <i class="bi bi-speedometer2 me-2"></i>Command Dashboard
+                </a>
+                <a class="nav-link" href="/registry">
+                    <i class="bi bi-folder-fill me-2"></i>Case Registry
+                </a>
+                <a class="nav-link" href="/investigation">
+                    <i class="bi bi-search me-2"></i>Investigation
+                </a>
+                <a class="nav-link" href="/seizures">
+                    <i class="bi bi-box-seam me-2"></i>Seizures
+                </a>
+                <a class="nav-link" href="/intelligence">
+                    <i class="bi bi-eye me-2"></i>Intelligence
+                </a>
+                <a class="nav-link" href="/court">
+                    <i class="bi bi-bank me-2"></i>Arrests / Court
+                </a>
+                <a class="nav-link" href="/forensics">
+                    <i class="bi bi-microscope me-2"></i>Forensics
+                </a>
+            </nav>
+
+            <div class="mt-auto p-3 border-top border-secondary">
+                <small class="text-muted">
+                    <i class="bi bi-shield-check me-1"></i>SOP: JCF/FW/PL/C&S/0001/2024
+                </small>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-10 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h4 class="fw-bold mb-0">Command Dashboard</h4>
+                    <small class="text-muted">FNID Area 3 — Real-time Operational Overview</small>
+                </div>
+                <div>
+                    <button class="btn btn-fnid" onclick="window.location.href='/registry/cases/new'">
+                        <i class="bi bi-plus-circle me-2"></i>New Case
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card card-fnid p-3">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <small class="text-muted text-uppercase">Open Cases</small>
+                                <h3 class="fw-bold mb-0" id="stat-open">--</h3>
+                            </div>
+                            <i class="bi bi-folder-open" style="font-size: 2rem; color: var(--fnid-secondary);"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card card-fnid p-3">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <small class="text-muted text-uppercase">Active Investigations</small>
+                                <h3 class="fw-bold mb-0" id="stat-active">--</h3>
+                            </div>
+                            <i class="bi bi-search" style="font-size: 2rem; color: var(--registry-green);"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card card-fnid p-3">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <small class="text-muted text-uppercase">Pending Review</small>
+                                <h3 class="fw-bold mb-0" id="stat-review">--</h3>
+                            </div>
+                            <i class="bi bi-clock-history" style="font-size: 2rem; color: var(--investigation-amber);"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card card-fnid p-3">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <small class="text-muted text-uppercase">Closed (YTD)</small>
+                                <h3 class="fw-bold mb-0" id="stat-closed">--</h3>
+                            </div>
+                            <i class="bi bi-check-circle" style="font-size: 2rem; color: var(--security-red);"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Cases -->
+            <div class="card card-fnid">
+                <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-list-ul me-2"></i>Recent Cases</h6>
+                    <a href="/registry" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>CR Number</th>
+                                    <th>Registry</th>
+                                    <th>Category</th>
+                                    <th>Offence</th>
+                                    <th>Status</th>
+                                    <th>Date Reported</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-cases">
+                                <tr><td colspan="7" class="text-center py-4 text-muted">Loading cases...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overdue Actions -->
+            <div class="card card-fnid mt-4">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold mb-0 text-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Overdue Actions (SOP Compliance Alert)
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="overdue-actions" class="text-muted small">
+                        Loading overdue actions...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function loadDashboard() {
+    try {
+        // Load cases
+        const response = await apiFetch('/api/v1/cases?per_page=10');
+        const data = await response.json();
+
+        const tbody = document.getElementById('recent-cases');
+        tbody.innerHTML = '';
+
+        if (data.cases && data.cases.length > 0) {
+            data.cases.forEach(case_item => {
+                const statusClass = {
+                    'OPEN': 'status-open',
+                    'ASSIGNED': 'status-open',
+                    'ACTIVE': 'status-active',
+                    'UNDER_REVIEW': 'status-active',
+                    'SUSPENDED': 'text-warning',
+                    'CLEARED': 'status-active',
+                    'CLOSED': 'status-closed',
+                    'COLD_CASE': 'text-secondary'
+                }[case_item.status] || 'text-muted';
+
+                const registryBadge = case_item.registry_type === 'DCRR' 
+                    ? '<span class="badge badge-registry">DCRR</span>'
+                    : `<span class="badge bg-secondary">${case_item.registry_type}</span>`;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><span class="cr-number">${case_item.cr_number}</span></td>
+                        <td>${registryBadge}</td>
+                        <td>${case_item.crime_category}</td>
+                        <td>${case_item.offence_description.substring(0, 50)}...</td>
+                        <td><span class="${statusClass} fw-bold">${case_item.status}</span></td>
+                        <td>${new Date(case_item.date_reported).toLocaleDateString()}</td>
+                        <td>
+                            <a href="/registry/cases/${case_item.case_id}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No cases found</td></tr>';
+        }
+
+        // Update stats (mock for now - would come from API)
+        document.getElementById('stat-open').textContent = data.cases?.filter(c => c.status === 'OPEN').length || 0;
+        document.getElementById('stat-active').textContent = data.cases?.filter(c => c.status === 'ACTIVE').length || 0;
+
+    } catch (err) {
+        console.error('Failed to load dashboard:', err);
+    }
+}
+
+loadDashboard();
+</script>
+{% endblock %}

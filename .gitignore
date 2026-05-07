@@ -3,17 +3,28 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
-*.egg-info/
-*.egg
-dist/
+.Python
 build/
+develop-eggs/
+dist/
+downloads/
+eggs/
 .eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
 # Virtual environments
 venv/
-.venv/
+ENV/
 env/
-.env
+.venv
 
 # IDE
 .vscode/
@@ -22,41 +33,55 @@ env/
 *.swo
 *~
 
-# OS
-.DS_Store
-Thumbs.db
+# Environment
+.env
+.env.local
+.env.production
 
-# Application data (generated at runtime)
-fnid_portal/data/
-instance/
+# Database
 *.db
 *.sqlite
 *.sqlite3
 
-# Local secrets
-fnid_portal/secret_keys.py
-*.pem
-*.key
+# Logs
+logs/
+*.log
 
-# Old fnid_web directory (superseded by fnid_portal)
-fnid_web/
-
-# Generated Excel files
-*.xlsx
-!fnid_portal/static/forms/registers/*.xlsx
-
-# Testing
-.pytest_cache/
-.coverage
+# Coverage
 htmlcov/
+.coverage
+.pytest_cache/
 
 # Docker
 .dockerignore
 
-# Frontend (React SPA)
+# OS
+.DS_Store
+Thumbs.db
+
+# Data (sensitive)
+data/uploads/*
+data/exports/*
+!data/uploads/.gitkeep
+!data/exports/.gitkeep
+
+# SSL (production)
+docker/nginx/ssl/*.crt
+docker/nginx/ssl/*.key
+
+# Local FNID runtime data and secrets (kept out of GitHub uploads)
+fnid_portal/data/
+instance/
+fnid_portal/secret_keys.py
+*.pem
+*.key
+
+# Old/generated app surfaces kept local unless explicitly migrated
+fnid_web/
 frontend/node_modules/
 frontend/dist/
 fnid_portal/static/spa/
 
-# Misc
-*.log
+# Generated Excel files; keep official register workbook tracked
+*.xlsx
+!fnid_portal/static/forms/registers/*.xlsx

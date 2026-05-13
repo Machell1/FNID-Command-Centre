@@ -15,21 +15,21 @@ import pytest
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
-def app():
+def app(tmp_path):
     """Create the primary fnid_portal Flask app with a disposable SQLite DB."""
-    db_fd, db_path = tempfile.mkstemp(suffix=".db")
+    db_path = str(tmp_path / "fnid_test.db")
 
     os.environ["FNID_DB_PATH"] = db_path
     os.environ["FLASK_ENV"] = "testing"
 
     from fnid_portal import create_app
+    from fnid_portal import models
+
+    models.configure(db_path)
     application = create_app("testing")
     application.config["DB_PATH"] = db_path
 
     yield application
-
-    os.close(db_fd)
-    os.unlink(db_path)
 
 
 @pytest.fixture

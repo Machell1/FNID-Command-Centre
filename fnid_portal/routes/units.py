@@ -173,75 +173,77 @@ def unit_home(unit):
             pass
 
     conn = get_db()
-    data = {}
+    try:
+        data = {}
 
-    if unit == "intel":
-        data["records"] = conn.execute(
-            "SELECT * FROM intel_reports ORDER BY id DESC"
-        ).fetchall()
-    elif unit == "operations":
-        data["records"] = conn.execute(
-            "SELECT * FROM operations ORDER BY id DESC"
-        ).fetchall()
-    elif unit == "seizures":
-        data["firearms"] = conn.execute(
-            "SELECT * FROM firearm_seizures ORDER BY id DESC"
-        ).fetchall()
-        data["narcotics"] = conn.execute(
-            "SELECT * FROM narcotics_seizures ORDER BY id DESC"
-        ).fetchall()
-    elif unit == "arrests":
-        data["records"] = conn.execute(
-            "SELECT * FROM arrests ORDER BY id DESC"
-        ).fetchall()
-    elif unit == "forensics":
-        data["custody"] = conn.execute(
-            "SELECT * FROM chain_of_custody ORDER BY id DESC"
-        ).fetchall()
-        data["lab"] = conn.execute(
-            "SELECT * FROM lab_tracking ORDER BY id DESC"
-        ).fetchall()
-    elif unit == "registry":
-        cases = conn.execute(
-            "SELECT * FROM cases ORDER BY id DESC"
-        ).fetchall()
-        data["cases"] = cases
-        data["dpp"] = conn.execute(
-            "SELECT * FROM dpp_pipeline ORDER BY id DESC"
-        ).fetchall()
-        data["sop"] = conn.execute(
-            "SELECT * FROM sop_checklists ORDER BY id DESC"
-        ).fetchall()
-        data["major_crime_register"] = conn.execute(
-            "SELECT * FROM major_crime_register ORDER BY id DESC"
-        ).fetchall()
-        data["registry_kpis"] = {
-            "sop_compliant": sum(
-                1 for case in cases
-                if any(marker in (case["sop_compliance"] or "")
-                       for marker in ("Fully", "Substantially"))
-            ),
-            "dcrr_cases": sum(
-                1 for case in cases
-                if (case["primary_register_type"] if "primary_register_type" in case.keys() else "dcrr") == "dcrr"
-            ),
-            "major_register_cases": sum(
-                1 for case in cases
-                if (case["primary_register_type"] if "primary_register_type" in case.keys() else "") == "major_crime_register"
-            ),
-            "at_dpp": sum(
-                1 for case in cases
-                if "Referred to DPP" in (case["case_status"] or "")
-            ),
-            "non_compliant": sum(
-                1 for case in cases
-                if "Non-Compliant" in (case["sop_compliance"] or "")
-            ),
-        }
+        if unit == "intel":
+            data["records"] = conn.execute(
+                "SELECT * FROM intel_reports ORDER BY id DESC"
+            ).fetchall()
+        elif unit == "operations":
+            data["records"] = conn.execute(
+                "SELECT * FROM operations ORDER BY id DESC"
+            ).fetchall()
+        elif unit == "seizures":
+            data["firearms"] = conn.execute(
+                "SELECT * FROM firearm_seizures ORDER BY id DESC"
+            ).fetchall()
+            data["narcotics"] = conn.execute(
+                "SELECT * FROM narcotics_seizures ORDER BY id DESC"
+            ).fetchall()
+        elif unit == "arrests":
+            data["records"] = conn.execute(
+                "SELECT * FROM arrests ORDER BY id DESC"
+            ).fetchall()
+        elif unit == "forensics":
+            data["custody"] = conn.execute(
+                "SELECT * FROM chain_of_custody ORDER BY id DESC"
+            ).fetchall()
+            data["lab"] = conn.execute(
+                "SELECT * FROM lab_tracking ORDER BY id DESC"
+            ).fetchall()
+        elif unit == "registry":
+            cases = conn.execute(
+                "SELECT * FROM cases ORDER BY id DESC"
+            ).fetchall()
+            data["cases"] = cases
+            data["dpp"] = conn.execute(
+                "SELECT * FROM dpp_pipeline ORDER BY id DESC"
+            ).fetchall()
+            data["sop"] = conn.execute(
+                "SELECT * FROM sop_checklists ORDER BY id DESC"
+            ).fetchall()
+            data["major_crime_register"] = conn.execute(
+                "SELECT * FROM major_crime_register ORDER BY id DESC"
+            ).fetchall()
+            data["registry_kpis"] = {
+                "sop_compliant": sum(
+                    1 for case in cases
+                    if any(marker in (case["sop_compliance"] or "")
+                           for marker in ("Fully", "Substantially"))
+                ),
+                "dcrr_cases": sum(
+                    1 for case in cases
+                    if (case["primary_register_type"] if "primary_register_type" in case.keys() else "dcrr") == "dcrr"
+                ),
+                "major_register_cases": sum(
+                    1 for case in cases
+                    if (case["primary_register_type"] if "primary_register_type" in case.keys() else "") == "major_crime_register"
+                ),
+                "at_dpp": sum(
+                    1 for case in cases
+                    if "Referred to DPP" in (case["case_status"] or "")
+                ),
+                "non_compliant": sum(
+                    1 for case in cases
+                    if "Non-Compliant" in (case["sop_compliance"] or "")
+                ),
+            }
 
-    conn.close()
-    return render_template(f"{unit}/home.html", portal=portal, data=data, unit=unit,
-                           alerts=alerts, is_unit_workspace=is_unit_workspace)
+        return render_template(f"{unit}/home.html", portal=portal, data=data, unit=unit,
+                               alerts=alerts, is_unit_workspace=is_unit_workspace)
+    finally:
+        conn.close()
 
 
 @bp.route("/unit/<unit>/dashboard")
@@ -253,100 +255,102 @@ def unit_dashboard(unit):
         return redirect(url_for("main.home"))
 
     conn = get_db()
-    charts = {}
+    try:
+        charts = {}
 
-    if unit == "intel":
-        charts["by_source"] = conn.execute(
-            "SELECT source, COUNT(*) as cnt FROM intel_reports GROUP BY source ORDER BY cnt DESC"
-        ).fetchall()
-        charts["by_priority"] = conn.execute(
-            "SELECT priority, COUNT(*) as cnt FROM intel_reports GROUP BY priority"
-        ).fetchall()
-        charts["by_parish"] = conn.execute(
-            "SELECT parish, COUNT(*) as cnt FROM intel_reports GROUP BY parish"
-        ).fetchall()
-        charts["total"] = conn.execute("SELECT COUNT(*) FROM intel_reports").fetchone()[0]
-        charts["critical"] = conn.execute(
-            "SELECT COUNT(*) FROM intel_reports WHERE priority='Critical'"
-        ).fetchone()[0]
-        charts["actioned"] = conn.execute(
-            "SELECT COUNT(*) FROM intel_reports WHERE triage_decision LIKE 'Action%'"
-        ).fetchone()[0]
+        if unit == "intel":
+            charts["by_source"] = conn.execute(
+                "SELECT source, COUNT(*) as cnt FROM intel_reports GROUP BY source ORDER BY cnt DESC"
+            ).fetchall()
+            charts["by_priority"] = conn.execute(
+                "SELECT priority, COUNT(*) as cnt FROM intel_reports GROUP BY priority"
+            ).fetchall()
+            charts["by_parish"] = conn.execute(
+                "SELECT parish, COUNT(*) as cnt FROM intel_reports GROUP BY parish"
+            ).fetchall()
+            charts["total"] = conn.execute("SELECT COUNT(*) FROM intel_reports").fetchone()[0]
+            charts["critical"] = conn.execute(
+                "SELECT COUNT(*) FROM intel_reports WHERE priority='Critical'"
+            ).fetchone()[0]
+            charts["actioned"] = conn.execute(
+                "SELECT COUNT(*) FROM intel_reports WHERE triage_decision LIKE 'Action%'"
+            ).fetchone()[0]
 
-    elif unit == "operations":
-        charts["by_type"] = conn.execute(
-            "SELECT op_type, COUNT(*) as cnt FROM operations GROUP BY op_type ORDER BY cnt DESC"
-        ).fetchall()
-        charts["by_outcome"] = conn.execute(
-            "SELECT outcome, COUNT(*) as cnt FROM operations GROUP BY outcome"
-        ).fetchall()
-        charts["total"] = conn.execute("SELECT COUNT(*) FROM operations").fetchone()[0]
-        charts["successful"] = conn.execute(
-            "SELECT COUNT(*) FROM operations WHERE outcome LIKE 'Successful%'"
-        ).fetchone()[0]
-        charts["firearms_total"] = conn.execute(
-            "SELECT COALESCE(SUM(firearms_seized),0) FROM operations"
-        ).fetchone()[0]
+        elif unit == "operations":
+            charts["by_type"] = conn.execute(
+                "SELECT op_type, COUNT(*) as cnt FROM operations GROUP BY op_type ORDER BY cnt DESC"
+            ).fetchall()
+            charts["by_outcome"] = conn.execute(
+                "SELECT outcome, COUNT(*) as cnt FROM operations GROUP BY outcome"
+            ).fetchall()
+            charts["total"] = conn.execute("SELECT COUNT(*) FROM operations").fetchone()[0]
+            charts["successful"] = conn.execute(
+                "SELECT COUNT(*) FROM operations WHERE outcome LIKE 'Successful%'"
+            ).fetchone()[0]
+            charts["firearms_total"] = conn.execute(
+                "SELECT COALESCE(SUM(firearms_seized),0) FROM operations"
+            ).fetchone()[0]
 
-    elif unit == "seizures":
-        charts["fa_by_type"] = conn.execute(
-            "SELECT firearm_type, COUNT(*) as cnt FROM firearm_seizures GROUP BY firearm_type ORDER BY cnt DESC"
-        ).fetchall()
-        charts["na_by_type"] = conn.execute(
-            "SELECT drug_type, COUNT(*) as cnt FROM narcotics_seizures GROUP BY drug_type ORDER BY cnt DESC"
-        ).fetchall()
-        charts["fa_total"] = conn.execute("SELECT COUNT(*) FROM firearm_seizures").fetchone()[0]
-        charts["na_total"] = conn.execute("SELECT COUNT(*) FROM narcotics_seizures").fetchone()[0]
-        charts["ibis_hits"] = conn.execute(
-            "SELECT COUNT(*) FROM firearm_seizures WHERE ibis_status LIKE 'Hit%'"
-        ).fetchone()[0]
+        elif unit == "seizures":
+            charts["fa_by_type"] = conn.execute(
+                "SELECT firearm_type, COUNT(*) as cnt FROM firearm_seizures GROUP BY firearm_type ORDER BY cnt DESC"
+            ).fetchall()
+            charts["na_by_type"] = conn.execute(
+                "SELECT drug_type, COUNT(*) as cnt FROM narcotics_seizures GROUP BY drug_type ORDER BY cnt DESC"
+            ).fetchall()
+            charts["fa_total"] = conn.execute("SELECT COUNT(*) FROM firearm_seizures").fetchone()[0]
+            charts["na_total"] = conn.execute("SELECT COUNT(*) FROM narcotics_seizures").fetchone()[0]
+            charts["ibis_hits"] = conn.execute(
+                "SELECT COUNT(*) FROM firearm_seizures WHERE ibis_status LIKE 'Hit%'"
+            ).fetchone()[0]
 
-    elif unit == "arrests":
-        charts["by_bail"] = conn.execute(
-            "SELECT bail_status, COUNT(*) as cnt FROM arrests GROUP BY bail_status"
-        ).fetchall()
-        charts["total"] = conn.execute("SELECT COUNT(*) FROM arrests").fetchone()[0]
-        charts["compliant_48"] = conn.execute(
-            "SELECT COUNT(*) FROM arrests WHERE charge_within_48hr='Yes'"
-        ).fetchone()[0]
+        elif unit == "arrests":
+            charts["by_bail"] = conn.execute(
+                "SELECT bail_status, COUNT(*) as cnt FROM arrests GROUP BY bail_status"
+            ).fetchall()
+            charts["total"] = conn.execute("SELECT COUNT(*) FROM arrests").fetchone()[0]
+            charts["compliant_48"] = conn.execute(
+                "SELECT COUNT(*) FROM arrests WHERE charge_within_48hr='Yes'"
+            ).fetchone()[0]
 
-    elif unit == "forensics":
-        charts["by_type"] = conn.execute(
-            "SELECT exhibit_type, COUNT(*) as cnt FROM chain_of_custody GROUP BY exhibit_type ORDER BY cnt DESC"
-        ).fetchall()
-        charts["by_cert"] = conn.execute(
-            "SELECT certificate_status, COUNT(*) as cnt FROM lab_tracking GROUP BY certificate_status"
-        ).fetchall()
-        charts["total_exhibits"] = conn.execute("SELECT COUNT(*) FROM chain_of_custody").fetchone()[0]
-        charts["certs_issued"] = conn.execute(
-            "SELECT COUNT(*) FROM lab_tracking WHERE certificate_status LIKE '%Issued%'"
-        ).fetchone()[0]
+        elif unit == "forensics":
+            charts["by_type"] = conn.execute(
+                "SELECT exhibit_type, COUNT(*) as cnt FROM chain_of_custody GROUP BY exhibit_type ORDER BY cnt DESC"
+            ).fetchall()
+            charts["by_cert"] = conn.execute(
+                "SELECT certificate_status, COUNT(*) as cnt FROM lab_tracking GROUP BY certificate_status"
+            ).fetchall()
+            charts["total_exhibits"] = conn.execute("SELECT COUNT(*) FROM chain_of_custody").fetchone()[0]
+            charts["certs_issued"] = conn.execute(
+                "SELECT COUNT(*) FROM lab_tracking WHERE certificate_status LIKE '%Issued%'"
+            ).fetchone()[0]
 
-    elif unit == "registry":
-        charts["by_status"] = conn.execute(
-            "SELECT case_status, COUNT(*) as cnt FROM cases GROUP BY case_status ORDER BY cnt DESC"
-        ).fetchall()
-        charts["by_classification"] = conn.execute(
-            "SELECT classification, COUNT(*) as cnt FROM cases GROUP BY classification ORDER BY cnt DESC"
-        ).fetchall()
-        charts["by_compliance"] = conn.execute(
-            "SELECT sop_compliance, COUNT(*) as cnt FROM cases GROUP BY sop_compliance"
-        ).fetchall()
-        charts["by_dpp"] = conn.execute(
-            "SELECT dpp_status, COUNT(*) as cnt FROM cases WHERE dpp_status IS NOT NULL GROUP BY dpp_status"
-        ).fetchall()
-        charts["total"] = conn.execute("SELECT COUNT(*) FROM cases").fetchone()[0]
-        charts["compliant"] = conn.execute(
-            "SELECT COUNT(*) FROM cases WHERE sop_compliance LIKE 'Fully%' OR sop_compliance LIKE 'Substantially%'"
-        ).fetchone()[0]
-        charts["at_dpp"] = conn.execute(
-            "SELECT COUNT(*) FROM cases WHERE case_status LIKE 'Referred to DPP%'"
-        ).fetchone()[0]
+        elif unit == "registry":
+            charts["by_status"] = conn.execute(
+                "SELECT case_status, COUNT(*) as cnt FROM cases GROUP BY case_status ORDER BY cnt DESC"
+            ).fetchall()
+            charts["by_classification"] = conn.execute(
+                "SELECT classification, COUNT(*) as cnt FROM cases GROUP BY classification ORDER BY cnt DESC"
+            ).fetchall()
+            charts["by_compliance"] = conn.execute(
+                "SELECT sop_compliance, COUNT(*) as cnt FROM cases GROUP BY sop_compliance"
+            ).fetchall()
+            charts["by_dpp"] = conn.execute(
+                "SELECT dpp_status, COUNT(*) as cnt FROM cases WHERE dpp_status IS NOT NULL GROUP BY dpp_status"
+            ).fetchall()
+            charts["total"] = conn.execute("SELECT COUNT(*) FROM cases").fetchone()[0]
+            charts["compliant"] = conn.execute(
+                "SELECT COUNT(*) FROM cases WHERE sop_compliance LIKE 'Fully%' OR sop_compliance LIKE 'Substantially%'"
+            ).fetchone()[0]
+            charts["at_dpp"] = conn.execute(
+                "SELECT COUNT(*) FROM cases WHERE case_status LIKE 'Referred to DPP%'"
+            ).fetchone()[0]
 
-    conn.close()
-    return render_template(f"{unit}/dashboard.html",
-                           portal=UNIT_PORTALS[unit],
-                           charts=charts, unit=unit)
+        return render_template(f"{unit}/dashboard.html",
+                               portal=UNIT_PORTALS[unit],
+                               charts=charts, unit=unit)
+    finally:
+        conn.close()
 
 
 @bp.route("/unit/<unit>/new", methods=["GET", "POST"])
@@ -387,9 +391,11 @@ def edit_record(unit, record_id, subtype=None):
         return redirect(url_for("main.home"))
 
     conn = get_db()
-    table = _get_table(unit, subtype)
-    record = conn.execute(f"SELECT * FROM {table} WHERE id = ?", (record_id,)).fetchone()
-    conn.close()
+    try:
+        table = _get_table(unit, subtype)
+        record = conn.execute(f"SELECT * FROM {table} WHERE id = ?", (record_id,)).fetchone()
+    finally:
+        conn.close()
 
     if not record:
         flash("Record not found.", "danger")

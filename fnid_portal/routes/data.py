@@ -73,9 +73,11 @@ def export_unit(unit):
 
     table = _get_table(unit)
     conn = get_db()
-    rows = conn.execute(f"SELECT * FROM {table}").fetchall()
-    columns = [desc[0] for desc in conn.execute(f"SELECT * FROM {table} LIMIT 0").description]
-    conn.close()
+    try:
+        rows = conn.execute(f"SELECT * FROM {table}").fetchall()
+        columns = [desc[0] for desc in conn.execute(f"SELECT * FROM {table} LIMIT 0").description]
+    finally:
+        conn.close()
 
     wb = XlWorkbook()
     ws = wb.active

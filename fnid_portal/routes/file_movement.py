@@ -7,7 +7,7 @@ and Investigator Index Card management.
 
 from datetime import datetime, timedelta
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from ..models import get_db, get_setting, log_audit
@@ -111,7 +111,7 @@ def file_checkout(case_id):
         flash(f"{file_type} checked out to {destination}. Return by {expected_return}.", "success")
     except Exception as e:
         conn.rollback()
-        flash(f"Error: {e}", "danger")
+        current_app.logger.exception("File movement error"); flash("An error occurred. Please try again.", "danger")
     finally:
         conn.close()
 

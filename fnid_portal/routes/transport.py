@@ -7,7 +7,7 @@ for the FNID Area 3 vehicle pool.
 
 from datetime import datetime
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from ..models import generate_id, get_db, log_audit
@@ -121,7 +121,7 @@ def new_vehicle():
 
         except Exception as e:
             conn.rollback()
-            flash(f"Error adding vehicle: {e}", "danger")
+            current_app.logger.exception("Vehicle creation error"); flash("An error occurred adding the vehicle.", "danger")
         finally:
             conn.close()
 
@@ -366,7 +366,7 @@ def return_trip(trip_id):
         flash(f"Trip {trip_id} marked as returned.", "success")
     except Exception as e:
         conn.rollback()
-        flash(f"Error: {e}", "danger")
+        current_app.logger.exception("Transport error"); flash("An error occurred. Please try again.", "danger")
     finally:
         conn.close()
 

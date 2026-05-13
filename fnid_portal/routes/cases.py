@@ -7,7 +7,7 @@ following the JCF case management policy.
 
 from datetime import datetime
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from .. import case_numbers
@@ -224,7 +224,7 @@ def intake():
 
         except Exception as e:
             conn.rollback()
-            flash(f"Error creating case: {e}", "danger")
+            current_app.logger.exception("Case creation error"); flash("An error occurred creating the case.", "danger")
         finally:
             conn.close()
 
@@ -355,7 +355,7 @@ def assign_case(case_id):
         flash(f"Case assigned to {officer['rank']} {officer['full_name']}.", "success")
     except Exception as e:
         conn.rollback()
-        flash(f"Error assigning case: {e}", "danger")
+        current_app.logger.exception("Case assignment error"); flash("An error occurred assigning the case.", "danger")
     finally:
         conn.close()
 
@@ -429,7 +429,7 @@ def transition_case(case_id):
         flash(f"Case transitioned to {target_stage}.", "success")
     except Exception as e:
         conn.rollback()
-        flash(f"Error: {e}", "danger")
+        current_app.logger.exception("Case operation error"); flash("An error occurred. Please try again.", "danger")
     finally:
         conn.close()
 

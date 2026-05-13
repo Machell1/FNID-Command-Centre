@@ -8,7 +8,7 @@ editing, and summary statistics.
 
 from datetime import datetime
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from ..case_numbers import generate_dcrr_number
@@ -163,7 +163,7 @@ def new_dcrr():
 
         except Exception as e:
             conn.rollback()
-            flash(f"Error creating DCRR entry: {e}", "danger")
+            current_app.logger.exception("DCRR creation error"); flash("An error occurred creating the DCRR entry.", "danger")
         finally:
             conn.close()
 

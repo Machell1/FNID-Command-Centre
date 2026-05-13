@@ -95,13 +95,13 @@ def _register_error_handlers(app):
     @app.errorhandler(400)
     def bad_request(e):
         if request.path.startswith("/api/"):
-            return jsonify({"error": "Bad request", "message": str(e)}), 400
+            return jsonify({"error": "Bad request"}), 400
         return render_template("errors/400.html"), 400
 
     @app.errorhandler(403)
     def forbidden(e):
         if request.path.startswith("/api/"):
-            return jsonify({"error": "Forbidden", "message": str(e)}), 403
+            return jsonify({"error": "Forbidden"}), 403
         return render_template("errors/403.html"), 403
 
     @app.errorhandler(404)
@@ -113,7 +113,7 @@ def _register_error_handlers(app):
     @app.errorhandler(429)
     def rate_limited(e):
         if request.path.startswith("/api/"):
-            return jsonify({"error": "Too many requests", "message": str(e)}), 429
+            return jsonify({"error": "Too many requests"}), 429
         return render_template("errors/429.html"), 429
 
     @app.errorhandler(500)

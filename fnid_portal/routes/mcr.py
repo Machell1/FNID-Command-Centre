@@ -7,7 +7,7 @@ Views for MCR compilation, review, briefing, and leads reports.
 import json
 from datetime import datetime
 
-from flask import Blueprint, Response, flash, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, Response, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from ..mcr_engine import _get_mcr_window, compile_mcr, generate_leads_report
@@ -139,7 +139,7 @@ def compile():
                  f"Compiled {len(entries)} entries")
         flash(f"MCR compiled for {mcr_date}: {len(entries)} entries.", "success")
     except Exception as e:
-        flash(f"Error compiling MCR: {e}", "danger")
+        current_app.logger.exception("MCR compile error"); flash("An error occurred compiling the MCR.", "danger")
 
     return redirect(url_for("mcr.mcr_dashboard"))
 

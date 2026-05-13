@@ -11,7 +11,7 @@ from flask import Blueprint, Response, jsonify, render_template, request
 from flask_login import login_required
 
 from ..models import get_db
-from ..pdf_export import pdf_base_css, pdf_header_html, render_pdf
+from ..pdf_export import _esc, pdf_base_css, pdf_header_html, render_pdf
 from ..rbac import role_required
 
 bp = Blueprint("reports", __name__, url_prefix="/reports")
@@ -501,7 +501,7 @@ def _dcrr_pdf_html(title):
     css = pdf_base_css()
 
     station_rows = "".join(
-        f"<tr><td>{r['station']}</td><td>{r['cnt']}</td></tr>" for r in by_station
+        f"<tr><td>{_esc(r['station'])}</td><td>{r['cnt']}</td></tr>" for r in by_station
     )
 
     return f"""<html><head>{css}</head><body>
@@ -533,7 +533,7 @@ def _caseload_pdf_html(title):
     css = pdf_base_css()
 
     rows = "".join(
-        f"<tr><td>{r['full_name']}</td><td>{r['badge_number']}</td>"
+        f"<tr><td>{_esc(r['full_name'])}</td><td>{_esc(r['badge_number'])}</td>"
         f"<td>{r['assigned']}</td><td>{r['open_cases']}</td></tr>"
         for r in officers
     )

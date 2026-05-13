@@ -7,7 +7,7 @@ link analysis, and operational tasking.
 
 from datetime import datetime
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from ..models import generate_id, get_db, log_audit
@@ -78,7 +78,7 @@ def new_target():
             return redirect(url_for("intel_unit.target_list"))
         except Exception as e:
             conn.rollback()
-            flash(f"Error: {e}", "danger")
+            current_app.logger.exception("Intel unit error"); flash("An error occurred. Please try again.", "danger")
         finally:
             conn.close()
 

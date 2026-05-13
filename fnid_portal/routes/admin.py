@@ -9,7 +9,7 @@ import os
 import shutil
 from datetime import datetime
 
-from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, send_file, url_for
 from flask_login import current_user, login_required
 from werkzeug.security import generate_password_hash
 
@@ -253,7 +253,7 @@ def backup():
                      f"Created backup: {backup_path}")
             flash(f"Backup created: fnid_backup_{timestamp}.db", "success")
         except Exception as e:
-            flash(f"Backup failed: {e}", "danger")
+            current_app.logger.exception("Backup failed"); flash("Backup failed. Please try again.", "danger")
 
         return redirect(url_for("admin.backup"))
 
@@ -272,6 +272,66 @@ def backup():
                 })
 
     return render_template("admin/backup.html", backups=backups)
+
+
+@bp.route("/backup/download/<filename>")
+@login_required
+@role_required("admin")
+def download_backup(filename):
+    """Download a backup file."""
+    from werkzeug.utils import secure_filename as _sf
+
+    safe = _sf(filename)
+    if not safe or not safe.endswith(".db"):
+        flash("Invalid backup filename.", "danger")
+        return redirect(url_for("admin.backup"))
+
+    backup_dir = os.path.join(
+        current_app.config.get("UPLOAD_DIR", "data"), "..", "backups"
+    )
+    backup_dir = os.path.normpath(backup_dir)
+    filepath = os.path.join(backup_dir, safe)
+
+    if not os.path.isfile(filepath):
+        flash("Backup file not found.", "danger")
+        return redirect(url_for("admin.backup"))
+
+    log_audit("system", safe, "BACKUP_DOWNLOAD",
+             current_user.badge_number, current_user.full_name)
+    return send_file(filepath, as_attachment=True, download_name=safe)
+
+
+@bp.route("/backup/delete/<filename>", methods=["POST"])
+@login_required
+@role_required("admin")
+def delete_backup(filename):
+    """Delete a backup file."""
+    from werkzeug.utils import secure_filename as _sf
+
+    safe = _sf(filename)
+    if not safe or not safe.endswith(".db"):
+        flash("Invalid backup filename.", "danger")
+        return redirect(url_for("admin.backup"))
+
+    backup_dir = os.path.join(
+        current_app.config.get("UPLOAD_DIR", "data"), "..", "backups"
+    )
+    backup_dir = os.path.normpath(backup_dir)
+    filepath = os.path.join(backup_dir, safe)
+
+    if not os.path.isfile(filepath):
+        flash("Backup file not found.", "danger")
+        return redirect(url_for("admin.backup"))
+
+    try:
+        os.remove(filepath)
+        log_audit("system", safe, "BACKUP_DELETE",
+                 current_user.badge_number, current_user.full_name)
+        flash(f"Backup {safe} deleted.", "success")
+    except OSError:
+        flash("Failed to delete backup.", "danger")
+
+    return redirect(url_for("admin.backup"))
 
 
 @bp.route("/audit-log")

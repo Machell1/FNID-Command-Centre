@@ -28,8 +28,8 @@ def home():
         recent = []
         rows = conn.execute("""
             SELECT table_name, action, officer_badge, officer_name,
-                   details, created_at
-            FROM audit_log ORDER BY created_at DESC LIMIT 10
+                   details, timestamp
+            FROM audit_log ORDER BY timestamp DESC LIMIT 10
         """).fetchall()
         for r in rows:
             recent.append({
@@ -38,7 +38,7 @@ def home():
                 "badge": r["officer_badge"],
                 "name": r["officer_name"],
                 "details": r["details"],
-                "time": r["created_at"],
+                "time": r["timestamp"],
             })
 
         # Alerts (overdue deadlines, etc.)
@@ -46,8 +46,8 @@ def home():
         try:
             alert_rows = conn.execute("""
                 SELECT id, alert_type, severity, title, message, created_at
-                FROM notifications
-                WHERE badge_number = ? AND read_at IS NULL
+                FROM alerts
+                WHERE target_badge = ? AND is_dismissed = 0
                 ORDER BY created_at DESC LIMIT 5
             """, (current_user.badge_number,)).fetchall()
             for a in alert_rows:
@@ -112,14 +112,14 @@ def command():
 
         case_status = []
         rows = conn.execute("""
-            SELECT status, COUNT(*) AS count
+            SELECT case_status, COUNT(*) AS count
             FROM cases
-            GROUP BY status
+            GROUP BY case_status
             ORDER BY count DESC
             LIMIT 10
         """).fetchall()
         for r in rows:
-            case_status.append({"status": r["status"], "count": r["count"]})
+            case_status.append({"status": r["case_status"], "count": r["count"]})
 
         return jsonify({
             "monthly_cases": monthly_data,
@@ -137,12 +137,12 @@ def notification_count():
     conn = get_db()
     try:
         total = conn.execute("""
-            SELECT COUNT(*) FROM notifications
-            WHERE badge_number = ? AND read_at IS NULL
+            SELECT COUNT(*) FROM alerts
+            WHERE target_badge = ? AND is_dismissed = 0
         """, (current_user.badge_number,)).fetchone()[0]
         critical = conn.execute("""
-            SELECT COUNT(*) FROM notifications
-            WHERE badge_number = ? AND read_at IS NULL AND severity = 'critical'
+            SELECT COUNT(*) FROM alerts
+            WHERE target_badge = ? AND is_dismissed = 0 AND severity = 'critical'
         """, (current_user.badge_number,)).fetchone()[0]
         return jsonify({"total": total, "critical": critical})
     except Exception:

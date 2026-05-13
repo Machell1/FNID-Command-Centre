@@ -4,9 +4,11 @@ import os
 from datetime import datetime
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, send_file, url_for
+from flask_login import login_required
 
 from ..constants import UNIT_PORTALS
 from ..models import get_db
+from ..rbac import permission_required
 
 bp = Blueprint("data", __name__)
 
@@ -25,6 +27,7 @@ def _get_table(unit):
 
 
 @bp.route("/import", methods=["GET", "POST"])
+@login_required
 def import_data():
     if request.method == "POST":
         if "file" not in request.files:
@@ -55,6 +58,8 @@ def import_data():
 
 
 @bp.route("/export/<unit>")
+@login_required
+@permission_required("admin", "read")
 def export_unit(unit):
     if unit not in UNIT_PORTALS:
         flash("Invalid unit.", "danger")
@@ -89,6 +94,8 @@ def export_unit(unit):
 
 
 @bp.route("/export/workbook")
+@login_required
+@permission_required("admin", "read")
 def export_workbook():
     """Export the full JCF FO 4032 Operational Workbook (all 10 sheets)."""
     from ..workbook import generate_operational_workbook

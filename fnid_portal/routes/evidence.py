@@ -8,7 +8,7 @@ tracking via IFSLM.
 
 from datetime import datetime, timedelta
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from ..models import generate_id, get_db, log_audit
@@ -38,7 +38,7 @@ def _detect_chain_gaps(conn, exhibit_tag):
         SELECT * FROM audit_log
         WHERE table_name = 'chain_of_custody' AND record_id = ?
               AND action IN ('TRANSFER', 'CREATE')
-        ORDER BY created_at
+        ORDER BY timestamp
     """, (exhibit_tag,)).fetchall()
 
     gaps = []
@@ -46,7 +46,7 @@ def _detect_chain_gaps(conn, exhibit_tag):
     prev_location = None
 
     for t in transfers:
-        ts = t["created_at"]
+        ts = t["timestamp"]
         try:
             current_time = datetime.fromisoformat(ts)
         except (ValueError, TypeError):
@@ -210,7 +210,7 @@ def exhibit_detail(exhibit_tag):
         transfers = conn.execute("""
             SELECT * FROM audit_log
             WHERE table_name = 'chain_of_custody' AND record_id = ?
-            ORDER BY created_at
+            ORDER BY timestamp
         """, (exhibit_tag,)).fetchall()
 
         # Lab submissions for this exhibit
@@ -297,7 +297,7 @@ def new_exhibit():
 
         except Exception as e:
             conn.rollback()
-            flash(f"Error registering exhibit: {e}", "danger")
+            current_app.logger.exception("Exhibit registration error"); flash("An error occurred registering the exhibit.", "danger")
         finally:
             conn.close()
 
@@ -373,7 +373,7 @@ def transfer_exhibit(exhibit_tag):
 
     except Exception as e:
         conn.rollback()
-        flash(f"Error recording transfer: {e}", "danger")
+        current_app.logger.exception("Transfer recording error"); flash("An error occurred recording the transfer.", "danger")
     finally:
         conn.close()
 
@@ -409,7 +409,7 @@ def chain_audit(case_id):
             transfers = conn.execute("""
                 SELECT * FROM audit_log
                 WHERE table_name = 'chain_of_custody' AND record_id = ?
-                ORDER BY created_at
+                ORDER BY timestamp
             """, (tag,)).fetchall()
 
             lab_records = conn.execute("""
@@ -609,7 +609,7 @@ def update_lab_status(lab_ref):
 
     except Exception as e:
         conn.rollback()
-        flash(f"Error: {e}", "danger")
+        current_app.logger.exception("Evidence operation error"); flash("An error occurred. Please try again.", "danger")
     finally:
         conn.close()
 

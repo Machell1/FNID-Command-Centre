@@ -1,16 +1,20 @@
 """
-FNID Command Centre v2.0 - Registry Tests
+FNID Command Centre v2.0 - Registry Tests (v2 API variant)
 SOP Compliance Validation
 """
 import pytest
 from datetime import datetime
-from src.fnid_portal import db
-from src.fnid_portal.models.base import Case, DCRREntry, StationRegister
-from src.fnid_portal.models.personnel import Personnel, Area, Division, Station
-from src.fnid_portal.services.registry_service import RegistryService
-from src.fnid_portal.services.auth_service import AuthService
 
-def test_create_dcr_case(client, auth_headers):
+v2_deps = pytest.importorskip("flask_sqlalchemy")
+
+from src.fnid_portal import db  # noqa: E402
+from src.fnid_portal.models.base import Case, DCRREntry, StationRegister  # noqa: E402
+from src.fnid_portal.models.personnel import Personnel, Area, Division, Station  # noqa: E402
+from src.fnid_portal.services.registry_service import RegistryService  # noqa: E402
+from src.fnid_portal.services.auth_service import AuthService  # noqa: E402
+
+
+def test_create_dcr_case(v2_client, auth_headers):
     # Setup reference data
     area = Area(area_code='A3', area_name='Area 3', acp_reg_number='ACP001')
     db.session.add(area)
@@ -27,7 +31,7 @@ def test_create_dcr_case(client, auth_headers):
     db.session.commit()
 
     # Create case
-    response = client.post('/registry/cases', headers=auth_headers, json={
+    response = v2_client.post('/registry/cases', headers=auth_headers, json={
         'area_id': area.area_id,
         'division_id': division.division_id,
         'station_id': station.station_id,
@@ -50,7 +54,7 @@ def test_create_dcr_case(client, auth_headers):
     assert len(parts) >= 2
     assert parts[1].startswith('20')  # Year
 
-def test_create_station_case(client, auth_headers):
+def test_create_station_case(v2_client, auth_headers):
     area = Area(area_code='A3', area_name='Area 3', acp_reg_number='ACP001')
     db.session.add(area)
     db.session.flush()
@@ -65,7 +69,7 @@ def test_create_station_case(client, auth_headers):
     db.session.add(station)
     db.session.commit()
 
-    response = client.post('/registry/cases', headers=auth_headers, json={
+    response = v2_client.post('/registry/cases', headers=auth_headers, json={
         'area_id': area.area_id,
         'division_id': division.division_id,
         'station_id': station.station_id,
@@ -79,7 +83,7 @@ def test_create_station_case(client, auth_headers):
     data = response.get_json()
     assert data['registry_type'] == 'MINOR'
 
-def test_cr_number_format_validation(client, auth_headers):
+def test_cr_number_format_validation(v2_client, auth_headers):
     area = Area(area_code='A3', area_name='Area 3', acp_reg_number='ACP001')
     db.session.add(area)
     db.session.flush()
@@ -105,7 +109,7 @@ def test_cr_number_format_validation(client, auth_headers):
     assert '_/' in cr_station
     assert cr_station.endswith('/MT')
 
-def test_case_status_transition(client, auth_headers):
+def test_case_status_transition(v2_client, auth_headers):
     # Setup
     area = Area(area_code='A3', area_name='Area 3', acp_reg_number='ACP001')
     db.session.add(area)
@@ -122,7 +126,7 @@ def test_case_status_transition(client, auth_headers):
     db.session.commit()
 
     # Create case
-    response = client.post('/registry/cases', headers=auth_headers, json={
+    response = v2_client.post('/registry/cases', headers=auth_headers, json={
         'area_id': area.area_id,
         'division_id': division.division_id,
         'station_id': station.station_id,
@@ -135,7 +139,7 @@ def test_case_status_transition(client, auth_headers):
     case_id = response.get_json()['case_id']
 
     # Transition to CLOSED
-    response = client.put(f'/registry/cases/{case_id}/status', headers=auth_headers, json={
+    response = v2_client.put(f'/registry/cases/{case_id}/status', headers=auth_headers, json={
         'status': 'CLOSED',
         'reason': 'Charges preferred, no other suspects'
     })
@@ -144,8 +148,8 @@ def test_case_status_transition(client, auth_headers):
     data = response.get_json()
     assert data['status'] == 'CLOSED'
 
-def test_list_cases_with_filters(client, auth_headers):
-    response = client.get('/api/v1/cases?status=OPEN', headers=auth_headers)
+def test_list_cases_with_filters(v2_client, auth_headers):
+    response = v2_client.get('/api/v1/cases?status=OPEN', headers=auth_headers)
     assert response.status_code == 200
     data = response.get_json()
     assert 'cases' in data

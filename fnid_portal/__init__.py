@@ -20,12 +20,14 @@ Phase 5: Security hardening, legal compliance, workflow engine,
 member features (registration, documents, KPIs, maintenance).
 """
 
+import logging
 import os
+import sys
 from datetime import datetime, timedelta
 
-from flask import Flask, redirect, request, url_for
+from flask import Flask, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFError, CSRFProtect
 
 from . import models
 from .auth import login_manager
@@ -34,6 +36,98 @@ from .constants import UNIT_PORTALS
 from .rbac import ROLES, can_access
 
 csrf = CSRFProtect()
+
+
+def _configure_logging(app):
+    """Set up structured logging to stderr with appropriate level."""
+    handler = logging.StreamHandler(sys.stderr)
+    handler.setFormatter(logging.Formatter(
+        "[%(asctime)s] %(levelname)s in %(name)s: %(message)s"
+    ))
+    level = logging.DEBUG if app.debug else logging.INFO
+    app.logger.setLevel(level)
+    app.logger.addHandler(handler)
+    logging.getLogger("fnid_portal").setLevel(level)
+
+
+def _init_sentry(app):
+    """Initialise Sentry error tracking when a DSN is configured."""
+    dsn = os.environ.get("SENTRY_DSN")
+    if not dsn:
+        return
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.flask import FlaskIntegration
+
+        sentry_sdk.init(
+            dsn=dsn,
+            integrations=[FlaskIntegration()],
+            traces_sample_rate=float(os.environ.get("SENTRY_TRACES_RATE", "0.1")),
+            environment=os.environ.get("FLASK_ENV", "production"),
+        )
+        app.logger.info("Sentry error tracking initialised")
+    except ImportError:
+        app.logger.warning("SENTRY_DSN set but sentry-sdk not installed")
+
+
+def _init_rate_limiter(app):
+    """Attach Flask-Limiter for brute-force protection."""
+    try:
+        from flask_limiter import Limiter
+        from flask_limiter.util import get_remote_address
+
+        limiter = Limiter(
+            get_remote_address,
+            app=app,
+            default_limits=["200 per minute"],
+            storage_uri=os.environ.get("REDIS_URL", "memory://"),
+        )
+        app.extensions["limiter"] = limiter
+        return limiter
+    except ImportError:
+        app.logger.warning("flask-limiter not installed — rate limiting disabled")
+        return None
+
+
+def _register_error_handlers(app):
+    """Global error handlers for a polished production experience."""
+
+    @app.errorhandler(400)
+    def bad_request(e):
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Bad request", "message": str(e)}), 400
+        return render_template("errors/400.html"), 400
+
+    @app.errorhandler(403)
+    def forbidden(e):
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Forbidden", "message": str(e)}), 403
+        return render_template("errors/403.html"), 403
+
+    @app.errorhandler(404)
+    def not_found(e):
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Not found"}), 404
+        return render_template("errors/404.html"), 404
+
+    @app.errorhandler(429)
+    def rate_limited(e):
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Too many requests", "message": str(e)}), 429
+        return render_template("errors/429.html"), 429
+
+    @app.errorhandler(500)
+    def internal_error(e):
+        app.logger.exception("Internal server error: %s", e)
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Internal server error"}), 500
+        return render_template("errors/500.html"), 500
+
+    @app.errorhandler(CSRFError)
+    def csrf_error(e):
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "CSRF token missing or expired"}), 400
+        return render_template("errors/csrf.html", reason=e.description), 400
 
 
 def create_app(config_name=None):
@@ -60,6 +154,16 @@ def create_app(config_name=None):
     else:
         app.config.from_object(config_cls)
 
+    # Structured logging
+    _configure_logging(app)
+
+    # Sentry error tracking (only when SENTRY_DSN is set)
+    if config_name != "testing":
+        _init_sentry(app)
+
+    # Rate limiting
+    limiter = _init_rate_limiter(app)
+
     # Store custom paths in app config for easy access
     app.config.setdefault("UPLOAD_DIR", config_cls.UPLOAD_DIR)
     app.config.setdefault("EXPORT_DIR", config_cls.EXPORT_DIR)
@@ -85,6 +189,9 @@ def create_app(config_name=None):
     login_manager.init_app(app)
     app.config["REMEMBER_COOKIE_DURATION"] = timedelta(hours=8)
 
+    # Global error handlers
+    _register_error_handlers(app)
+
     # Security headers
     @app.after_request
     def set_security_headers(response):
@@ -102,7 +209,7 @@ def create_app(config_name=None):
             "font-src 'self' https://cdn.jsdelivr.net data:; "
             "style-src 'self' https://cdn.jsdelivr.net https://cdn.datatables.net 'unsafe-inline'; "
             "script-src 'self' https://cdn.jsdelivr.net https://code.jquery.com "
-            "https://cdn.datatables.net 'unsafe-inline'; "
+            "https://cdn.datatables.net; "
             "connect-src 'self'"
         )
         response.headers["Permissions-Policy"] = (
@@ -246,6 +353,11 @@ def create_app(config_name=None):
     # Exempt JSON API from CSRF (session cookies still required)
     csrf.exempt(api_auth_bp)
     csrf.exempt(api_dashboard_bp)
+
+    # Apply stricter rate limits to authentication endpoints
+    if limiter:
+        limiter.limit("10 per minute")(auth_bp)
+        limiter.limit("10 per minute")(api_auth_bp)
 
     # CSRF token endpoint for the React SPA
     @app.route("/api/v1/csrf-token")

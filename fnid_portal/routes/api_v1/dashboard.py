@@ -1,10 +1,14 @@
 """JSON API dashboard endpoints for the React SPA."""
 
+import logging
+
 from flask import Blueprint, jsonify
 from flask_login import current_user, login_required
 
 from ...constants import UNIT_PORTALS
 from ...models import get_db
+
+logger = logging.getLogger(__name__)
 
 bp = Blueprint("api_dashboard", __name__, url_prefix="/api/v1/dashboard")
 
@@ -24,7 +28,6 @@ def home():
             "arrests": conn.execute("SELECT COUNT(*) FROM arrests").fetchone()[0],
         }
 
-        # Recent activity
         recent = []
         rows = conn.execute("""
             SELECT table_name, action, officer_badge, officer_name,
@@ -41,7 +44,6 @@ def home():
                 "time": r["timestamp"],
             })
 
-        # Alerts (overdue deadlines, etc.)
         alerts = []
         try:
             alert_rows = conn.execute("""
@@ -60,9 +62,8 @@ def home():
                     "time": a["created_at"],
                 })
         except Exception:
-            pass
+            logger.debug("Alerts query failed — table may be empty", exc_info=True)
 
-        # Filter portals by user access
         visible_portals = {}
         assigned = set()
         if hasattr(current_user, "get_assigned_units"):
@@ -133,7 +134,7 @@ def command():
 @bp.route("/notifications/count")
 @login_required
 def notification_count():
-    """Return unread notification count."""
+    """Return unread notification count for the current user."""
     conn = get_db()
     try:
         total = conn.execute("""
@@ -146,6 +147,7 @@ def notification_count():
         """, (current_user.badge_number,)).fetchone()[0]
         return jsonify({"total": total, "critical": critical})
     except Exception:
+        logger.debug("Notification count query failed", exc_info=True)
         return jsonify({"total": 0, "critical": 0})
     finally:
         conn.close()

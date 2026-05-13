@@ -7,6 +7,7 @@ using xhtml2pdf. Falls back to HTML-only print view if unavailable.
 
 import io
 from datetime import datetime
+from markupsafe import escape
 
 
 def render_pdf(html_content):
@@ -33,17 +34,24 @@ def render_pdf(html_content):
     return buffer
 
 
+def _esc(value):
+    """HTML-escape a value for safe inclusion in generated PDF markup."""
+    if value is None:
+        return ""
+    return str(escape(str(value)))
+
+
 def pdf_header_html(title, case_id=None, form_type=None):
     """Generate standard JCF header HTML for PDF documents."""
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
-    case_line = f"<p><strong>Case Ref:</strong> {case_id}</p>" if case_id else ""
-    form_line = f"<p><strong>Form:</strong> {form_type}</p>" if form_type else ""
+    case_line = f"<p><strong>Case Ref:</strong> {_esc(case_id)}</p>" if case_id else ""
+    form_line = f"<p><strong>Form:</strong> {_esc(form_type)}</p>" if form_type else ""
 
     return f"""
     <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #1F3864; padding-bottom: 10px;">
         <h2 style="color: #1F3864; margin: 0;">Jamaica Constabulary Force</h2>
-        <h3 style="color: #1F3864; margin: 5px 0;">Firearms & Narcotics Investigation Division — Area 3</h3>
-        <h4 style="margin: 5px 0;">{title}</h4>
+        <h3 style="color: #1F3864; margin: 5px 0;">Firearms &amp; Narcotics Investigation Division — Area 3</h3>
+        <h4 style="margin: 5px 0;">{_esc(title)}</h4>
         {case_line}
         {form_line}
         <p style="font-size: 10px; color: #666;">Generated: {now} | RESTRICTED — Official Use Only</p>

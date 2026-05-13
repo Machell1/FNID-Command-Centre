@@ -192,34 +192,65 @@ def create_app(config_name=None):
     # Global error handlers
     _register_error_handlers(app)
 
-    # Security headers
-    @app.after_request
-    def set_security_headers(response):
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; "
-            "base-uri 'self'; "
-            "form-action 'self'; "
-            "frame-ancestors 'none'; "
-            "object-src 'none'; "
-            "img-src 'self' data: blob:; "
-            "font-src 'self' https://cdn.jsdelivr.net data:; "
-            "style-src 'self' https://cdn.jsdelivr.net https://cdn.datatables.net 'unsafe-inline'; "
-            "script-src 'self' https://cdn.jsdelivr.net https://code.jquery.com "
-            "https://cdn.datatables.net; "
-            "connect-src 'self'"
+    # Security headers via Flask-Talisman (when available) or manual fallback
+    _csp = {
+        "default-src": "'self'",
+        "base-uri": "'self'",
+        "form-action": "'self'",
+        "frame-ancestors": "'none'",
+        "object-src": "'none'",
+        "img-src": "'self' data: blob:",
+        "font-src": "'self' https://cdn.jsdelivr.net data:",
+        "style-src": "'self' https://cdn.jsdelivr.net https://cdn.datatables.net 'unsafe-inline'",
+        "script-src": "'self' https://cdn.jsdelivr.net https://code.jquery.com https://cdn.datatables.net",
+        "connect-src": "'self'",
+    }
+
+    try:
+        from flask_talisman import Talisman
+
+        Talisman(
+            app,
+            force_https=not app.debug,
+            content_security_policy=_csp,
+            frame_options="DENY",
+            referrer_policy="strict-origin-when-cross-origin",
+            permissions_policy={
+                "camera": "()",
+                "microphone": "()",
+                "geolocation": "()",
+                "payment": "()",
+            },
+            session_cookie_secure=not app.debug,
         )
-        response.headers["Permissions-Policy"] = (
-            "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
-        )
-        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
-        response.headers["Pragma"] = "no-cache"
-        if not app.debug:
-            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        return response
+        app.logger.info("Flask-Talisman enabled")
+    except ImportError:
+        app.logger.info("flask-talisman not installed — using manual security headers")
+
+        @app.after_request
+        def set_security_headers(response):
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["X-Frame-Options"] = "DENY"
+            response.headers["X-XSS-Protection"] = "1; mode=block"
+            response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+            csp_str = "; ".join(f"{k} {v}" for k, v in _csp.items())
+            response.headers["Content-Security-Policy"] = csp_str
+            response.headers["Permissions-Policy"] = (
+                "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+            )
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            if not app.debug:
+                response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+            return response
+
+    # CORS for API endpoints used by the React SPA
+    try:
+        from flask_cors import CORS
+
+        CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
+    except ImportError:
+        app.logger.info("flask-cors not installed — CORS headers not set")
 
     # Verification gate: block pending users from main routes
     ALLOWED_UNVERIFIED = {

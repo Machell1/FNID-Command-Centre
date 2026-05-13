@@ -25,62 +25,60 @@ Jamaica Constabulary Force — Firearms & Narcotics Investigation Division (FNID
 
 ## Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  PERIMETER          WAF → VPN → TLS 1.3 → Geo-Block     │
-├─────────────────────────────────────────────────────────┤
-│  IDENTITY           JCF AD → MFA → RBAC/ABAC            │
-├─────────────────────────────────────────────────────────┤
-│  FNID UNITS         Intelligence | Operations | Seizures  │
-│                     Arrests/Court | Forensics | Registry│
-├─────────────────────────────────────────────────────────┤
-│  CORE ENGINE        Unified Registry ↔ Investigation     │
-│                     DPP Pipeline | Exhibit Custody      │
-├─────────────────────────────────────────────────────────┤
-│  DATA               PostgreSQL | WORM Audit | S3 Lock     │
-│                     Redis Cache | Cross-Region Backup     │
-└─────────────────────────────────────────────────────────┘
-```
+The platform ships as two complementary stacks:
+
+| Component | Path | Database | Entry Point |
+|-----------|------|----------|-------------|
+| **Primary Portal** | `fnid_portal/` | SQLite | `python main.py` / `gunicorn wsgi:app` |
+| React SPA | `frontend/` | — (API consumer) | `npm run dev` (port 3000) |
+| v2 API variant | `src/fnid_portal/` | PostgreSQL | — (reference only) |
+
+The **primary portal** is the actively-developed, production application.  
+It uses Flask + Flask-Login + Jinja2 templates backed by SQLite.
 
 ---
 
 ## Quick Start
 
-### Docker (Recommended for Production)
+### Development
 
 ```bash
-# 1. Clone and configure
-cp .env.example .env
-# Edit .env with production secrets
-
-# 2. Build and start
-docker-compose up --build -d
-
-# 3. Initialize database
-docker-compose exec app flask db upgrade
-
-# 4. Access
-# Web UI: https://localhost
-# API: https://localhost/api/v1
-```
-
-### Manual Setup
-
-```bash
-# 1. Install dependencies
+# 1. Install Python dependencies (requires libcairo2-dev, pkg-config, python3-dev)
 pip install -r requirements.txt
 
-# 2. Configure environment
+# 2. Create the secrets stub (gitignored — needed for AI assistant integration)
+cat > fnid_portal/secret_keys.py << 'EOF'
+import os
+def get_secret(key): return os.environ.get(key)
+def has_secret(key): return bool(os.environ.get(key))
+EOF
+
+# 3. Start the development server
+FLASK_ENV=development python main.py
+# → http://127.0.0.1:5000
+
+# 4. (Optional) Start the React SPA frontend
+cd frontend && npm install && npm run dev
+# → http://localhost:3000 (proxies /api to Flask)
+```
+
+On first start the app creates the SQLite database, seeds 28 officer
+accounts with random passwords (printed to stdout), and creates a
+default `ADMIN` account.
+
+### Production (Gunicorn)
+
+```bash
+export FNID_SECRET_KEY=$(python -c "import secrets; print(secrets.token_hex(32))")
+gunicorn wsgi:app --bind 0.0.0.0:5000 --workers 4
+```
+
+### Docker
+
+```bash
 cp .env.example .env
-# Edit .env
-
-# 3. Initialize database
-flask db init
-flask db migrate
-flask db upgrade
-
-# 4. Run
-flask run
+# Edit .env with production secrets
+docker-compose up --build -d
 ```
 
 ---
@@ -94,23 +92,17 @@ flask run
 - 7-year retention with soft-delete only
 
 ### Registry Extensions
-- `dcrr_entries` — Divisional Case Report Register (Appendix 13)
-- `station_registers` — Major/Minor Crime Registers (Appendix 11 & 12)
-
-### Investigation Module
-- `investigations` — IO assignment, review scheduling
-- `investigation_worksheets` — CR 1 digital form (Appendix 9)
-- `action_sheets` — CR 2 task management (Appendix 10)
+- `dcrr` — Divisional Case Report Register (Appendix 13)
+- `major_crime_register` — Major Crime Register (Appendix 11 & 12)
 
 ### FNID Domain
-- `fnid_seizures` — Firearms & narcotics cataloguing
-- `intelligence_reports` — Source grading, cross-case linking
-- `dpp_file_pipeline` — Prosecution bundle management
-- `exhibits` — Chain of custody (CR 5, Appendix 16)
+- `firearm_seizures` / `narcotics_seizures` — Seizure cataloguing
+- `intel_reports` — Source grading, cross-case linking
+- `dpp_pipeline` — Prosecution bundle management
+- `chain_of_custody` — Exhibit tracking (CR 5, Appendix 16)
 
 ### Audit & Compliance
-- `audit_log` — WORM (Write Once Read Many), cryptographic chain
-- 7-year retention, non-repudiation enforcement
+- `audit_log` — WORM (Write Once Read Many), 7-year retention
 
 ---
 
@@ -137,44 +129,52 @@ OPEN → ASSIGNED → ACTIVE → [UNDER_REVIEW | AWAITING_COURT | SUSPENDED | CL
 
 | Layer | Implementation |
 |-------|---------------|
-| Authentication | JWT + bcrypt + MFA (TOTP/Smart Card) |
-| Authorization | RBAC (rank-based) + ABAC (unit/division/station) |
+| Authentication | Flask-Login sessions + bcrypt password hashing |
+| Authorization | RBAC (rank-based) + unit/division/station access |
 | Transport | TLS 1.3, HSTS, secure cookies |
-| Data | AES-256 at rest, field-level encryption for PII |
-| Audit | WORM log, SHA-256 chain, 7-year retention |
-| Network | VPN-only admin, geo-blocking, WAF |
+| Rate Limiting | Flask-Limiter on auth endpoints (10/min) |
+| CSRF | Flask-WTF CSRFProtect on all form routes |
+| Headers | CSP, X-Frame-Options DENY, Referrer-Policy |
+| Audit | WORM log, 7-year retention |
+| Monitoring | Sentry integration (optional, via SENTRY_DSN) |
 
 ---
 
 ## Testing
 
 ```bash
-# Run all tests
-pytest -v
+# Run all tests (excludes AI assistant tests by default)
+pytest tests/ -v --ignore=tests/test_ai_assistants.py
 
-# With coverage
-pytest --cov=src/fnid_portal --cov-report=html
+# Lint
+ruff check fnid_portal/ tests/
 
-# Specific module
-pytest tests/test_registry.py -v
+# Frontend
+cd frontend && npx eslint . && npx tsc -b
 ```
 
 ---
 
 ## API Endpoints
 
-| Endpoint | Method | Description | Auth |
-|----------|--------|-------------|------|
-| `/auth/login` | POST | Officer authentication | Public |
-| `/auth/me` | GET | Current officer profile | JWT |
-| `/api/v1/cases` | GET | List cases (filtered) | JWT |
-| `/api/v1/cases` | POST | Create new case | JWT + Registrar |
-| `/api/v1/cases/<id>` | GET | Case details | JWT + Access |
-| `/api/v1/cases/<id>/investigation` | GET | Investigation data | JWT + Access |
-| `/api/v1/dashboard/stats` | GET | Dashboard statistics | JWT |
-| `/api/v1/divisions` | GET | Division reference | JWT |
-| `/api/v1/stations` | GET | Station reference | JWT |
-| `/api/v1/officers` | GET | Officer directory | JWT |
+### Server-rendered (Flask-Login session auth)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/login` | GET/POST | Officer authentication |
+| `/cases/` | GET | Case list with filters |
+| `/cases/intake` | GET/POST | New case registration |
+| `/unit/<unit>` | GET | Unit portal page |
+| `/admin/settings` | GET/POST | Admin configuration |
+
+### JSON API (session auth, for React SPA)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/auth/login` | POST | JSON login |
+| `/api/v1/auth/me` | GET | Current user profile |
+| `/api/v1/dashboard/` | GET | Dashboard statistics |
+| `/api/v1/dashboard/command` | GET | Command-level charts |
 
 ---
 

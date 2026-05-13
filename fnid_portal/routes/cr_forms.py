@@ -36,7 +36,7 @@ from ..official_cr_forms import (
     printable_field_rows,
     source_filename,
 )
-from ..pdf_export import pdf_base_css, pdf_header_html, render_pdf
+from ..pdf_export import _esc, pdf_base_css, pdf_header_html, render_pdf
 from ..rbac import permission_required
 
 bp = Blueprint("cr_forms", __name__)
@@ -1161,25 +1161,25 @@ def form_pdf(case_id, form_id):
         """
 
         for section in form_def.get("sections", []):
-            html += f'<div class="section"><div class="section-title">{section["title"]}</div>'
+            html += f'<div class="section"><div class="section-title">{_esc(section["title"])}</div>'
             html += '<table>'
             for field in section["fields"]:
                 val = form_data.get(field["name"], "—")
-                html += f'<tr><td class="field-label" style="width:35%">{field["label"]}</td>'
-                html += f'<td class="field-value">{val}</td></tr>'
+                html += f'<tr><td class="field-label" style="width:35%">{_esc(field["label"])}</td>'
+                html += f'<td class="field-value">{_esc(val)}</td></tr>'
             html += '</table></div>'
 
         html += '<div class="section"><div class="section-title">Official CR Form Values</div><table>'
         for row in printable_field_rows(form_type, form_data):
             val = row["value"] or "N/A"
-            html += f'<tr><td class="field-label" style="width:35%">{row["label"]}</td>'
-            html += f'<td class="field-value">{val}</td></tr>'
+            html += f'<tr><td class="field-label" style="width:35%">{_esc(row["label"])}</td>'
+            html += f'<td class="field-value">{_esc(val)}</td></tr>'
         html += '</table></div>'
 
         html += f"""
         <div class="footer">
-            Form ID: {form_id} | Status: {form_rec['status']} |
-            Created by: {form_rec['created_by']} | Date: {form_rec['created_at']}
+            Form ID: {_esc(form_id)} | Status: {_esc(form_rec['status'])} |
+            Created by: {_esc(form_rec['created_by'])} | Date: {_esc(form_rec['created_at'])}
         </div>
         </body></html>"""
 

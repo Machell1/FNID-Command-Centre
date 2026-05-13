@@ -1,10 +1,14 @@
 """JSON API dashboard endpoints for the React SPA."""
 
+import logging
+
 from flask import Blueprint, jsonify
 from flask_login import current_user, login_required
 
 from ...constants import UNIT_PORTALS
 from ...models import get_db
+
+logger = logging.getLogger(__name__)
 
 bp = Blueprint("api_dashboard", __name__, url_prefix="/api/v1/dashboard")
 
@@ -24,12 +28,11 @@ def home():
             "arrests": conn.execute("SELECT COUNT(*) FROM arrests").fetchone()[0],
         }
 
-        # Recent activity
         recent = []
         rows = conn.execute("""
             SELECT table_name, action, officer_badge, officer_name,
-                   details, created_at
-            FROM audit_log ORDER BY created_at DESC LIMIT 10
+                   details, timestamp
+            FROM audit_log ORDER BY timestamp DESC LIMIT 10
         """).fetchall()
         for r in rows:
             recent.append({
@@ -38,16 +41,15 @@ def home():
                 "badge": r["officer_badge"],
                 "name": r["officer_name"],
                 "details": r["details"],
-                "time": r["created_at"],
+                "time": r["timestamp"],
             })
 
-        # Alerts (overdue deadlines, etc.)
         alerts = []
         try:
             alert_rows = conn.execute("""
                 SELECT id, alert_type, severity, title, message, created_at
-                FROM notifications
-                WHERE badge_number = ? AND read_at IS NULL
+                FROM alerts
+                WHERE target_badge = ? AND is_dismissed = 0
                 ORDER BY created_at DESC LIMIT 5
             """, (current_user.badge_number,)).fetchall()
             for a in alert_rows:
@@ -60,9 +62,8 @@ def home():
                     "time": a["created_at"],
                 })
         except Exception:
-            pass
+            logger.debug("Alerts query failed — table may be empty", exc_info=True)
 
-        # Filter portals by user access
         visible_portals = {}
         assigned = set()
         if hasattr(current_user, "get_assigned_units"):
@@ -112,14 +113,14 @@ def command():
 
         case_status = []
         rows = conn.execute("""
-            SELECT status, COUNT(*) AS count
+            SELECT case_status, COUNT(*) AS count
             FROM cases
-            GROUP BY status
+            GROUP BY case_status
             ORDER BY count DESC
             LIMIT 10
         """).fetchall()
         for r in rows:
-            case_status.append({"status": r["status"], "count": r["count"]})
+            case_status.append({"status": r["case_status"], "count": r["count"]})
 
         return jsonify({
             "monthly_cases": monthly_data,
@@ -133,19 +134,20 @@ def command():
 @bp.route("/notifications/count")
 @login_required
 def notification_count():
-    """Return unread notification count."""
+    """Return unread notification count for the current user."""
     conn = get_db()
     try:
         total = conn.execute("""
-            SELECT COUNT(*) FROM notifications
-            WHERE badge_number = ? AND read_at IS NULL
+            SELECT COUNT(*) FROM alerts
+            WHERE target_badge = ? AND is_dismissed = 0
         """, (current_user.badge_number,)).fetchone()[0]
         critical = conn.execute("""
-            SELECT COUNT(*) FROM notifications
-            WHERE badge_number = ? AND read_at IS NULL AND severity = 'critical'
+            SELECT COUNT(*) FROM alerts
+            WHERE target_badge = ? AND is_dismissed = 0 AND severity = 'critical'
         """, (current_user.badge_number,)).fetchone()[0]
         return jsonify({"total": total, "critical": critical})
     except Exception:
+        logger.debug("Notification count query failed", exc_info=True)
         return jsonify({"total": 0, "critical": 0})
     finally:
         conn.close()

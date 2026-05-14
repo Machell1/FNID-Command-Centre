@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Statement of {{ entry.witness_name }} — {{ entry.statement_id }}</title>
+<style>
+  @page { size: Letter; margin: 22mm 22mm 22mm 22mm; }
+  body {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12pt;
+    color: #000;
+    line-height: 1.5;
+    margin: 0;
+  }
+  .letterhead {
+    text-align: center;
+    border-bottom: 2px solid #1F3864;
+    padding-bottom: 10pt;
+    margin-bottom: 16pt;
+  }
+  .letterhead .force {
+    font-size: 13pt;
+    font-weight: bold;
+    letter-spacing: 1pt;
+  }
+  .letterhead .unit {
+    font-size: 11pt;
+    margin-top: 2pt;
+  }
+  .letterhead .division {
+    font-size: 10pt;
+    margin-top: 2pt;
+    color: #444;
+  }
+  h1.title {
+    text-align: center;
+    font-size: 14pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin: 14pt 0 4pt 0;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 10pt;
+    color: #555;
+    margin-bottom: 16pt;
+  }
+  .meta {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 18pt;
+    font-size: 10.5pt;
+  }
+  .meta th, .meta td {
+    border: 1px solid #888;
+    padding: 4pt 8pt;
+    text-align: left;
+    vertical-align: top;
+  }
+  .meta th {
+    width: 32%;
+    background: #f0f2f5;
+    font-weight: bold;
+  }
+  h2.body-heading {
+    font-size: 12pt;
+    margin: 18pt 0 8pt 0;
+    border-bottom: 1px solid #aaa;
+    padding-bottom: 4pt;
+  }
+  .statement-body {
+    text-align: justify;
+    white-space: normal;
+  }
+  .statement-body p { margin: 0 0 8pt 0; }
+  .statement-body ul, .statement-body ol { margin: 0 0 8pt 22pt; }
+  .statement-body blockquote {
+    margin: 6pt 18pt; padding-left: 8pt;
+    border-left: 3px solid #ccc; color: #333;
+  }
+  .declaration {
+    margin-top: 22pt;
+    font-style: italic;
+    border-top: 1px solid #aaa;
+    padding-top: 10pt;
+  }
+  .signature {
+    margin-top: 36pt;
+    display: flex;
+    justify-content: space-between;
+  }
+  .signature .block {
+    width: 45%;
+  }
+  .signature .line {
+    border-top: 1px solid #000;
+    margin-top: 40pt;
+    padding-top: 4pt;
+    font-size: 10pt;
+    color: #444;
+  }
+  .footer {
+    margin-top: 28pt;
+    font-size: 9pt;
+    color: #666;
+    border-top: 1px dashed #aaa;
+    padding-top: 6pt;
+    text-align: center;
+  }
+  .no-print { display: block; text-align: center; margin: 8pt 0 16pt 0; }
+  @media print {
+    .no-print { display: none; }
+  }
+</style>
+</head>
+<body>
+
+{% if mode != 'pdf' %}
+<div class="no-print">
+  <button onclick="window.print()" style="padding: 6pt 18pt; font-size: 11pt; cursor: pointer;">
+    🖨️ Print this statement
+  </button>
+  &nbsp;
+  <a href="{{ url_for('witnesses.pdf_statement', statement_id=entry.statement_id) }}"
+     style="padding: 6pt 18pt; font-size: 11pt;">
+    ⬇ Download as PDF
+  </a>
+  &nbsp;
+  <a href="{{ url_for('witnesses.witness_detail', statement_id=entry.statement_id) }}"
+     style="padding: 6pt 18pt; font-size: 11pt;">
+    ← Back
+  </a>
+</div>
+{% endif %}
+
+<div class="letterhead">
+  <div class="force">JAMAICA CONSTABULARY FORCE</div>
+  <div class="unit">Firearms &amp; Narcotics Investigation Division — Area 3</div>
+  <div class="division">Manchester · St. Elizabeth · Clarendon</div>
+</div>
+
+<h1 class="title">Witness Statement</h1>
+<div class="subtitle">Recorded under the Judges' Rules and the Evidence Act</div>
+
+<table class="meta">
+  <tr><th>Statement Reference</th><td>{{ entry.statement_id }}</td></tr>
+  <tr><th>Linked Case Reference</th><td>{{ entry.linked_case_id }}</td></tr>
+  <tr><th>Witness Name</th><td>{{ entry.witness_name }}</td></tr>
+  {% if entry.witness_type %}<tr><th>Witness Type</th><td>{{ entry.witness_type }}</td></tr>{% endif %}
+  {% if entry.witness_address %}<tr><th>Address</th><td>{{ entry.witness_address }}</td></tr>{% endif %}
+  {% if entry.witness_phone %}<tr><th>Telephone</th><td>{{ entry.witness_phone }}</td></tr>{% endif %}
+  {% if entry.relation_to_case %}<tr><th>Relation to Case</th><td>{{ entry.relation_to_case }}</td></tr>{% endif %}
+  <tr><th>Date of Statement</th><td>{{ entry.statement_date or '—' }}</td></tr>
+  <tr><th>Statement Taken By</th><td>{{ entry.statement_taken_by or '—' }}</td></tr>
+  {% if entry.special_measures_needed == 'Yes' %}
+  <tr><th>Special Measures</th><td>{{ entry.special_measures_type or 'Yes (type not specified)' }}</td></tr>
+  {% endif %}
+</table>
+
+<h2 class="body-heading">Statement</h2>
+<div class="statement-body">
+  {% if entry.statement_text %}
+    {{ entry.statement_text|safe }}
+  {% else %}
+    <p><em>No statement text recorded. Edit this statement to compose the body.</em></p>
+  {% endif %}
+</div>
+
+<div class="declaration">
+  I, {{ entry.witness_name }}, declare that the contents of this statement are
+  true to the best of my knowledge and belief. I make this statement knowing
+  that, if it is tendered in evidence, I shall be liable to prosecution if I
+  have wilfully stated in it anything which I know to be false or do not
+  believe to be true.
+</div>
+
+<div class="signature">
+  <div class="block">
+    <div class="line">Signature of Witness</div>
+  </div>
+  <div class="block">
+    <div class="line">Signature of Officer (Taken By)</div>
+  </div>
+</div>
+<div class="signature">
+  <div class="block">
+    <div class="line">Date</div>
+  </div>
+  <div class="block">
+    <div class="line">Rank / Badge Number</div>
+  </div>
+</div>
+
+<div class="footer">
+  FNID Area 3 · Statement {{ entry.statement_id }} ·
+  Generated {{ entry.updated_at or entry.created_at }} ·
+  This document is part of an official case file and is subject to the
+  Data Protection Act, 2020.
+</div>
+
+</body>
+</html>

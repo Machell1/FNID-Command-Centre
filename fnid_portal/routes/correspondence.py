@@ -3,14 +3,21 @@ Correspondence Tracking Routes
 
 Inward/Outward correspondence register for case-related documents,
 court orders, DPP directives, and inter-agency communications.
+
+Officers can compose the full memo body in-app, save it to the case file,
+and print or export it as a PDF on JCF letterhead.
 """
 
 from datetime import datetime
+from io import BytesIO
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import (
+    Blueprint, flash, redirect, render_template, request, send_file, url_for,
+)
 from flask_login import current_user, login_required
 
 from ..models import get_db, log_audit
+from ..pdf_export import render_pdf
 from ..rbac import permission_required
 
 bp = Blueprint("correspondence", __name__, url_prefix="/correspondence")
@@ -124,17 +131,18 @@ def new_correspondence():
                     document_types=DOCUMENT_TYPES,
                 )
 
+            body = request.form.get("body", "").strip() or None
             cursor = conn.execute(
                 """INSERT INTO correspondence
                    (case_id, direction, date, reference_number, from_entity,
                     to_entity, subject, document_type, logged_by, logged_at,
-                    action_required, action_deadline, action_status, notes)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?)""",
+                    action_required, action_deadline, action_status, notes, body)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?, ?)""",
                 (
                     case_id, direction, date, reference_number, from_entity,
                     to_entity, subject, document_type,
                     current_user.badge_number, datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    action_required, action_deadline, notes,
+                    action_required, action_deadline, notes, body,
                 ),
             )
             conn.commit()
@@ -199,16 +207,19 @@ def edit_correspondence(id):
                     document_types=DOCUMENT_TYPES,
                 )
 
+            body = request.form.get("body", "").strip() or None
             conn.execute(
                 """UPDATE correspondence SET
                    case_id=?, direction=?, date=?, reference_number=?,
                    from_entity=?, to_entity=?, subject=?, document_type=?,
-                   action_required=?, action_deadline=?, action_status=?, notes=?
+                   action_required=?, action_deadline=?, action_status=?,
+                   notes=?, body=?
                    WHERE id=?""",
                 (
                     case_id, direction, date, reference_number, from_entity,
                     to_entity, subject, document_type,
-                    action_required, action_deadline, action_status, notes, id,
+                    action_required, action_deadline, action_status,
+                    notes, body, id,
                 ),
             )
             conn.commit()
@@ -230,6 +241,59 @@ def edit_correspondence(id):
             directions=DIRECTION_OPTIONS,
             document_types=DOCUMENT_TYPES,
             action_statuses=ACTION_STATUSES,
+        )
+    finally:
+        conn.close()
+
+
+def _fetch(conn, id):
+    return conn.execute(
+        "SELECT * FROM correspondence WHERE id = ?", (id,)
+    ).fetchone()
+
+
+@bp.route("/<int:id>/print")
+@login_required
+@permission_required("registry", "read")
+def print_memo(id):
+    """Print-ready memo on JCF letterhead."""
+    conn = get_db()
+    try:
+        item = _fetch(conn, id)
+        if not item:
+            flash("Correspondence record not found.", "danger")
+            return redirect(url_for("correspondence.correspondence_list"))
+        return render_template(
+            "correspondence/print.html", item=item, mode="print",
+        )
+    finally:
+        conn.close()
+
+
+@bp.route("/<int:id>/pdf")
+@login_required
+@permission_required("registry", "read")
+def pdf_memo(id):
+    """Generate a PDF download of the memo."""
+    conn = get_db()
+    try:
+        item = _fetch(conn, id)
+        if not item:
+            flash("Correspondence record not found.", "danger")
+            return redirect(url_for("correspondence.correspondence_list"))
+
+        html = render_template("correspondence/print.html", item=item, mode="pdf")
+        pdf_buf = render_pdf(html)
+        if pdf_buf is None:
+            return html, 200, {"Content-Type": "text/html"}
+
+        slug = (item["subject"] or "memo").replace(" ", "_")[:40]
+        filename = f"Memo_{id}_{slug}.pdf"
+        return send_file(
+            BytesIO(pdf_buf.read()),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=filename,
         )
     finally:
         conn.close()

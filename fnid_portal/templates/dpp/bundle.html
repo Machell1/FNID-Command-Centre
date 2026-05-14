@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DPP File Bundle — {{ entry.linked_case_id or 'No case' }}</title>
+<style>
+  @page { size: Letter; margin: 22mm 22mm 22mm 22mm; }
+  body {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 11pt;
+    color: #000;
+    line-height: 1.45;
+    margin: 0;
+  }
+  h1.title {
+    text-align: center;
+    font-size: 16pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2pt;
+    margin: 4pt 0 0 0;
+  }
+  h2.section {
+    page-break-before: always;
+    font-size: 13pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    border-bottom: 2px solid #1F3864;
+    padding: 6pt 0 6pt 0;
+    margin: 0 0 14pt 0;
+    color: #1F3864;
+  }
+  /* First section after the cover page — no page break */
+  .first-section { page-break-before: avoid; margin-top: 12pt; }
+  h3.subsection {
+    font-size: 11pt;
+    font-weight: bold;
+    background: #f0f2f5;
+    padding: 4pt 8pt;
+    margin: 12pt 0 6pt 0;
+    border-left: 3px solid #1F3864;
+  }
+  .letterhead {
+    text-align: center;
+    border-bottom: 2px solid #1F3864;
+    padding-bottom: 10pt;
+  }
+  .letterhead .force { font-size: 14pt; font-weight: bold; letter-spacing: 1pt; }
+  .letterhead .unit { font-size: 11pt; margin-top: 2pt; }
+  .letterhead .division { font-size: 10pt; margin-top: 2pt; color: #444; }
+
+  .cover {
+    margin-top: 28pt;
+  }
+  .meta {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10.5pt;
+    margin: 10pt 0 14pt 0;
+  }
+  .meta th, .meta td {
+    border: 1px solid #888;
+    padding: 4pt 8pt;
+    text-align: left;
+    vertical-align: top;
+  }
+  .meta th {
+    width: 28%;
+    background: #f0f2f5;
+    font-weight: bold;
+  }
+
+  .toc { margin: 18pt 0 0 0; font-size: 11pt; }
+  .toc ol { padding-left: 24pt; }
+  .toc li { margin: 3pt 0; }
+
+  .cover-letter {
+    margin-top: 32pt;
+    font-size: 11.5pt;
+    line-height: 1.6;
+    text-align: justify;
+  }
+  .cover-letter p { margin: 0 0 9pt 0; }
+
+  table.data {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9.5pt;
+    margin-bottom: 12pt;
+  }
+  table.data th, table.data td {
+    border: 1px solid #aaa;
+    padding: 4pt 6pt;
+    text-align: left;
+    vertical-align: top;
+  }
+  table.data th {
+    background: #1F3864;
+    color: #fff;
+    font-weight: bold;
+  }
+  table.data tr:nth-child(even) td { background: #fafbfc; }
+
+  .statement-body { text-align: justify; }
+  .statement-body p { margin: 0 0 8pt 0; }
+  .statement-body ul, .statement-body ol { margin: 0 0 8pt 22pt; }
+
+  .signature {
+    margin-top: 24pt;
+    width: 100%;
+  }
+  .signature .line {
+    border-top: 1px solid #000;
+    margin-top: 40pt;
+    padding-top: 4pt;
+    font-size: 10pt;
+  }
+
+  .empty {
+    color: #888;
+    font-style: italic;
+    padding: 6pt 10pt;
+    background: #fafafa;
+    border: 1px dashed #ccc;
+  }
+  .footer {
+    margin-top: 12pt;
+    font-size: 9pt;
+    color: #666;
+    text-align: center;
+  }
+  .no-print { display: block; text-align: center; margin: 8pt 0 16pt 0; }
+  @media print { .no-print { display: none; } }
+  .badge {
+    display: inline-block;
+    padding: 1pt 6pt;
+    background: #1F3864;
+    color: #fff;
+    border-radius: 2pt;
+    font-size: 9pt;
+    font-weight: bold;
+  }
+  .badge.yes { background: #1f6d3a; }
+  .badge.no  { background: #8b1f1f; }
+  .badge.na  { background: #777; }
+</style>
+</head>
+<body>
+
+{% if mode != 'pdf' %}
+<div class="no-print">
+  <button onclick="window.print()" style="padding: 6pt 18pt; font-size: 11pt;">
+    🖨️ Print bundle
+  </button>
+  &nbsp;
+  <a href="{{ url_for('dpp.bundle_pdf', id=entry.id) }}"
+     style="padding: 6pt 18pt; font-size: 11pt;">
+    ⬇ Download as PDF
+  </a>
+  &nbsp;
+  <a href="{{ url_for('dpp.dpp_detail', id=entry.id) }}"
+     style="padding: 6pt 18pt; font-size: 11pt;">
+    ← Back to submission
+  </a>
+</div>
+{% endif %}
+
+{# ===== COVER PAGE ===== #}
+<div class="letterhead">
+  <div class="force">JAMAICA CONSTABULARY FORCE</div>
+  <div class="unit">Firearms &amp; Narcotics Investigation Division — Area 3</div>
+  <div class="division">Manchester · St. Elizabeth · Clarendon</div>
+</div>
+
+<h1 class="title">DPP File Bundle</h1>
+<div style="text-align:center; font-size:10pt; color:#555; margin-top:4pt;">
+  Director of Public Prosecutions — Submission Package
+</div>
+
+<div class="cover">
+  <table class="meta">
+    <tr><th>Case Reference No.</th>
+        <td>{{ entry.linked_case_id or '—' }}</td></tr>
+    {% if case %}
+    <tr><th>Classification</th><td>{{ case.classification or '—' }}</td></tr>
+    <tr><th>Offence</th><td>{{ case.offence_description or '—' }}</td></tr>
+    <tr><th>Law &amp; Section</th><td>{{ case.law_and_section or '—' }}</td></tr>
+    <tr><th>Parish</th><td>{{ case.parish or '—' }}</td></tr>
+    <tr><th>Suspect</th><td>{{ case.suspect_name or '—' }}</td></tr>
+    <tr><th>OIC</th><td>{{ case.oic_rank }} {{ case.oic_name }} (Badge {{ case.oic_badge }})</td></tr>
+    {% endif %}
+    <tr><th>DPP Submission Date</th><td>{{ entry.dpp_file_date or '—' }}</td></tr>
+    <tr><th>Crown Counsel</th><td>{{ entry.crown_counsel or '—' }}</td></tr>
+    <tr><th>Evidential Sufficiency Met</th>
+        <td>
+          {% if entry.evidential_sufficiency == 'Yes' %}<span class="badge yes">YES</span>
+          {% elif entry.evidential_sufficiency == 'No' %}<span class="badge no">NO</span>
+          {% else %}<span class="badge na">{{ entry.evidential_sufficiency or 'Pending' }}</span>{% endif %}
+        </td></tr>
+    <tr><th>Public Interest Test Met</th>
+        <td>
+          {% if entry.public_interest_met == 'Yes' %}<span class="badge yes">YES</span>
+          {% elif entry.public_interest_met == 'No' %}<span class="badge no">NO</span>
+          {% else %}<span class="badge na">{{ entry.public_interest_met or 'Pending' }}</span>{% endif %}
+        </td></tr>
+    <tr><th>Generated</th><td>{{ generated_at }} — by {{ generated_by }}</td></tr>
+  </table>
+
+  <div class="toc">
+    <strong>Contents:</strong>
+    <ol>
+      <li>Cover Letter</li>
+      <li>Case Facts &amp; Background</li>
+      <li>Suspect &amp; Arrest Records ({{ arrests|length }})</li>
+      <li>Seizures &mdash; Firearms ({{ seizures_firearms|length }}), Narcotics ({{ seizures_drugs|length }})</li>
+      <li>CR Forms ({{ cr_forms|length }})</li>
+      <li>Witness Statements ({{ statements|length }})</li>
+      <li>Exhibits &amp; Chain of Custody ({{ exhibits|length }} exhibit movements)</li>
+      <li>Forensic Submissions ({{ forensic_subs|length }})</li>
+      <li>SOP Compliance Checklist</li>
+      <li>Disclosure Schedule ({{ disclosure|length }})</li>
+    </ol>
+  </div>
+</div>
+
+{# ===== 1. COVER LETTER ===== #}
+<h2 class="section">1. Cover Letter</h2>
+<div class="cover-letter">
+  <p style="text-align:right;">Date: {{ entry.dpp_file_date or generated_at }}</p>
+
+  <p>
+    <strong>To:</strong> The Director of Public Prosecutions<br>
+    Office of the Director of Public Prosecutions<br>
+    Kingston, Jamaica
+  </p>
+
+  <p><strong>RE: {{ case.offence_description if case else 'Submission' }} — Case Ref {{ entry.linked_case_id or '—' }}</strong></p>
+
+  <p>Sir / Madam,</p>
+
+  <p>
+    I respectfully submit the attached case file for your consideration in
+    accordance with the JCF Case Management Policy (JCF/FW/PL/C&amp;S/0001/2024)
+    and the DPP Prosecution Protocol of April 2012.
+  </p>
+
+  {% if case %}
+  <p>
+    The case concerns <strong>{{ case.suspect_name or 'the named suspect' }}</strong>,
+    arising from incidents in the parish of <strong>{{ case.parish }}</strong> on
+    or about <strong>{{ case.registration_date }}</strong>. The alleged offence is
+    <strong>{{ case.offence_description }}</strong>, contrary to
+    <strong>{{ case.law_and_section }}</strong>.
+  </p>
+  {% endif %}
+
+  <p>
+    The evidential package comprises {{ cr_forms|length }} CR forms,
+    {{ statements|length }} witness statement(s), and {{ exhibits|length }}
+    chain-of-custody record(s). The required forensic submissions
+    ({{ forensic_subs|length }} in total) have been made. The SOP compliance
+    checklist for this matter has been completed and is included at Section 9.
+  </p>
+
+  <p>
+    I respectfully request your ruling on charging in this matter.
+  </p>
+
+  <p>
+    Yours faithfully,
+  </p>
+
+  <div class="signature">
+    <div class="line">
+      {% if case %}{{ case.oic_rank }} {{ case.oic_name }} (Badge {{ case.oic_badge }}){% else %}Officer in Charge{% endif %}<br>
+      FNID Area 3
+    </div>
+  </div>
+</div>
+
+{# ===== 2. CASE FACTS ===== #}
+<h2 class="section">2. Case Facts &amp; Background</h2>
+{% if case %}
+<table class="meta">
+  <tr><th>Case Reference No.</th><td>{{ case.case_id }}</td></tr>
+  <tr><th>Registration Date</th><td>{{ case.registration_date }}</td></tr>
+  <tr><th>Station / Diary No.</th><td>{{ case.station_code }} / {{ case.diary_number or '—' }}</td></tr>
+  <tr><th>Classification</th><td>{{ case.classification }}</td></tr>
+  <tr><th>Offence Description</th><td>{{ case.offence_description }}</td></tr>
+  <tr><th>Law &amp; Section</th><td>{{ case.law_and_section }}</td></tr>
+  <tr><th>Parish</th><td>{{ case.parish }}</td></tr>
+  <tr><th>Suspect Name</th><td>{{ case.suspect_name or '—' }}</td></tr>
+  <tr><th>Suspect Address</th><td>{{ case.suspect_address or '—' }}</td></tr>
+  <tr><th>Suspect Occupation</th><td>{{ case.suspect_occupation or '—' }}</td></tr>
+  <tr><th>Victim Name</th><td>{{ case.victim_name or '—' }}</td></tr>
+  <tr><th>OIC</th><td>{{ case.oic_rank }} {{ case.oic_name }} (Badge {{ case.oic_badge }})</td></tr>
+  <tr><th>Case Status</th><td>{{ case.case_status }}</td></tr>
+  <tr><th>Current Stage</th><td>{{ case.current_stage }}</td></tr>
+</table>
+{% else %}
+<div class="empty">This DPP submission is not linked to a case in the registry.</div>
+{% endif %}
+
+{# ===== 3. ARRESTS ===== #}
+<h2 class="section">3. Suspect &amp; Arrest Records</h2>
+{% if arrests %}
+<table class="data">
+  <thead><tr><th>Arrest ID</th><th>Date</th><th>Suspect</th><th>Officer</th><th>Offence</th><th>Bail Status</th></tr></thead>
+  <tbody>
+    {% for a in arrests %}
+    <tr>
+      <td>{{ a.arrest_id }}</td>
+      <td>{{ a.arrest_date }}</td>
+      <td>{{ a.suspect_name }}</td>
+      <td>{{ a.arresting_officer or '—' }}</td>
+      <td>{{ a.offence_charged or '—' }}</td>
+      <td>{{ a.bail_status or '—' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">No arrest records linked to this case.</div>
+{% endif %}
+
+{# ===== 4. SEIZURES ===== #}
+<h2 class="section">4. Seizures</h2>
+
+<h3 class="subsection">4.1 Firearms ({{ seizures_firearms|length }})</h3>
+{% if seizures_firearms %}
+<table class="data">
+  <thead><tr><th>Seizure ID</th><th>Date</th><th>Make / Model</th><th>Calibre</th><th>Serial</th><th>Location</th></tr></thead>
+  <tbody>
+    {% for s in seizures_firearms %}
+    <tr>
+      <td>{{ s.seizure_id }}</td>
+      <td>{{ s.seizure_date or '—' }}</td>
+      <td>{{ s.firearm_make or '—' }} {{ s.firearm_model or '' }}</td>
+      <td>{{ s.calibre or '—' }}</td>
+      <td>{{ s.serial_number or '—' }}</td>
+      <td>{{ s.seizure_location or '—' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">No firearm seizures linked to this case.</div>
+{% endif %}
+
+<h3 class="subsection">4.2 Narcotics ({{ seizures_drugs|length }})</h3>
+{% if seizures_drugs %}
+<table class="data">
+  <thead><tr><th>Seizure ID</th><th>Date</th><th>Drug</th><th>Quantity</th><th>Location</th></tr></thead>
+  <tbody>
+    {% for s in seizures_drugs %}
+    <tr>
+      <td>{{ s.seizure_id }}</td>
+      <td>{{ s.seizure_date or '—' }}</td>
+      <td>{{ s.drug_type or '—' }}</td>
+      <td>{{ s.quantity or '—' }} {{ s.quantity_unit or '' }}</td>
+      <td>{{ s.seizure_location or '—' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">No narcotic seizures linked to this case.</div>
+{% endif %}
+
+{# ===== 5. CR FORMS ===== #}
+<h2 class="section">5. CR Forms</h2>
+{% if cr_forms %}
+<table class="data">
+  <thead><tr><th>Form ID</th><th>Type</th><th>Status</th><th>Officer</th><th>Created</th></tr></thead>
+  <tbody>
+    {% for f in cr_forms %}
+    <tr>
+      <td>{{ f.form_id if f.form_id is defined else f.id }}</td>
+      <td>{{ f.form_type }}</td>
+      <td>{{ f.status if f.status is defined else (f.record_status or '—') }}</td>
+      <td>{{ f.officer_name if f.officer_name is defined else (f.created_by or '—') }}</td>
+      <td>{{ f.created_at or '—' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p style="font-size:9.5pt; color:#555; margin-top:4pt;">
+  Each CR form is available in full from the case file; export individually
+  via <code>Cases &rarr; Forms</code> for the standalone PDF.
+</p>
+{% else %}
+<div class="empty">No CR forms linked to this case.</div>
+{% endif %}
+
+{# ===== 6. WITNESS STATEMENTS ===== #}
+<h2 class="section">6. Witness Statements</h2>
+{% if statements %}
+  {% for s in statements %}
+    <h3 class="subsection">6.{{ loop.index }} Statement of {{ s.witness_name }} — {{ s.statement_id }}</h3>
+    <table class="meta">
+      <tr><th>Witness Type</th><td>{{ s.witness_type or '—' }}</td></tr>
+      <tr><th>Address</th><td>{{ s.witness_address or '—' }}</td></tr>
+      <tr><th>Phone</th><td>{{ s.witness_phone or '—' }}</td></tr>
+      <tr><th>Date</th><td>{{ s.statement_date or '—' }}</td></tr>
+      <tr><th>Taken by</th><td>{{ s.statement_taken_by or '—' }}</td></tr>
+      <tr><th>Signed</th><td>
+        {% if s.statement_signed == 'Yes' %}<span class="badge yes">YES</span>
+        {% else %}<span class="badge no">NO</span>{% endif %}
+      </td></tr>
+      <tr><th>Available for Court</th><td>{{ s.available_for_court }}</td></tr>
+    </table>
+    <div class="statement-body">
+      {% if s.statement_text %}
+        {{ s.statement_text|safe }}
+      {% else %}
+        <p class="empty">No statement body recorded.</p>
+      {% endif %}
+    </div>
+  {% endfor %}
+{% else %}
+<div class="empty">No witness statements linked to this case.</div>
+{% endif %}
+
+{# ===== 7. EXHIBITS / CHAIN OF CUSTODY ===== #}
+<h2 class="section">7. Exhibits &amp; Chain of Custody</h2>
+{% if exhibits %}
+<table class="data">
+  <thead>
+    <tr>
+      <th>Exhibit Tag</th>
+      <th>Description</th>
+      <th>From</th>
+      <th>To</th>
+      <th>Date / Time</th>
+      <th>Reason</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for e in exhibits %}
+    <tr>
+      <td>{{ e.exhibit_tag if e.exhibit_tag is defined else '—' }}</td>
+      <td>{{ e.exhibit_description if e.exhibit_description is defined else '—' }}</td>
+      <td>{{ e.transferred_from if e.transferred_from is defined else '—' }}</td>
+      <td>{{ e.transferred_to if e.transferred_to is defined else '—' }}</td>
+      <td>{{ e.transfer_date if e.transfer_date is defined else '—' }} {{ e.transfer_time if e.transfer_time is defined else '' }}</td>
+      <td>{{ e.transfer_reason if e.transfer_reason is defined else '—' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">No chain-of-custody entries linked to this case.</div>
+{% endif %}
+
+{# ===== 8. FORENSIC SUBMISSIONS ===== #}
+<h2 class="section">8. Forensic Submissions</h2>
+{% if forensic_subs %}
+<table class="data">
+  <thead><tr><th>Lab Ref</th><th>Type</th><th>Submitted</th><th>Cert No.</th><th>Status</th></tr></thead>
+  <tbody>
+    {% for f in forensic_subs %}
+    <tr>
+      <td>{{ f.lab_ref }}</td>
+      <td>{{ f.submission_type or '—' }}</td>
+      <td>{{ f.submission_date or '—' }}</td>
+      <td>{{ f.certificate_number or '—' }}</td>
+      <td>{{ f.cert_status if f.cert_status is defined else (f.status or '—') }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">No forensic submissions linked to this case.</div>
+{% endif %}
+
+{# ===== 9. SOP COMPLIANCE ===== #}
+<h2 class="section">9. SOP Compliance Checklist</h2>
+{% if sop %}
+<table class="meta">
+  <tr><th>OIC</th><td>{{ sop.oic_name or '—' }}</td></tr>
+  <tr><th>Checklist Date</th><td>{{ sop.checklist_date or '—' }}</td></tr>
+  <tr><th>Overall Compliance</th><td><span class="badge">{{ sop.overall_compliance or 'N/A' }}</span></td></tr>
+  {% if sop.compliance_notes %}
+  <tr><th>Notes</th><td>{{ sop.compliance_notes }}</td></tr>
+  {% endif %}
+</table>
+<p style="font-size:9.5pt; color:#555;">
+  Full 48-item SOP checklist is available in the case file; this summary
+  confirms the overall compliance assessment recorded by the OIC.
+</p>
+{% else %}
+<div class="empty">No SOP compliance checklist on file for this case.</div>
+{% endif %}
+
+{# ===== 10. DISCLOSURE ===== #}
+<h2 class="section">10. Disclosure Schedule</h2>
+{% if disclosure %}
+<table class="data">
+  <thead><tr><th>Disclosure ID</th><th>Material</th><th>Type</th><th>Served</th><th>Date Served</th></tr></thead>
+  <tbody>
+    {% for d in disclosure %}
+    <tr>
+      <td>{{ d.disclosure_id }}</td>
+      <td>{{ d.material_description or '—' }}</td>
+      <td>{{ d.disclosure_type or '—' }}</td>
+      <td>{{ d.service_status or '—' }}</td>
+      <td>{{ d.service_date or '—' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">No disclosure entries logged for this case.</div>
+{% endif %}
+
+<div class="footer">
+  END OF BUNDLE — Generated {{ generated_at }} by {{ generated_by }} ·
+  FNID Area 3 · Subject to the Data Protection Act, 2020
+</div>
+
+</body>
+</html>

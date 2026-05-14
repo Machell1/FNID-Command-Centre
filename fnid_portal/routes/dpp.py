@@ -4,14 +4,22 @@ DPP Prosecution Pipeline Routes
 Manages submissions to the Director of Public Prosecutions (DPP),
 tracking case files through the prosecution pipeline including rulings,
 returns for investigation, and resubmissions.
+
+Also assembles the complete DPP file bundle into a single PDF:
+cover letter, case facts, CR forms, witness statements, exhibits list,
+chain of custody log, SOP compliance checklist, and disclosure schedule.
 """
 
 from datetime import datetime
+from io import BytesIO
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import (
+    Blueprint, flash, redirect, render_template, request, send_file, url_for,
+)
 from flask_login import current_user, login_required
 
 from ..models import get_db, log_audit
+from ..pdf_export import render_pdf
 from ..rbac import permission_required
 
 bp = Blueprint("dpp", __name__, url_prefix="/dpp")
@@ -317,5 +325,190 @@ def record_ruling(id):
 
         flash(f"Ruling recorded: {ruling_outcome}.", "success")
         return redirect(url_for("dpp.dpp_detail", id=id))
+    finally:
+        conn.close()
+
+
+# ── DPP Bundle Export ───────────────────────────────────────────────
+
+
+def _collect_bundle_data(conn, entry):
+    """Gather every component needed for the DPP file bundle."""
+    case_id = entry["linked_case_id"]
+
+    case_row = None
+    cr_forms = []
+    statements = []
+    exhibits = []
+    coc_log = []
+    forensic_subs = []
+    sop_row = None
+    disclosure = []
+    arrests = []
+    seizures_firearms = []
+    seizures_drugs = []
+
+    if case_id:
+        case_row = conn.execute(
+            "SELECT * FROM cases WHERE case_id = ?", (case_id,)
+        ).fetchone()
+
+        try:
+            cr_forms = conn.execute(
+                "SELECT * FROM cr_forms WHERE linked_case_id = ? ORDER BY form_type, created_at",
+                (case_id,),
+            ).fetchall()
+        except Exception:
+            cr_forms = []
+
+        statements = conn.execute(
+            "SELECT * FROM witness_statements WHERE linked_case_id = ? "
+            "ORDER BY statement_date, created_at",
+            (case_id,),
+        ).fetchall()
+
+        try:
+            exhibits = conn.execute(
+                "SELECT * FROM chain_of_custody WHERE linked_case_id = ? "
+                "ORDER BY id",
+                (case_id,),
+            ).fetchall()
+            coc_log = exhibits
+        except Exception:
+            pass
+
+        try:
+            forensic_subs = conn.execute(
+                "SELECT * FROM lab_tracking WHERE linked_case_id = ? ORDER BY id",
+                (case_id,),
+            ).fetchall()
+        except Exception:
+            pass
+
+        try:
+            sop_row = conn.execute(
+                "SELECT * FROM sop_checklists WHERE linked_case_id = ? "
+                "ORDER BY id DESC LIMIT 1",
+                (case_id,),
+            ).fetchone()
+        except Exception:
+            sop_row = None
+
+        try:
+            disclosure = conn.execute(
+                "SELECT * FROM disclosure_log WHERE linked_case_id = ? "
+                "ORDER BY id",
+                (case_id,),
+            ).fetchall()
+        except Exception:
+            pass
+
+        try:
+            arrests = conn.execute(
+                "SELECT * FROM arrests WHERE linked_case_id = ? ORDER BY id",
+                (case_id,),
+            ).fetchall()
+        except Exception:
+            pass
+
+        try:
+            seizures_firearms = conn.execute(
+                "SELECT * FROM firearm_seizures WHERE linked_case_id = ? ORDER BY id",
+                (case_id,),
+            ).fetchall()
+        except Exception:
+            pass
+
+        try:
+            seizures_drugs = conn.execute(
+                "SELECT * FROM narcotics_seizures WHERE linked_case_id = ? ORDER BY id",
+                (case_id,),
+            ).fetchall()
+        except Exception:
+            pass
+
+    return {
+        "case": case_row,
+        "cr_forms": cr_forms,
+        "statements": statements,
+        "exhibits": exhibits,
+        "coc_log": coc_log,
+        "forensic_subs": forensic_subs,
+        "sop": sop_row,
+        "disclosure": disclosure,
+        "arrests": arrests,
+        "seizures_firearms": seizures_firearms,
+        "seizures_drugs": seizures_drugs,
+    }
+
+
+@bp.route("/<int:id>/bundle")
+@login_required
+@permission_required("cases", "read")
+def bundle_preview(id):
+    """HTML preview of the full DPP bundle (officer can review before exporting)."""
+    conn = get_db()
+    try:
+        entry = conn.execute(
+            "SELECT * FROM dpp_pipeline WHERE id = ?", (id,)
+        ).fetchone()
+        if not entry:
+            flash("DPP submission not found.", "danger")
+            return redirect(url_for("dpp.dpp_home"))
+
+        data = _collect_bundle_data(conn, entry)
+        return render_template(
+            "dpp/bundle.html",
+            entry=entry,
+            mode="preview",
+            generated_at=datetime.now().strftime("%Y-%m-%d %H:%M"),
+            generated_by=current_user.full_name,
+            **data,
+        )
+    finally:
+        conn.close()
+
+
+@bp.route("/<int:id>/bundle.pdf")
+@login_required
+@permission_required("cases", "read")
+def bundle_pdf(id):
+    """Render the full DPP bundle as a single PDF for download."""
+    conn = get_db()
+    try:
+        entry = conn.execute(
+            "SELECT * FROM dpp_pipeline WHERE id = ?", (id,)
+        ).fetchone()
+        if not entry:
+            flash("DPP submission not found.", "danger")
+            return redirect(url_for("dpp.dpp_home"))
+
+        data = _collect_bundle_data(conn, entry)
+        html = render_template(
+            "dpp/bundle.html",
+            entry=entry,
+            mode="pdf",
+            generated_at=datetime.now().strftime("%Y-%m-%d %H:%M"),
+            generated_by=current_user.full_name,
+            **data,
+        )
+        pdf_buf = render_pdf(html)
+        if pdf_buf is None:
+            return html, 200, {"Content-Type": "text/html"}
+
+        case_id = entry["linked_case_id"] or "no-case"
+        slug = case_id.replace("/", "-").replace(" ", "_")
+        filename = f"DPP_Bundle_{slug}.pdf"
+
+        log_audit("dpp_pipeline", str(id), "BUNDLE_EXPORT",
+                  current_user.badge_number, current_user.full_name,
+                  f"DPP bundle PDF generated for case {case_id}")
+
+        return send_file(
+            BytesIO(pdf_buf.read()),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=filename,
+        )
     finally:
         conn.close()

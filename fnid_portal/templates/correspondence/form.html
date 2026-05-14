@@ -118,10 +118,25 @@
           </div>
         </div>
 
+        <div class="card mb-3" style="background: #fafbfc;">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <strong><i class="bi bi-pencil-square me-2"></i>Memo Body</strong>
+            <small class="text-muted">Compose the full memo here. After saving, use the
+              <strong>Print</strong> / <strong>PDF</strong> buttons on the detail page to
+              produce the signed copy on JCF letterhead.</small>
+          </div>
+          <div class="card-body">
+            <div id="statement-editor"
+                 data-placeholder="Compose the full memo. Open with the recipient ('To: ACP CIB, Area 3'), state the purpose, list the facts, and close with your signature line. The JCF letterhead is added automatically on print/PDF."
+                 style="min-height: 320px; background: #fff;">{{ item.body|safe if item and item.body else '' }}</div>
+            <textarea name="body" id="statement_text_field" hidden>{{ item.body if item and item.body else '' }}</textarea>
+          </div>
+        </div>
+
         <div class="mb-3">
-          <label class="form-label">Notes</label>
-          <textarea name="notes" class="form-control" rows="3"
-                    placeholder="Additional notes">{{ item.notes if item and item.notes is defined else (item.get('notes', '') if item and item.get else '') }}</textarea>
+          <label class="form-label">Internal Notes (not printed)</label>
+          <textarea name="notes" class="form-control" rows="2"
+                    placeholder="Follow-up reminders, internal annotations">{{ item.notes if item and item.notes is defined else (item.get('notes', '') if item and item.get else '') }}</textarea>
         </div>
 
         <div class="d-flex gap-2">
@@ -134,4 +149,8 @@
     </div>
   </div>
 </div>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/quill/quill.snow.css') }}">
+<script src="{{ url_for('static', filename='vendor/quill/quill.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/quill-statement-editor.js') }}"></script>
 {% endblock %}

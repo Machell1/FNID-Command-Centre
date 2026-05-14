@@ -131,6 +131,25 @@
             </div>
         </div>
 
+        <!-- Statement Body -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Statement Body</h5>
+                <small class="text-muted">Compose the witness statement here. Use the formatting toolbar for emphasis, lists, and quotations.</small>
+            </div>
+            <div class="card-body">
+                <div id="statement-editor"
+                     data-placeholder="Type the witness statement in first-person voice. Use full sentences, in chronological order: 'On [date] at approximately [time], I was at [location]...'"
+                     style="min-height: 320px; background: #fff;">{{ entry.statement_text|safe if is_edit and entry.statement_text else '' }}</div>
+                <textarea name="statement_text" id="statement_text_field" hidden>{{ entry.statement_text if is_edit else '' }}</textarea>
+                <div class="form-text mt-2">
+                    Tip: This statement is saved with the case. After saving, use
+                    <strong>Print</strong> or <strong>Download PDF</strong> from the detail page
+                    to produce the signed copy.
+                </div>
+            </div>
+        </div>
+
         <!-- Status & Notes -->
         <div class="card mb-4">
             <div class="card-header"><h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Status & Notes</h5></div>
@@ -145,9 +164,9 @@
                         </select>
                     </div>
                     <div class="col-md-12">
-                        <label class="form-label">Notes</label>
-                        <textarea name="notes" class="form-control" rows="4"
-                                  placeholder="Additional notes or observations">{{ entry.notes if is_edit else '' }}</textarea>
+                        <label class="form-label">Notes (internal, not part of statement)</label>
+                        <textarea name="notes" class="form-control" rows="3"
+                                  placeholder="Investigator notes, follow-ups, etc.">{{ entry.notes if is_edit else '' }}</textarea>
                     </div>
                 </div>
             </div>
@@ -161,4 +180,8 @@
         </div>
     </form>
 </div>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/quill/quill.snow.css') }}">
+<script src="{{ url_for('static', filename='vendor/quill/quill.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/quill-statement-editor.js') }}"></script>
 {% endblock %}

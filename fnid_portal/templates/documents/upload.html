@@ -29,8 +29,13 @@
                     </div>
                     <div class="mb-3">
                         <label for="file" class="form-label">File <span class="text-danger">*</span></label>
-                        <input type="file" class="form-control" id="file" name="file" required accept=".pdf,.docx,.doc,.jpg,.jpeg,.png,.xlsx,.xls">
-                        <div class="form-text">Allowed: PDF, DOCX, DOC, JPG, PNG, XLSX, XLS. Max 16MB.</div>
+                        <input type="file" class="form-control" id="file" name="file" required
+                               accept=".pdf,.docx,.doc,.jpg,.jpeg,.png,.xlsx,.xls,image/*"
+                               capture="environment">
+                        <div class="form-text">
+                            Allowed: PDF, DOCX, DOC, JPG, PNG, XLSX, XLS. Max 16MB.
+                            On mobile, tap to open the camera and capture a photo directly.
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i> Upload</button>
                     <a href="{{ url_for('documents.doc_list') }}" class="btn btn-outline-secondary">Cancel</a>

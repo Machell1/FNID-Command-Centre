@@ -7,11 +7,16 @@ and court availability tracking.
 """
 
 from datetime import datetime
+from io import BytesIO
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import (
+    Blueprint, flash, make_response, redirect, render_template, request,
+    send_file, url_for,
+)
 from flask_login import current_user, login_required
 
 from ..models import generate_id, get_db, log_audit
+from ..pdf_export import render_pdf
 from ..rbac import permission_required
 
 bp = Blueprint("witnesses", __name__, url_prefix="/witnesses")
@@ -105,8 +110,9 @@ def new_witness():
                     statement_signed, witness_willing, special_measures_needed,
                     special_measures_type, available_for_court,
                     record_status, submitted_by, submitted_date, notes,
+                    statement_text,
                     created_by, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 statement_id,
                 request.form.get("linked_case_id", ""),
@@ -127,6 +133,7 @@ def new_witness():
                 current_user.badge_number,
                 now,
                 request.form.get("notes", ""),
+                request.form.get("statement_text", ""),
                 current_user.badge_number,
                 now,
                 now,
@@ -181,7 +188,7 @@ def edit_witness(statement_id):
                     statement_signed = ?, witness_willing = ?,
                     special_measures_needed = ?, special_measures_type = ?,
                     available_for_court = ?, record_status = ?, notes = ?,
-                    updated_at = ?
+                    statement_text = ?, updated_at = ?
                 WHERE statement_id = ?
             """, (
                 request.form.get("linked_case_id", ""),
@@ -200,6 +207,7 @@ def edit_witness(statement_id):
                 request.form.get("available_for_court", "Yes"),
                 request.form.get("record_status", "Draft"),
                 request.form.get("notes", ""),
+                request.form.get("statement_text", ""),
                 now,
                 statement_id,
             ))
@@ -217,6 +225,64 @@ def edit_witness(statement_id):
             entry=entry,
             case_id=entry["linked_case_id"],
             is_edit=True,
+        )
+    finally:
+        conn.close()
+
+
+# ── Print & PDF Export ───────────────────────────────────────────────
+
+
+def _fetch_statement(conn, statement_id):
+    row = conn.execute(
+        "SELECT * FROM witness_statements WHERE statement_id = ?",
+        (statement_id,),
+    ).fetchone()
+    return row
+
+
+@bp.route("/<statement_id>/print")
+@login_required
+@permission_required("cases", "read")
+def print_statement(statement_id):
+    """Render a print-ready statement page (officer hits Ctrl+P from here)."""
+    conn = get_db()
+    try:
+        entry = _fetch_statement(conn, statement_id)
+        if not entry:
+            flash("Witness statement not found.", "danger")
+            return redirect(url_for("witnesses.witness_list"))
+        return render_template(
+            "witnesses/print.html", entry=entry, mode="print",
+        )
+    finally:
+        conn.close()
+
+
+@bp.route("/<statement_id>/pdf")
+@login_required
+@permission_required("cases", "read")
+def pdf_statement(statement_id):
+    """Generate a PDF download of the statement."""
+    conn = get_db()
+    try:
+        entry = _fetch_statement(conn, statement_id)
+        if not entry:
+            flash("Witness statement not found.", "danger")
+            return redirect(url_for("witnesses.witness_list"))
+
+        html = render_template("witnesses/print.html", entry=entry, mode="pdf")
+        pdf_buf = render_pdf(html)
+        if pdf_buf is None:
+            # Fall back to the print view if PDF generation failed.
+            return html, 200, {"Content-Type": "text/html"}
+
+        filename = f"Statement_{entry['statement_id']}.pdf"
+        return send_file(
+            BytesIO(pdf_buf.read()),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=filename,
         )
     finally:
         conn.close()

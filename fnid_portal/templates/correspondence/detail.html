@@ -16,7 +16,15 @@
       </span>
       {% endif %}
     </h2>
-    <div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('correspondence.print_memo', id=item.id) }}"
+         class="btn btn-success" target="_blank">
+        <i class="bi bi-printer"></i> Print
+      </a>
+      <a href="{{ url_for('correspondence.pdf_memo', id=item.id) }}"
+         class="btn btn-outline-success">
+        <i class="bi bi-file-earmark-pdf"></i> Download PDF
+      </a>
       <a href="{{ url_for('correspondence.edit_correspondence', id=item.id) }}" class="btn btn-warning">
         <i class="bi bi-pencil"></i> Edit
       </a>
@@ -75,6 +83,25 @@
             <div class="col-md-4"><strong>Logged At</strong></div>
             <div class="col-md-8">{{ item.logged_at }}</div>
           </div>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Memo Body</h5>
+          <small class="text-muted">Print or export PDF using the buttons above for the JCF-letterhead version.</small>
+        </div>
+        <div class="card-body" style="background: #fefefe;">
+          {% if item.body %}
+            <div class="memo-rendered" style="font-family: 'Times New Roman', Times, serif; line-height: 1.55; max-width: 780px;">
+              {{ item.body|safe }}
+            </div>
+          {% else %}
+            <p class="text-muted mb-0">
+              No memo body composed yet.
+              <a href="{{ url_for('correspondence.edit_correspondence', id=item.id) }}">Compose now &rarr;</a>
+            </p>
+          {% endif %}
         </div>
       </div>
     </div>

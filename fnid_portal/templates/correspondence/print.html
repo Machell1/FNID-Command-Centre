@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ item.subject }} — Memo {{ item.reference_number or item.id }}</title>
+<style>
+  @page { size: Letter; margin: 22mm 22mm 22mm 22mm; }
+  body {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12pt;
+    color: #000;
+    line-height: 1.5;
+    margin: 0;
+  }
+  .letterhead {
+    text-align: center;
+    border-bottom: 2px solid #1F3864;
+    padding-bottom: 10pt;
+    margin-bottom: 18pt;
+  }
+  .letterhead .force {
+    font-size: 13pt;
+    font-weight: bold;
+    letter-spacing: 1pt;
+  }
+  .letterhead .unit { font-size: 11pt; margin-top: 2pt; }
+  .letterhead .division { font-size: 10pt; margin-top: 2pt; color: #444; }
+
+  .memo-header {
+    margin: 14pt 0 18pt 0;
+    border-bottom: 1px solid #aaa;
+    padding-bottom: 8pt;
+  }
+  .memo-header table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11pt;
+  }
+  .memo-header td {
+    padding: 3pt 0;
+    vertical-align: top;
+  }
+  .memo-header td.label {
+    font-weight: bold;
+    width: 110pt;
+  }
+  h1.title {
+    text-align: center;
+    font-size: 14pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin: 12pt 0 16pt 0;
+    letter-spacing: 2pt;
+  }
+  .subject-line {
+    font-size: 12pt;
+    font-weight: bold;
+    margin-bottom: 14pt;
+  }
+  .body-text {
+    text-align: justify;
+  }
+  .body-text p { margin: 0 0 9pt 0; }
+  .body-text ul, .body-text ol { margin: 0 0 9pt 22pt; }
+  .body-text blockquote {
+    margin: 6pt 18pt; padding-left: 8pt;
+    border-left: 3px solid #ccc; color: #333;
+  }
+
+  .signature {
+    margin-top: 36pt;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .signature .block {
+    width: 60%;
+  }
+  .signature .line {
+    border-top: 1px solid #000;
+    margin-top: 48pt;
+    padding-top: 4pt;
+    font-size: 10pt;
+    color: #444;
+  }
+  .action-required {
+    margin-top: 22pt;
+    border: 1px solid #aaa;
+    padding: 8pt 10pt;
+    background: #fbfbf3;
+    font-size: 10.5pt;
+  }
+  .action-required .head {
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1pt;
+    font-size: 9.5pt;
+    color: #555;
+    margin-bottom: 4pt;
+  }
+  .footer {
+    margin-top: 24pt;
+    font-size: 9pt;
+    color: #666;
+    border-top: 1px dashed #aaa;
+    padding-top: 6pt;
+    text-align: center;
+  }
+  .no-print { display: block; text-align: center; margin: 8pt 0 16pt 0; }
+  @media print {
+    .no-print { display: none; }
+  }
+</style>
+</head>
+<body>
+
+{% if mode != 'pdf' %}
+<div class="no-print">
+  <button onclick="window.print()" style="padding: 6pt 18pt; font-size: 11pt; cursor: pointer;">
+    🖨️ Print this memo
+  </button>
+  &nbsp;
+  <a href="{{ url_for('correspondence.pdf_memo', id=item.id) }}"
+     style="padding: 6pt 18pt; font-size: 11pt;">
+    ⬇ Download as PDF
+  </a>
+  &nbsp;
+  <a href="{{ url_for('correspondence.correspondence_detail', id=item.id) }}"
+     style="padding: 6pt 18pt; font-size: 11pt;">
+    ← Back
+  </a>
+</div>
+{% endif %}
+
+<div class="letterhead">
+  <div class="force">JAMAICA CONSTABULARY FORCE</div>
+  <div class="unit">Firearms &amp; Narcotics Investigation Division — Area 3</div>
+  <div class="division">Manchester · St. Elizabeth · Clarendon</div>
+</div>
+
+<h1 class="title">{{ 'Internal Memorandum' if item.document_type in (None, '', 'Memo') else item.document_type }}</h1>
+
+<div class="memo-header">
+  <table>
+    <tr>
+      <td class="label">To:</td><td>{{ item.to_entity or '—' }}</td>
+    </tr>
+    <tr>
+      <td class="label">From:</td><td>{{ item.from_entity or '—' }}</td>
+    </tr>
+    <tr>
+      <td class="label">Date:</td><td>{{ item.date or '—' }}</td>
+    </tr>
+    {% if item.reference_number %}
+    <tr>
+      <td class="label">Reference:</td><td>{{ item.reference_number }}</td>
+    </tr>
+    {% endif %}
+    {% if item.case_id %}
+    <tr>
+      <td class="label">Case Ref:</td><td>{{ item.case_id }}</td>
+    </tr>
+    {% endif %}
+  </table>
+</div>
+
+<div class="subject-line">SUBJECT: {{ item.subject }}</div>
+
+<div class="body-text">
+  {% if item.body %}
+    {{ item.body|safe }}
+  {% else %}
+    <p><em>No memo body recorded. Edit this record to compose the body.</em></p>
+  {% endif %}
+</div>
+
+{% if item.action_required %}
+<div class="action-required">
+  <div class="head">Action Required</div>
+  {{ item.action_required }}
+  {% if item.action_deadline %}<br><strong>By:</strong> {{ item.action_deadline }}{% endif %}
+</div>
+{% endif %}
+
+<div class="signature">
+  <div class="block">
+    <div class="line">
+      Signature &nbsp;&nbsp;&nbsp;
+      ({{ item.from_entity or 'sender' }})
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  FNID Area 3 · Memo #{{ item.id }}
+  {% if item.reference_number %} · Ref {{ item.reference_number }}{% endif %}
+  {% if item.case_id %} · Case {{ item.case_id }}{% endif %}
+  · Logged {{ item.logged_at }} ·
+  This document is part of an official case file and is subject to the
+  Data Protection Act, 2020.
+</div>
+
+</body>
+</html>

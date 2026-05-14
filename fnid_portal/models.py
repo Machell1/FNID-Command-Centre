@@ -506,6 +506,7 @@ def init_db():
         submitted_by TEXT,
         submitted_date TEXT,
         notes TEXT,
+        statement_text TEXT,
         created_by TEXT NOT NULL,
         created_at TEXT DEFAULT (datetime('now')),
         updated_at TEXT DEFAULT (datetime('now'))
@@ -641,7 +642,8 @@ def init_db():
         action_required TEXT,
         action_deadline TEXT,
         action_status TEXT DEFAULT 'Pending',
-        notes TEXT
+        notes TEXT,
+        body TEXT
     )""")
 
     c.execute("""
@@ -946,6 +948,10 @@ def init_db():
     _migrate_add_column(c, "officers", "regulation_no", "TEXT")
     _migrate_add_column(c, "cases", "primary_register_type", "TEXT DEFAULT 'dcrr'")
     _migrate_add_column(c, "cases", "primary_register_number", "TEXT")
+
+    # In-app statement / memo composition (closes the "must use Word" gap).
+    _migrate_add_column(c, "witness_statements", "statement_text", "TEXT")
+    _migrate_add_column(c, "correspondence", "body", "TEXT")
     c.execute("""
         UPDATE cases
         SET primary_register_type = COALESCE(primary_register_type, 'dcrr'),

@@ -116,9 +116,10 @@ def _clear_all(conn):
 
 
 def _seed_named_admins(conn):
-    """Seed four named admin officers with tiered access."""
+    """Seed four named admin officers with tiered access (demo mode)."""
     print("Seeding named admin officers ...")
-    pw_hash = generate_password_hash("Fnid@Admin2026!")
+    import secrets as _secrets
+    from .models import _write_initial_credentials
 
     admins = [
         ("JCF-2001", "Cpl. Machell Williams", "Corporal",
@@ -130,18 +131,24 @@ def _seed_named_admins(conn):
         ("JCF-2004", "Sgt. Danette McPherson", "Sergeant",
          "FNID Headquarters - Area 3", "station_mgr", 4),
     ]
+    created = []
     for badge, name, rank, section, role, tier in admins:
         existing = conn.execute(
             "SELECT badge_number FROM officers WHERE badge_number = ?", (badge,)
         ).fetchone()
         if not existing:
+            pw = _secrets.token_urlsafe(12)
             conn.execute("""
                 INSERT INTO officers (badge_number, full_name, rank, section, role,
                     password_hash, unit_access, must_change_password, admin_tier,
                     verification_status)
                 VALUES (?, ?, ?, ?, ?, ?, 'all', 1, ?, 'active')
-            """, (badge, name, rank, section, role, pw_hash, tier))
-            print(f"  Created admin: {badge} ({name}) - Tier {tier}")
+            """, (badge, name, rank, section, role,
+                  generate_password_hash(pw), tier))
+            created.append({"badge": badge, "name": name, "role": role,
+                            "password": pw})
+    if created:
+        _write_initial_credentials(created)
 
 
 # ---------------------------------------------------------------------------
@@ -149,10 +156,17 @@ def _seed_named_admins(conn):
 # ---------------------------------------------------------------------------
 
 def _seed_officers(conn):
+    """Seed 10 demo officer accounts (separate from the named roster).
+
+    Used only by `flask seed` for development/testing. Each officer gets a
+    random password written to _initial_credentials.txt beside the DB.
+    """
     print("Seeding officers ...")
 
-    pw_hash = generate_password_hash("fnid2026")
+    import secrets as _secrets
+    from .models import _write_initial_credentials
 
+    created_for_file = []
     officers = [
         # (badge, full_name, rank, section, role, email, unit_access)
         ("JCF-1001", "Superintendent Althea Morgan",
@@ -198,18 +212,25 @@ def _seed_officers(conn):
     ]
 
     for badge, name, rank, section, role, email, unit_access in officers:
-        # Skip if this badge already exists (e.g. ADMIN inserted by init_db)
         exists = conn.execute(
             "SELECT 1 FROM officers WHERE badge_number = ?", (badge,)
         ).fetchone()
         if exists:
             continue
+        pw = _secrets.token_urlsafe(12)
         conn.execute("""
             INSERT INTO officers
                 (badge_number, full_name, rank, section, role,
                  password_hash, email, unit_access, is_active)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
-        """, (badge, name, rank, section, role, pw_hash, email, unit_access))
+        """, (badge, name, rank, section, role,
+              generate_password_hash(pw), email, unit_access))
+        created_for_file.append({
+            "badge": badge, "name": name, "role": role, "password": pw,
+        })
+
+    if created_for_file:
+        _write_initial_credentials(created_for_file)
 
 
 # ---------------------------------------------------------------------------
@@ -360,7 +381,7 @@ def _seed_cases(conn):
     case_ids = []
 
     for i in range(25):
-        case_id = generate_id("CASE", "cases", "case_id")
+        case_id = generate_id("CASE", "cases", "case_id", conn=conn)
         case_ids.append(case_id)
 
         classification = _CLASSIFICATIONS[i % len(_CLASSIFICATIONS)]
@@ -495,7 +516,7 @@ def _seed_intel_reports(conn):
     ]
 
     for i in range(15):
-        intel_id = generate_id("INTEL", "intel_reports", "intel_id")
+        intel_id = generate_id("INTEL", "intel_reports", "intel_id", conn=conn)
         parish = _PARISHES[i % 3]
         date_received = _rand_date(80, 3)
         source = _INTEL_SOURCES[i]
@@ -563,7 +584,7 @@ def _seed_operations(conn):
     print("Seeding operations ...")
 
     for i in range(10):
-        op_id = generate_id("OP", "operations", "op_id")
+        op_id = generate_id("OP", "operations", "op_id", conn=conn)
         parish = _PARISHES[i % 3]
         op_date = _rand_date(70, 5)
 
@@ -644,7 +665,7 @@ def _seed_firearm_seizures(conn):
     case_ids = _seed_cases._case_ids
 
     for i in range(12):
-        seizure_id = generate_id("FS", "firearm_seizures", "seizure_id")
+        seizure_id = generate_id("FS", "firearm_seizures", "seizure_id", conn=conn)
         parish = _PARISHES[i % 3]
 
         serial = f"SN-{random.randint(100000, 999999)}" if i < 8 else "OBLITERATED"
@@ -717,7 +738,7 @@ def _seed_narcotics_seizures(conn):
     ]
 
     for i in range(8):
-        seizure_id = generate_id("NS", "narcotics_seizures", "seizure_id")
+        seizure_id = generate_id("NS", "narcotics_seizures", "seizure_id", conn=conn)
         parish = _PARISHES[i % 3]
 
         conn.execute("""
@@ -781,7 +802,7 @@ def _seed_arrests(conn):
     ]
 
     for i in range(15):
-        arrest_id = generate_id("ARR", "arrests", "arrest_id")
+        arrest_id = generate_id("ARR", "arrests", "arrest_id", conn=conn)
         parish = _PARISHES[i % 3]
         arrest_date = _rand_date(75, 5)
         deadline_48hr = (
@@ -913,7 +934,7 @@ def _seed_lab_tracking(conn):
     ]
 
     for i in range(8):
-        lab_ref = generate_id("LAB", "lab_tracking", "lab_ref")
+        lab_ref = generate_id("LAB", "lab_tracking", "lab_ref", conn=conn)
         sub_date = _rand_date(60, 10)
         expected = (
             datetime.strptime(sub_date, "%Y-%m-%d") + timedelta(weeks=8)
@@ -1104,7 +1125,7 @@ def _seed_witness_statements(conn):
     ]
 
     for i in range(12):
-        stmt_id = generate_id("WS", "witness_statements", "statement_id")
+        stmt_id = generate_id("WS", "witness_statements", "statement_id", conn=conn)
         io_idx = i % 4
         parish = _PARISHES[i % 3]
 
@@ -1163,7 +1184,7 @@ def _seed_disclosure_log(conn):
     ]
 
     for i in range(5):
-        disc_id = generate_id("DISC", "disclosure_log", "disclosure_id")
+        disc_id = generate_id("DISC", "disclosure_log", "disclosure_id", conn=conn)
         io_idx = i % 4
 
         conn.execute("""
@@ -1509,7 +1530,7 @@ def _seed_intel_targets(conn):
     ]
 
     for t in targets:
-        target_id = generate_id("TGT", "intel_targets", "target_id")
+        target_id = generate_id("TGT", "intel_targets", "target_id", conn=conn)
         conn.execute("""
             INSERT INTO intel_targets
                 (target_id, target_name, aliases, description,
@@ -1544,7 +1565,7 @@ def _seed_dcrr(conn):
     ]
 
     for i in range(10):
-        dcrr_number = generate_id("DCRR", "dcrr", "dcrr_number")
+        dcrr_number = generate_id("DCRR", "dcrr", "dcrr_number", conn=conn)
         case_id = case_ids[i]
         classification = _CLASSIFICATIONS[i % len(_CLASSIFICATIONS)]
         offence_desc = _OFFENCES[i % len(_OFFENCES)][0]

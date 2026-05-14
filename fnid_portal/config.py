@@ -1,33 +1,26 @@
 """
-FNID Application Configuration
+FNID Application Configuration.
 
-Environment-based configuration with sensible defaults for development
-and strict requirements for production.
+Path defaults come from `paths.py`. Flask config attributes that depend on
+the resolved data directory are filled in by `apply_paths_to_config()` from
+the app factory, after the config class has been loaded.
 """
-
 import os
 from datetime import timedelta
-from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent
+from . import paths
 
 
 class Config:
-    """Base configuration."""
+    """Base configuration shared by all environments."""
 
-    SECRET_KEY = os.environ.get("FNID_SECRET_KEY")
-    DB_PATH = os.environ.get(
-        "FNID_DB_PATH",
-        str(BASE_DIR / "data" / "fnid.db"),
-    )
-    UPLOAD_DIR = os.environ.get(
-        "FNID_UPLOAD_DIR",
-        str(BASE_DIR / "data" / "uploads"),
-    )
-    EXPORT_DIR = os.environ.get(
-        "FNID_EXPORT_DIR",
-        str(BASE_DIR / "data" / "exports"),
-    )
+    # Static defaults — paths are filled in by apply_paths_to_config().
+    SECRET_KEY = None
+    DB_PATH = None
+    UPLOAD_DIR = None
+    EXPORT_DIR = None
+    LOG_DIR = None
+
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB upload limit
 
     # Session security
@@ -45,29 +38,17 @@ class Config:
 
 
 class DevelopmentConfig(Config):
-    """Development configuration."""
-
     DEBUG = True
-    SECRET_KEY = os.environ.get("FNID_SECRET_KEY", "fnid-dev-key-not-for-production")
 
 
 class ProductionConfig(Config):
-    """Production configuration - SECRET_KEY must be set via env var."""
+    """Installed Windows build. Local HTTP on 127.0.0.1 by default."""
 
     DEBUG = False
-    SESSION_COOKIE_SECURE = True
-
-    def __init__(self):
-        if not self.SECRET_KEY:
-            raise RuntimeError(
-                "FNID_SECRET_KEY environment variable must be set in production. "
-                "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
-            )
+    SESSION_COOKIE_SECURE = False
 
 
 class TestingConfig(Config):
-    """Testing configuration."""
-
     TESTING = True
     DEBUG = True
     SECRET_KEY = "test-secret-key-not-for-production"
@@ -79,3 +60,17 @@ config_by_name = {
     "production": ProductionConfig,
     "testing": TestingConfig,
 }
+
+
+def apply_paths_to_config(app_config, environment: str) -> None:
+    """Resolve and write all path-dependent config values.
+
+    Called from the app factory once the config object has been loaded.
+    """
+    paths.ensure_data_dir()
+    if environment != "testing" or not app_config.get("SECRET_KEY"):
+        app_config["SECRET_KEY"] = paths.load_or_create_secret_key()
+    app_config["DB_PATH"] = paths.db_path()
+    app_config["UPLOAD_DIR"] = paths.uploads_dir()
+    app_config["EXPORT_DIR"] = paths.exports_dir()
+    app_config["LOG_DIR"] = paths.logs_dir()

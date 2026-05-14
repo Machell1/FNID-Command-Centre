@@ -7,12 +7,12 @@
         <h4><i class="bi bi-folder2-open me-2" style="color: #1F3864;"></i>Case File Register &mdash; {{ case.case_id }}</h4>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a href="{{ url_for('cases.view_case', case_id=case.id) }}">{{ case.case_id }}</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('cases.case_detail', case_id=case.id) }}">{{ case.case_id }}</a></li>
                 <li class="breadcrumb-item active">File Register</li>
             </ol>
         </nav>
     </div>
-    <a href="{{ url_for('cases.view_case', case_id=case.id) }}" class="btn btn-outline-primary btn-sm">
+    <a href="{{ url_for('cases.case_detail', case_id=case.id) }}" class="btn btn-outline-primary btn-sm">
         <i class="bi bi-arrow-left me-1"></i> Back to Case
     </a>
 </div>
@@ -40,7 +40,7 @@
                     <td><small>{{ item.checkout_date }}</small></td>
                     <td><small>{{ item.reason or '-' }}</small></td>
                     <td>
-                        <form method="POST" action="{{ url_for('file_movement.return_file', case_id=case.id) }}" class="d-inline">
+                        <form method="POST" action="{{ url_for('file_movement.file_return', case_id=case.id) }}" class="d-inline">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="movement_id" value="{{ item.id }}">
                             <button type="submit" class="btn btn-sm btn-success" title="Return File">
@@ -64,7 +64,7 @@
                 <h6 class="mb-0"><i class="bi bi-box-arrow-right me-2"></i>Checkout File</h6>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('file_movement.checkout_file', case_id=case.id) }}">
+                <form method="POST" action="{{ url_for('file_movement.file_checkout', case_id=case.id) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-3">
                         <label for="file_type" class="form-label">File Type <span class="required">*</span></label>
@@ -101,7 +101,7 @@
             </div>
             <div class="card-body">
                 {% if checked_out %}
-                <form method="POST" action="{{ url_for('file_movement.return_file', case_id=case.id) }}">
+                <form method="POST" action="{{ url_for('file_movement.file_return', case_id=case.id) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-3">
                         <label for="movement_id" class="form-label">Select Checked-Out File <span class="required">*</span></label>

@@ -599,7 +599,7 @@ SOP_CHECKLIST_CATEGORIES = {
         ("detainee_book_entry", "Detainee Book Entry"),
         ("property_book_entry", "Charge & Prisoners' Property Book Entry"),
         ("lockup_time_recorded", "Lock-Up Time Recorded"),
-        ("48hr_compliance", "48-Hour Rule Compliance (s.15 CFA)"),
+        ("forty_eight_hr_compliance", "48-Hour Rule Compliance (s.15 CFA)"),
         ("charge_sheet_prepared", "Charge Sheet Prepared"),
     ],
     "Evidence & Exhibit Management": [

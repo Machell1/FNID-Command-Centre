@@ -970,17 +970,66 @@ def init_db():
               "FNID Headquarters - Area 3", "admin",
               generate_password_hash(default_pw), "all", 1, 1))
         conn.commit()
-        print(f"[FNID] Default admin created. Badge: ADMIN / Password: {default_pw}")
-        print("[FNID] You MUST change this password on first login.")
+        _write_initial_credentials([{
+            "badge": "ADMIN",
+            "name": "System Administrator",
+            "role": "admin",
+            "password": default_pw,
+        }])
 
-    # Seed pre-configured command and supervisor accounts
-    _seed_named_accounts(c, conn)
+    # Auto-seed the 28-officer roster only when explicitly requested.
+    # On a single-PC install, each user creates their own account via /register.
+    if os.environ.get("FNID_SEED_ROSTER") == "1":
+        _seed_named_accounts(c, conn)
 
     # Seed any missing default system settings without overriding local changes.
     _seed_default_settings(c)
     conn.commit()
 
     conn.close()
+
+
+def _write_initial_credentials(accounts):
+    """Write first-run credentials to a single-readable file beside the DB.
+
+    accounts: list of {"badge", "name", "role", "password"} dicts.
+    Path: <db_dir>/_initial_credentials.txt
+    The file is created with restrictive perms where the OS supports it.
+    """
+    if not _db_path or not accounts:
+        return
+    out_dir = os.path.dirname(_db_path)
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, "_initial_credentials.txt")
+    lines = [
+        "FNID Command Centre - Initial Credentials",
+        "=" * 50,
+        "This file was generated on first run and contains the initial",
+        "passwords for the seeded accounts. After signing in and changing",
+        "your password, DELETE this file.",
+        "",
+    ]
+    for acc in accounts:
+        lines.append(
+            f"  [{acc['role'].upper():>10}] Badge: {acc['badge']:<18} "
+            f"Name: {acc['name']:<22} Password: {acc['password']}"
+        )
+    lines.append("")
+    lines.append("Press Ctrl+L at the login page to copy a badge to clipboard.")
+    try:
+        with open(out_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines))
+        try:
+            # Best-effort restrictive perms (no-op on Windows for most cases)
+            os.chmod(out_path, 0o600)
+        except OSError:
+            pass
+    except OSError:
+        # Fall back to logger if we cannot write the file
+        import logging
+        logging.getLogger("fnid_portal").warning(
+            "Could not write initial credentials to %s", out_path
+        )
 
 
 def _seed_named_accounts(cursor, conn):
@@ -1089,11 +1138,16 @@ def _seed_named_accounts(cursor, conn):
 
     if created:
         conn.commit()
-        for badge, name, role, pw, email in created:
-            print(f"[FNID] {role.upper():>10} | {name:<20} | Badge: {badge:<16} "
-                  f"| Email: {email} | Password: {pw}")
-        print(f"[FNID] {len(created)} roster accounts created. "
-              "All MUST change password on first login.")
+        _write_initial_credentials([
+            {"badge": badge, "name": name, "role": role, "password": pw}
+            for badge, name, role, pw, _email in created
+        ])
+        import logging
+        logging.getLogger("fnid_portal").info(
+            "Seeded %d roster accounts; passwords written to "
+            "_initial_credentials.txt beside the database.",
+            len(created),
+        )
 
 
 def _seed_default_settings(cursor):
@@ -1218,17 +1272,29 @@ def log_audit(table_name, record_id, action, officer_badge=None,
     conn.close()
 
 
-def generate_id(prefix, table, id_column):
-    """Generate the next sequential ID for a table."""
+def generate_id(prefix, table, id_column, conn=None):
+    """Generate the next sequential ID for a table.
+
+    When the caller is inside an uncommitted transaction (e.g. seeding), pass
+    its connection so that uncommitted rows are visible — otherwise a fresh
+    connection sees the pre-batch state and returns the same ID repeatedly.
+    """
     if table not in VALID_TABLES:
         raise ValueError(f"Invalid table name: {table}")
-    conn = get_db()
-    year = datetime.now().year
-    pattern = f"{prefix}-{year}-%"
-    row = conn.execute(
-        f"SELECT {id_column} FROM {table} WHERE {id_column} LIKE ? ORDER BY id DESC LIMIT 1",
-        (pattern,)).fetchone()
-    conn.close()
+    own_conn = conn is None
+    if own_conn:
+        conn = get_db()
+    try:
+        year = datetime.now().year
+        pattern = f"{prefix}-{year}-%"
+        row = conn.execute(
+            f"SELECT {id_column} FROM {table} WHERE {id_column} LIKE ? "
+            f"ORDER BY id DESC LIMIT 1",
+            (pattern,),
+        ).fetchone()
+    finally:
+        if own_conn:
+            conn.close()
 
     if row:
         try:

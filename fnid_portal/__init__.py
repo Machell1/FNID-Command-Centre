@@ -31,7 +31,7 @@ from flask_wtf.csrf import CSRFError, CSRFProtect
 
 from . import models
 from .auth import login_manager
-from .config import config_by_name
+from .config import apply_paths_to_config, config_by_name
 from .constants import UNIT_PORTALS
 from .rbac import ROLES, can_access
 
@@ -39,15 +39,38 @@ csrf = CSRFProtect()
 
 
 def _configure_logging(app):
-    """Set up structured logging to stderr with appropriate level."""
-    handler = logging.StreamHandler(sys.stderr)
-    handler.setFormatter(logging.Formatter(
+    """Set up structured logging.
+
+    - stderr always (for `python main.py` and the launcher's captured output).
+    - Rotating file in LOG_DIR whenever it's available (i.e. once the app
+      factory has filled it in).
+    """
+    fmt = logging.Formatter(
         "[%(asctime)s] %(levelname)s in %(name)s: %(message)s"
-    ))
+    )
+
     level = logging.DEBUG if app.debug else logging.INFO
     app.logger.setLevel(level)
-    app.logger.addHandler(handler)
     logging.getLogger("fnid_portal").setLevel(level)
+
+    stderr_handler = logging.StreamHandler(sys.stderr)
+    stderr_handler.setFormatter(fmt)
+    app.logger.addHandler(stderr_handler)
+
+    log_dir = app.config.get("LOG_DIR")
+    if log_dir:
+        try:
+            os.makedirs(log_dir, exist_ok=True)
+            from logging.handlers import RotatingFileHandler
+            file_handler = RotatingFileHandler(
+                os.path.join(log_dir, "fnid.log"),
+                maxBytes=5 * 1024 * 1024, backupCount=5, encoding="utf-8",
+            )
+            file_handler.setFormatter(fmt)
+            app.logger.addHandler(file_handler)
+            logging.getLogger("fnid_portal").addHandler(file_handler)
+        except OSError:
+            app.logger.warning("Could not set up file logging in %s", log_dir)
 
 
 def _init_sentry(app):
@@ -147,12 +170,8 @@ def create_app(config_name=None):
     if config_cls is None:
         raise ValueError(f"Unknown config: {config_name}. Use: {list(config_by_name.keys())}")
 
-    # For production, instantiate to trigger validation
-    if config_name == "production":
-        config_obj = config_cls()
-        app.config.from_object(config_obj)
-    else:
-        app.config.from_object(config_cls)
+    app.config.from_object(config_cls)
+    apply_paths_to_config(app.config, config_name)
 
     # Structured logging
     _configure_logging(app)
@@ -164,20 +183,8 @@ def create_app(config_name=None):
     # Rate limiting
     limiter = _init_rate_limiter(app)
 
-    # Store custom paths in app config for easy access
-    app.config.setdefault("UPLOAD_DIR", config_cls.UPLOAD_DIR)
-    app.config.setdefault("EXPORT_DIR", config_cls.EXPORT_DIR)
-
-    # Ensure data directories exist
-    os.makedirs(app.config["UPLOAD_DIR"], exist_ok=True)
-    os.makedirs(app.config["EXPORT_DIR"], exist_ok=True)
-
     # Configure database
-    db_path = getattr(config_cls, "DB_PATH", None)
-    if config_name == "production":
-        db_path = config_obj.DB_PATH
-    app.config["DB_PATH"] = db_path
-    models.configure(db_path)
+    models.configure(app.config["DB_PATH"])
 
     # Initialize database
     models.init_db()
@@ -206,12 +213,19 @@ def create_app(config_name=None):
         "connect-src": "'self'",
     }
 
+    # On a single-PC install we serve plain HTTP on 127.0.0.1. The bundled
+    # Windows launcher sets FNID_LOCAL_HTTP=1. To deploy behind an HTTPS
+    # reverse proxy instead, set FNID_LOCAL_HTTP=0 in the environment.
+    local_http = os.environ.get("FNID_LOCAL_HTTP", "1") != "0"
+    https_mode = not local_http
+
     try:
         from flask_talisman import Talisman
 
         Talisman(
             app,
-            force_https=not app.debug,
+            force_https=https_mode,
+            strict_transport_security=https_mode,
             content_security_policy=_csp,
             frame_options="DENY",
             referrer_policy="strict-origin-when-cross-origin",
@@ -221,9 +235,11 @@ def create_app(config_name=None):
                 "geolocation": "()",
                 "payment": "()",
             },
-            session_cookie_secure=not app.debug,
+            session_cookie_secure=https_mode,
         )
-        app.logger.info("Flask-Talisman enabled")
+        app.logger.info(
+            "Flask-Talisman enabled (https=%s)", https_mode
+        )
     except ImportError:
         app.logger.info("flask-talisman not installed — using manual security headers")
 
@@ -240,17 +256,9 @@ def create_app(config_name=None):
             )
             response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
             response.headers["Pragma"] = "no-cache"
-            if not app.debug:
+            if https_mode:
                 response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
             return response
-
-    # CORS for API endpoints used by the React SPA
-    try:
-        from flask_cors import CORS
-
-        CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
-    except ImportError:
-        app.logger.info("flask-cors not installed — CORS headers not set")
 
     # Verification gate: block pending users from main routes
     ALLOWED_UNVERIFIED = {
@@ -372,30 +380,9 @@ def create_app(config_name=None):
     app.register_blueprint(workflow_bp)
     app.register_blueprint(assistants_bp)
 
-    # Register blueprints — React SPA & API v1
-    from .routes.api_v1.auth import bp as api_auth_bp
-    from .routes.api_v1.dashboard import bp as api_dashboard_bp
-    from .routes.spa import bp as spa_bp
-
-    app.register_blueprint(api_auth_bp)
-    app.register_blueprint(api_dashboard_bp)
-    app.register_blueprint(spa_bp)
-
-    # Exempt JSON API from CSRF (session cookies still required)
-    csrf.exempt(api_auth_bp)
-    csrf.exempt(api_dashboard_bp)
-
     # Apply stricter rate limits to authentication endpoints
     if limiter:
         limiter.limit("10 per minute")(auth_bp)
-        limiter.limit("10 per minute")(api_auth_bp)
-
-    # CSRF token endpoint for the React SPA
-    @app.route("/api/v1/csrf-token")
-    def csrf_token_endpoint():
-        from flask import jsonify
-        from flask_wtf.csrf import generate_csrf
-        return jsonify({"csrf_token": generate_csrf()})
 
     # Register CLI commands
     _register_cli(app)

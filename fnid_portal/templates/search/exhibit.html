@@ -67,7 +67,7 @@
                     <td>{{ e.description|truncate(60) if e.description else '-' }}</td>
                     <td>
                         {% if e.case_id %}
-                        <a href="{{ url_for('cases.view_case', case_id=e.case_db_id) }}">{{ e.case_id }}</a>
+                        <a href="{{ url_for('cases.case_detail', case_id=e.case_db_id) }}">{{ e.case_id }}</a>
                         {% else %}
                         -
                         {% endif %}

@@ -61,7 +61,7 @@
                     <label for="parish" class="form-label">Parish <span class="required">*</span></label>
                     <select class="form-select" id="parish" name="parish" required>
                         <option value="">-- Select Parish --</option>
-                        {% for p in cfg.get('parishes', []) %}
+                        {% for p in cfg.ALL_PARISHES %}
                         <option value="{{ p }}" {% if target and target.parish == p %}selected{% endif %}>{{ p }}</option>
                         {% endfor %}
                     </select>

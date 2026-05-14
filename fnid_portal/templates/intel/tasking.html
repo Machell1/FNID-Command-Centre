@@ -43,7 +43,7 @@
                             <label for="parish" class="form-label">Parish</label>
                             <select class="form-select" id="parish" name="parish">
                                 <option value="">-- Select --</option>
-                                {% for p in cfg.get('parishes', []) %}
+                                {% for p in cfg.ALL_PARISHES %}
                                 <option value="{{ p }}">{{ p }}</option>
                                 {% endfor %}
                             </select>

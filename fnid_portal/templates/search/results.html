@@ -52,7 +52,7 @@
                 {% for c in results.cases %}
                 <tr>
                     <td>
-                        <a href="{{ url_for('cases.view_case', case_id=c.id) }}">
+                        <a href="{{ url_for('cases.case_detail', case_id=c.id) }}">
                             <strong>{{ c.case_id }}</strong>
                         </a>
                     </td>

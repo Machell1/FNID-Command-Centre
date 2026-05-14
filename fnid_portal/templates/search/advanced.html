@@ -119,7 +119,7 @@
                 {% for c in cases %}
                 <tr>
                     <td>
-                        <a href="{{ url_for('cases.view_case', case_id=c.id) }}">
+                        <a href="{{ url_for('cases.case_detail', case_id=c.id) }}">
                             <strong>{{ c.case_id }}</strong>
                         </a>
                     </td>
@@ -132,7 +132,7 @@
                     <td>{{ c.stage or '-' }}</td>
                     <td>{{ c.oic_name or '-' }}</td>
                     <td>
-                        <a href="{{ url_for('cases.view_case', case_id=c.id) }}"
+                        <a href="{{ url_for('cases.case_detail', case_id=c.id) }}"
                            class="btn btn-sm btn-outline-primary" title="View">
                             <i class="bi bi-eye"></i>
                         </a>

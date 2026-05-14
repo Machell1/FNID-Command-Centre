@@ -133,34 +133,59 @@ def generate_dcrr_number(station_code=None, year=None):
         conn.close()
 
 
-def generate_major_crime_register_number(station_code=None, year=None):
-    """Generate the next Major Crime Register number.
+def generate_major_crime_register_number(diary_number=None, registration_date=None,
+                                          station_code=None, year=None):
+    """Generate the next Major Crime Register reference number.
 
-    Format: MCRG/{station}/{year}/{sequence}. The MCRG prefix avoids confusion
-    with the existing MCR Morning Crime Report engine.
+    Official FNID Area 3 format:
+
+        <MCR consecutive #>/<station diary entry #>/<YYYY>/<MM>/<DD>/FNIDAREA 3
+
+    Example: 0001/15/2026/05/14/FNIDAREA 3
+
+    The consecutive number resets per calendar year (matching the physical
+    Major Crime Register book). It is derived by counting existing entries
+    in the register whose ``report_date`` falls in the same year.
+
+    Args:
+        diary_number: the station diary entry number captured at intake.
+        registration_date: the date the case is being registered (YYYY-MM-DD
+            or a datetime); defaults to today.
+        station_code, year: legacy keyword args, ignored except for backward
+            compatibility with callers that haven't updated.
     """
-    if station_code is None:
-        station_code = get_setting("default_station_code", "FNID")
-    if year is None:
-        year = datetime.now().year
+    if registration_date is None:
+        reg_dt = datetime.now()
+    elif isinstance(registration_date, datetime):
+        reg_dt = registration_date
+    else:
+        try:
+            reg_dt = datetime.strptime(str(registration_date)[:10], "%Y-%m-%d")
+        except ValueError:
+            reg_dt = datetime.now()
 
-    prefix = f"MCRG/{station_code}/{year}"
+    use_year = reg_dt.year
+    yyyy = f"{use_year:04d}"
+    mm = f"{reg_dt.month:02d}"
+    dd = f"{reg_dt.day:02d}"
+
+    diary = str(diary_number).strip() if diary_number else "TBD"
+
     conn = get_db()
     try:
-        row = conn.execute("""
-            SELECT register_number FROM major_crime_register
-            WHERE register_number LIKE ?
-            ORDER BY id DESC LIMIT 1
-        """, (prefix + "%",)).fetchone()
+        # Count entries already in the register for the same calendar year
+        # by inspecting `report_date`. Fall back to substring match on the
+        # stored register_number when report_date is empty.
+        row = conn.execute(
+            """
+            SELECT COUNT(*) AS cnt FROM major_crime_register
+            WHERE substr(report_date, 1, 4) = ?
+            """,
+            (yyyy,),
+        ).fetchone()
+        seq = (row["cnt"] if row and "cnt" in row.keys() else (row[0] if row else 0)) + 1
 
-        seq = 1
-        if row:
-            try:
-                seq = int(str(row[0]).rsplit("/", 1)[-1]) + 1
-            except (ValueError, IndexError):
-                pass
-
-        return f"{prefix}/{str(seq).zfill(4)}"
+        return f"{seq:04d}/{diary}/{yyyy}/{mm}/{dd}/FNIDAREA 3"
     finally:
         conn.close()
 

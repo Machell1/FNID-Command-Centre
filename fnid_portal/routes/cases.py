@@ -127,12 +127,16 @@ def intake():
             register_type = request.form.get("primary_register_type", "dcrr")
             if register_type not in {"dcrr", "major_crime_register"}:
                 register_type = "dcrr"
-            register_number = (
-                generate_major_crime_register_number(station_code=station_code)
-                if register_type == "major_crime_register"
-                else generate_dcrr_number(station_code=station_code)
-            )
+
             now = datetime.now()
+            diary_number_raw = request.form.get("diary_number", "").strip()
+            if register_type == "major_crime_register":
+                register_number = generate_major_crime_register_number(
+                    diary_number=diary_number_raw or None,
+                    registration_date=now,
+                )
+            else:
+                register_number = generate_dcrr_number(station_code=station_code)
             badge = current_user.badge_number
             name = current_user.full_name
 

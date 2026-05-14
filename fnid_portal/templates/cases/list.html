@@ -91,7 +91,7 @@
             <tbody>
                 {% for c in cases %}
                 <tr style="cursor: pointer;" onclick="window.location='{{ url_for('cases.case_detail', case_id=c.case_id) }}'">
-                    <td><strong>{{ c.case_id }}</strong></td>
+                    <td><strong>{{ c.primary_register_number or c.dcrr_number or c.case_id }}</strong></td>
                     <td>{{ c.classification or '-' }}</td>
                     <td>{{ c.parish or '-' }}</td>
                     <td>{{ c.suspect_name or '-' }}</td>

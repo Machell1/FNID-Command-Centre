@@ -1,6 +1,10 @@
 ﻿{% extends "base.html" %}
 {% from "macros.html" import select_field, text_field, textarea_field, status_badge %}
-{% block title %}Case {{ case.case_id }}{% endblock %}
+{# Display reference: the register number the officer actually uses
+   (DCRR or Major Crime Register), with the internal case_id as fallback
+   and shown separately as "System ID". URL params keep using case_id. #}
+{% set case_ref = case.primary_register_number or case.dcrr_number or case.case_id %}
+{% block title %}Case {{ case_ref }}{% endblock %}
 
 {% block content %}
 {# --- Page Header --- #}
@@ -8,7 +12,7 @@
     <div>
         <h4>
             <i class="bi bi-folder2-open me-2" style="color: var(--fnid-navy);"></i>
-            {{ case.case_id }}
+            {{ case_ref }}
             {% set status = case.case_status or '' %}
             {% if 'Open' in status %}
             <span class="badge bg-success ms-2">{{ status }}</span>
@@ -43,7 +47,7 @@
             <ol class="breadcrumb mb-0">
                 <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
                 <li class="breadcrumb-item"><a href="{{ url_for('cases.case_list') }}">Cases</a></li>
-                <li class="breadcrumb-item active">{{ case.case_id }}</li>
+                <li class="breadcrumb-item active">{{ case_ref }}</li>
             </ol>
         </nav>
     </div>
@@ -126,7 +130,7 @@
                                 <tbody>
                                     <tr>
                                         <td class="text-muted" style="width:40%;">Case Reference No.</td>
-                                        <td><strong>{{ case.case_id }}</strong></td>
+                                        <td><strong>{{ case_ref }}</strong></td>
                                     </tr>
                                     <tr>
                                         <td class="text-muted">Primary Register</td>
@@ -139,8 +143,8 @@
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td class="text-muted">Register Number</td>
-                                        <td>{{ case.primary_register_number or case.dcrr_number or '-' }}</td>
+                                        <td class="text-muted">System ID</td>
+                                        <td><small class="text-muted">{{ case.case_id }}</small></td>
                                     </tr>
                                     <tr>
                                         <td class="text-muted">Classification</td>

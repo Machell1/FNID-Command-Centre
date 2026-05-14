@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Timeline - {{ case.case_id }}{% endblock %}
+{% set case_ref = case.primary_register_number or case.dcrr_number or case.case_id %}
+{% block title %}Timeline - {{ case_ref }}{% endblock %}
 
 {% block head %}
 <style>
@@ -101,7 +102,7 @@
             <ol class="breadcrumb mb-0">
                 <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
                 <li class="breadcrumb-item"><a href="{{ url_for('cases.case_list') }}">Cases</a></li>
-                <li class="breadcrumb-item"><a href="{{ url_for('cases.case_detail', case_id=case.case_id) }}">{{ case.case_id }}</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('cases.case_detail', case_id=case.case_id) }}">{{ case_ref }}</a></li>
                 <li class="breadcrumb-item active">Timeline</li>
             </ol>
         </nav>
@@ -117,7 +118,7 @@
 <div class="form-section">
     <div class="row align-items-center">
         <div class="col-md-4">
-            <strong>Case:</strong> {{ case.case_id }}
+            <strong>Case:</strong> {{ case_ref }}
         </div>
         <div class="col-md-4">
             <strong>Classification:</strong> {{ case.classification or '-' }}

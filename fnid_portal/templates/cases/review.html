@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "macros.html" import select_field, text_field, textarea_field %}
-{% block title %}Case Review - {{ case.case_id }}{% endblock %}
+{% set case_ref = case.primary_register_number or case.dcrr_number or case.case_id %}
+{% block title %}Case Review - {{ case_ref }}{% endblock %}
 
 {% block content %}
 {# --- Page Header --- #}
@@ -14,7 +15,7 @@
             <ol class="breadcrumb mb-0">
                 <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Portal</a></li>
                 <li class="breadcrumb-item"><a href="{{ url_for('cases.case_list') }}">Cases</a></li>
-                <li class="breadcrumb-item"><a href="{{ url_for('cases.case_detail', case_id=case.case_id) }}">{{ case.case_id }}</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('cases.case_detail', case_id=case.case_id) }}">{{ case_ref }}</a></li>
                 <li class="breadcrumb-item active">Review</li>
             </ol>
         </nav>
@@ -30,7 +31,7 @@
 <div class="form-section">
     <div class="row align-items-center">
         <div class="col-md-3">
-            <strong>Case:</strong> {{ case.case_id }}
+            <strong>Case:</strong> {{ case_ref }}
         </div>
         <div class="col-md-3">
             <strong>Classification:</strong> {{ case.classification or '-' }}
